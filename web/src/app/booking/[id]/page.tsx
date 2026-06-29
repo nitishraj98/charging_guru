@@ -1,0 +1,282 @@
+"use client";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { stations, bookings, Slot } from "@/lib/api";
+import { checkAuth } from "@/lib/auth";
+import NavBar from "@/components/NavBar";
+
+const DURATIONS = [30, 45, 60, 90];
+
+function getNextDays(n: number) {
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    return {
+      label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : d.toLocaleDateString("en-IN", { weekday: "short" }),
+      date: d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+    };
+  });
+}
+
+function HoldTimer() {
+  const [secs, setSecs] = useState(15 * 60);
+  const ref = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    ref.current = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000);
+    return () => { if (ref.current) clearInterval(ref.current); };
+  }, []);
+  const m = Math.floor(secs / 60).toString().padStart(2, "0");
+  const s = (secs % 60).toString().padStart(2, "0");
+  return (
+    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: "#FFC043" }}>{m}:{s}</span>
+  );
+}
+
+export default function BookingPage() {
+  const router = useRouter();
+  const { id: chargerId } = useParams<{ id: string }>();
+  const sp = useSearchParams();
+  const stationId = sp.get("station") ?? "";
+
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [duration, setDuration] = useState(60);
+  const [dayIdx, setDayIdx] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [booking, setBooking] = useState(false);
+  const [error, setError] = useState("");
+  const [chargerLabel, setChargerLabel] = useState("Bay");
+  const [pricePerKwh, setPricePerKwh] = useState(1800);
+  const [connectorType, setConnectorType] = useState("CCS2");
+  const [powerKw, setPowerKw] = useState(60);
+  const [stationName, setStationName] = useState("");
+
+  const days = getNextDays(5);
+
+  const loadSlots = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await stations.slots(chargerId);
+      setSlots(data);
+      const first = data.find(s => s.available);
+      if (first) setSelectedSlot(first);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load available slots");
+    } finally { setLoading(false); }
+  }, [chargerId]);
+
+  useEffect(() => {
+    checkAuth().then(ok => { if (!ok) router.push("/login"); });
+    if (stationId) {
+      stations.get(stationId).then(s => {
+        setStationName(s.name);
+        const c = s.chargers?.find(ch => ch.id === chargerId);
+        if (c) {
+          setChargerLabel(c.label);
+          setPricePerKwh(c.price_per_kwh);
+          setConnectorType(c.connector_type);
+          setPowerKw(c.power_kw);
+        }
+      }).catch(() => {});
+    }
+    loadSlots();
+  }, [chargerId, stationId, router, loadSlots]);
+
+  const estimatedKwh = (duration / 60) * powerKw;
+  const estimatedAmount = Math.round(estimatedKwh * (pricePerKwh / 100));
+  const bookingFee = 10;
+  const total = estimatedAmount + bookingFee;
+
+  async function createBooking() {
+    if (!selectedSlot) return;
+    setBooking(true); setError("");
+    try {
+      const b = await bookings.create(chargerId, selectedSlot.slot_start, duration);
+      router.push(`/pay/${b.id}`);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Booking failed. Please try again.");
+      setBooking(false);
+    }
+  }
+
+
+  return (
+    <div style={{ background: "#0A0D0E", minHeight: "100vh" }}>
+      <NavBar />
+      <div className="fade-up" style={{ maxWidth: 640, margin: "0 auto", padding: "36px 24px" }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
+          <button onClick={() => router.back()} style={{
+            width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center",
+            background: "#101415", border: "1px solid #222829", color: "#E6EBED",
+            cursor: "pointer", fontSize: 16, flexShrink: 0,
+          }}>←</button>
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 2 }}>
+              {chargerLabel} · {connectorType} {powerKw}kW
+            </h2>
+            <p style={{ color: "#6B7479", fontSize: 13 }}>
+              {stationName || "Select slot and duration"}
+            </p>
+          </div>
+        </div>
+
+        {/* Date row */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "#6B7479", marginBottom: 10 }}>Date</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {days.map((d, i) => (
+              <button key={i} onClick={() => setDayIdx(i)} style={{
+                flex: 1, padding: "10px 6px", borderRadius: 12, cursor: "pointer",
+                background: dayIdx === i ? "#00532B" : "#101415",
+                border: `1.5px solid ${dayIdx === i ? "#00A455" : "#222829"}`,
+                color: dayIdx === i ? "#4DFFA6" : "#6B7479",
+                transition: "all .15s",
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 3 }}>{d.label}</div>
+                <div style={{ fontSize: 10, opacity: .7 }}>{d.date}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Slots */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "#6B7479", marginBottom: 10 }}>Available slots</div>
+          {loading ? (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} style={{ width: 64, height: 36, borderRadius: 10, background: "#101415", border: "1px solid #222829" }} />
+              ))}
+            </div>
+          ) : error ? (
+            <div style={{ padding: "16px", borderRadius: 12, background: "rgba(255,90,95,.08)", border: "1px solid rgba(255,90,95,.25)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <span style={{ color: "#FF5A5F", fontSize: 13 }}>Could not load slots — {error}</span>
+              <button onClick={loadSlots} style={{ padding: "6px 14px", borderRadius: 8, background: "#222829", border: "1px solid #2E3638", color: "#E6EBED", fontSize: 12, cursor: "pointer" }}>Retry</button>
+            </div>
+          ) : slots.length === 0 ? (
+            <div style={{ padding: "16px", borderRadius: 12, background: "rgba(255,192,67,.06)", border: "1px solid rgba(255,192,67,.2)", color: "#FFC043", fontSize: 13 }}>
+              No available slots for today. Try selecting another date.
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {slots.map((s, i) => {
+                const time = s.slot_start.includes("T")
+                  ? new Date(s.slot_start).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false })
+                  : s.slot_start;
+                const selected = selectedSlot?.slot_start === s.slot_start;
+                return (
+                  <button key={i} onClick={() => s.available && setSelectedSlot(s)} style={{
+                    padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 500,
+                    cursor: s.available ? "pointer" : "not-allowed",
+                    opacity: s.available ? 1 : .35,
+                    background: selected ? "#00532B" : "#101415",
+                    border: `1.5px solid ${selected ? "#00A455" : "#222829"}`,
+                    color: selected ? "#4DFFA6" : s.available ? "#E6EBED" : "#495154",
+                    boxShadow: selected ? "0 0 0 3px rgba(0,164,85,.15)" : "none",
+                    transition: "all .15s",
+                  }}>{time}</button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Duration */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "#6B7479", marginBottom: 10 }}>Duration</div>
+          <div style={{
+            display: "flex", gap: 4,
+            background: "#101415", border: "1px solid #222829", borderRadius: 14, padding: 4,
+          }}>
+            {DURATIONS.map(d => (
+              <button key={d} onClick={() => setDuration(d)} style={{
+                flex: 1, padding: "11px 8px", borderRadius: 11,
+                fontSize: 13, fontWeight: 700,
+                background: duration === d ? "#181D1F" : "transparent",
+                color: duration === d ? "#00E676" : "#6B7479",
+                border: duration === d ? "1px solid #222829" : "1px solid transparent",
+                cursor: "pointer", transition: "all .2s",
+              }}>{d}m</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Price summary */}
+        <div style={{
+          background: "#101415", border: "1px solid #222829", borderRadius: 18,
+          padding: "18px 20px", marginBottom: selectedSlot ? 16 : 24,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "#6B7479", marginBottom: 14 }}>Order summary</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+              <span style={{ color: "#98A1A6" }}>Energy ~{estimatedKwh.toFixed(0)} kWh</span>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace" }}>₹{estimatedAmount.toLocaleString("en-IN")}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+              <span style={{ color: "#98A1A6" }}>Booking fee</span>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace" }}>₹{bookingFee}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+              <span style={{ color: "#98A1A6" }}>Rate</span>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#6B7479" }}>₹{(pricePerKwh / 100).toFixed(0)}/kWh</span>
+            </div>
+          </div>
+          <div style={{ height: 1, background: "#222829", margin: "14px 0" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <b style={{ fontSize: 15 }}>Total</b>
+            <b style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 26 }}>₹{total.toLocaleString("en-IN")}</b>
+          </div>
+        </div>
+
+        {/* Hold timer */}
+        {selectedSlot && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10, marginBottom: 20,
+            padding: "12px 16px", borderRadius: 12,
+            background: "rgba(255,192,67,.06)", border: "1px solid rgba(255,192,67,.2)",
+          }}>
+            <span style={{ fontSize: 16 }}>⏳</span>
+            <span style={{ fontSize: 13, color: "#FFC043" }}>Slot held for </span>
+            <HoldTimer />
+            <span style={{ fontSize: 13, color: "#98A1A6", marginLeft: 4 }}>· Complete payment to confirm</span>
+          </div>
+        )}
+
+        {error && (
+          <div style={{
+            padding: "12px 16px", borderRadius: 12, marginBottom: 16,
+            background: "rgba(255,90,95,.1)", border: "1px solid rgba(255,90,95,.3)",
+            color: "#FF5A5F", fontSize: 13,
+          }}>{error}</div>
+        )}
+
+        <button
+          onClick={createBooking}
+          disabled={!selectedSlot || booking}
+          className={selectedSlot && !booking ? "pulse-glow" : ""}
+          style={{
+            width: "100%", padding: "18px 20px", borderRadius: 14,
+            background: (!selectedSlot || booking) ? "#222829" : "#00E676",
+            color: (!selectedSlot || booking) ? "#6B7479" : "#050708",
+            fontSize: 16, fontWeight: 700, border: "none",
+            cursor: (!selectedSlot || booking) ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            transition: "background .15s",
+          }}>
+          {booking
+            ? <><span className="spinner" />Creating booking…</>
+            : selectedSlot
+              ? `Continue to pay · ₹${total.toLocaleString("en-IN")} →`
+              : "Select a slot to continue"}
+        </button>
+
+        <p style={{ fontSize: 11, color: "#495154", textAlign: "center", marginTop: 14 }}>
+          Your slot is held for 15 minutes · Cancel any time before check-in
+        </p>
+      </div>
+    </div>
+  );
+}
