@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Charging Guru — Interactive Prototype</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── TOP NAV ─────────────────────────────────── -->
+  <nav class="topnav">
+    <div class="brand">
+      <span class="logo">
+        <svg width="20" height="22" viewBox="0 0 30 34"><path d="M15 1C7.8 1 2 6.6 2 13.6 2 22 15 33 15 33s13-11 13-19.4C28 6.6 22.2 1 15 1Z" fill="none" stroke="#00E676" stroke-width="2"/><path fill="#00E676" d="M16.5 7 10 17h4l-1.5 8L20 14h-4.2l1.7-7Z"/></svg>
+      </span>
+      Charging Guru <span class="tag" style="margin-left:4px">prototype</span>
+    </div>
+    <div class="segmented">
+      <button data-app="cover" class="on">🏠 Home</button>
+      <button data-app="userapp">📱 User App</button>
+      <button data-app="userweb">🖥 User Website</button>
+      <button data-app="ownerapp">⚡ Owner App</button>
+      <button data-app="admin">🛡 Admin</button>
+      <button data-app="design">🎨 Design System</button>
+    </div>
+    <div class="spacer"></div>
+    <button id="themeToggle" class="ghostbtn">☀ Light</button>
+  </nav>
+
+  <div class="stage">
+
+  <!-- ════════════════ COVER / WELCOME ════════════════ -->
+  <section class="app on" id="cover">
+    <div class="cover">
+      <span class="logo" style="width:76px;height:76px;border-radius:22px;margin-bottom:6px"><svg width="40" height="44" viewBox="0 0 30 34"><path d="M15 1C7.8 1 2 6.6 2 13.6 2 22 15 33 15 33s13-11 13-19.4C28 6.6 22.2 1 15 1Z" fill="none" stroke="#00E676" stroke-width="2"/><path fill="#00E676" d="M16.5 7 10 17h4l-1.5 8L20 14h-4.2l1.7-7Z"/></svg></span>
+      <div class="tag">Charging Guru · product walkthrough</div>
+      <h1 style="font-size:46px;line-height:1.05;text-align:center">Charge with certainty.</h1>
+      <p class="muted" style="max-width:560px;text-align:center;font-size:16px">A premium, dark-mode, navigation-centric EV ecosystem. Click a product below to explore the full interactive prototype — every screen is live.</p>
+      <div class="covergrid">
+        <button class="coverc" data-app="userapp"><span class="ci">📱</span><b>User App</b><span class="note">10 screens · login → book → QR</span></button>
+        <button class="coverc" data-app="userweb"><span class="ci">🖥</span><b>User Website</b><span class="note">5 pages · landing → checkout</span></button>
+        <button class="coverc" data-app="ownerapp"><span class="ci">⚡</span><b>Station Owner App</b><span class="note">4 screens · scan → revenue</span></button>
+        <button class="coverc" data-app="admin"><span class="ci">🛡</span><b>Admin Console</b><span class="note">4 pages · analytics → approvals</span></button>
+      </div>
+      <div class="row" style="gap:14px;margin-top:6px;color:var(--text-3);font-size:13px">
+        <span><span class="dot d-av"></span> available</span><span><span class="dot d-bk"></span> booked</span>
+        <span><span class="dot d-oc"></span> in session</span><span><span class="dot d-mt"></span> maintenance</span>
+        <span class="muted">· 23 live screens</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ USER MOBILE APP ════════════════ -->
+  <section class="app" id="userapp">
+    <div class="mobwrap">
+      <div class="screenmenu">
+        <h4>User App · screens</h4>
+        <button data-goto="ua-login"><span class="num">00</span> Login / OTP</button>
+        <button data-goto="ua-home" class="on"><span class="num">01</span> Home · Discovery</button>
+        <button data-goto="ua-plan"><span class="num">02</span> Route Planner</button>
+        <button data-goto="ua-station"><span class="num">03</span> Station Details</button>
+        <button data-goto="ua-booking"><span class="num">04</span> Booking</button>
+        <button data-goto="ua-payment"><span class="num">05</span> Payment</button>
+        <button data-goto="ua-qr"><span class="num">06</span> QR Pass</button>
+        <button data-goto="ua-trips"><span class="num">07</span> Trips</button>
+        <button data-goto="ua-rewards"><span class="num">08</span> Rewards</button>
+        <button data-goto="ua-profile"><span class="num">09</span> Profile</button>
+      </div>
+
+      <div class="phone"><div class="dynisland"></div><div class="display">
+        <div class="statusbar"><span>9:41</span><span class="r mono">5G ▤ 86%</span></div>
+
+        <!-- LOGIN -->
+        <div class="screen scr" id="ua-login">
+          <div class="body center" style="text-align:center;gap:18px;display:flex;flex-direction:column;justify-content:center">
+            <span class="logo" style="width:64px;height:64px;margin:0 auto;border-radius:18px"><svg width="34" height="38" viewBox="0 0 30 34"><path d="M15 1C7.8 1 2 6.6 2 13.6 2 22 15 33 15 33s13-11 13-19.4C28 6.6 22.2 1 15 1Z" fill="none" stroke="#00E676" stroke-width="2"/><path fill="#00E676" d="M16.5 7 10 17h4l-1.5 8L20 14h-4.2l1.7-7Z"/></svg></span>
+            <div><h2 style="font-size:26px">Charge with certainty</h2><p class="muted" style="font-size:13px;margin-top:6px">Plan once. Charge everywhere.</p></div>
+            <div class="card" style="text-align:left;margin-top:10px">
+              <div class="tag">Mobile number</div>
+              <div class="row between" style="margin-top:8px;background:var(--carbon-950);border:1px solid var(--border);border-radius:12px;padding:13px"><span class="mono">+91 98765 43210</span><span class="muted">✎</span></div>
+              <button class="btn primary lg" data-goto="ua-home" style="margin-top:14px">Send OTP →</button>
+              <p class="note" style="text-align:center;margin-top:12px">By continuing you agree to our Terms &amp; Privacy.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- HOME -->
+        <div class="screen scr on" id="ua-home">
+          <div class="map">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+              <rect class="block" x="8" y="14" width="20" height="16" rx="2"/><rect class="block" x="34" y="10" width="22" height="14" rx="2"/>
+              <rect class="block" x="64" y="16" width="24" height="20" rx="2"/><rect class="block" x="10" y="44" width="26" height="18" rx="2"/>
+              <rect class="block" x="44" y="40" width="18" height="22" rx="2"/><rect class="block" x="70" y="48" width="20" height="22" rx="2"/>
+              <polygon class="water" points="0,82 40,72 70,88 100,80 100,100 0,100"/>
+              <path class="road minor" d="M0,36 H100 M0,68 H100 M30,0 V100 M60,0 V100"/>
+              <path class="road major" d="M-2,24 C30,30 60,18 102,28"/>
+              <path class="road major" d="M48,-2 C44,40 58,70 52,102"/>
+            </svg>
+            <span class="ripple" style="left:60%;top:30%"></span>
+            <span class="mk" style="left:60%;top:30%" data-goto="ua-station"><svg width="34" height="42" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#00E676" stroke-width="2"/><path fill="#00E676" d="M16 7 11 16h3l-1 6 5-8h-3l1-7Z"/></svg><span class="badge">3</span></span>
+            <span class="mk" style="left:34%;top:50%"><svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#FFC043" stroke-width="2"/></svg></span>
+            <span class="mk" style="left:78%;top:58%"><svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#22D3EE" stroke-width="2"/></svg></span>
+            <span class="mk" style="left:20%;top:28%"><svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#00E676" stroke-width="2"/></svg></span>
+            <span class="puck" style="left:46%;top:64%"></span>
+          </div>
+          <div class="appbar" style="background:none">
+            <div class="glass" style="flex:1;border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:10px"><span>🔍</span><span class="sec2" style="font-size:14px">Where to?</span><span class="spacer"></span><span class="chip" style="padding:5px 9px"><span class="dot d-av"></span>82%</span></div>
+          </div>
+          <div style="position:absolute;top:96px;left:0;right:0;display:flex;gap:8px;padding:0 16px;z-index:20;overflow:auto">
+            <span class="chip on">Near me</span><span class="chip">⚡ Fast</span><span class="chip">CCS2</span><span class="chip">≥50kW</span>
+          </div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="row between" style="margin-bottom:8px"><b style="font-size:14px">6 chargers nearby</b><span class="muted" style="font-size:13px">Sort ▾</span></div>
+            <div class="stn" data-goto="ua-station">
+              <div class="t"><span class="dot d-av"></span> GreenCharge Sector 62</div>
+              <div class="m">2.1 km · ⚡60kW CCS2 · ₹18/kWh</div>
+              <div class="row between" style="margin-top:9px"><span class="pips"><s></s><s></s><s></s><s class="off"></s><span class="muted" style="font-size:11px;margin-left:5px">3/4 free</span></span><span class="btn primary" style="padding:7px 15px;font-size:13px">Book</span></div>
+            </div>
+            <div class="stn">
+              <div class="t"><span class="dot d-oc"></span> VoltHub Mall Road</div>
+              <div class="m">3.4 km · ⚡120kW CCS2 · ₹22/kWh · ★4.7</div>
+            </div>
+            <div class="stn">
+              <div class="t"><span class="dot d-av"></span> EcoCharge DLF Phase 3</div>
+              <div class="m">4.0 km · 🔌22kW Type2 · ₹14/kWh · ★4.4</div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <button class="on" data-goto="ua-home">🏠<span>Home</span></button>
+            <button data-goto="ua-plan">🧭<span>Plan</span></button>
+            <button class="fab" data-goto="ua-qr"><svg width="20" height="22" viewBox="0 0 20 22"><path fill="#050708" d="M11 1 3 12h5l-2 9 9-12h-5l2-8Z"/></svg></button>
+            <button data-goto="ua-trips">🧾<span>Trips</span></button>
+            <button data-goto="ua-profile">👤<span>Me</span></button>
+          </div>
+        </div>
+
+        <!-- ROUTE PLANNER -->
+        <div class="screen scr" id="ua-plan">
+          <div class="appbar"><span class="back" data-goto="ua-home">←</span> Plan your trip</div>
+          <div class="body" style="padding-top:90px">
+            <div class="card" style="padding:12px">
+              <div class="row" style="font-size:13px"><span style="color:var(--volt-500)">◉</span> Noida Sector 62</div>
+              <div class="divider" style="margin:9px 0"></div>
+              <div class="row" style="font-size:13px"><span class="muted">◎</span> Patna, Bihar</div>
+            </div>
+            <div class="row between" style="margin:12px 2px"><span class="chip">🚗 Nexon EV ▾</span><span class="chip"><span class="dot d-av"></span> Start 80%</span></div>
+            <!-- mini map with route -->
+            <div style="position:relative;height:150px;border-radius:16px;overflow:hidden;border:1px solid var(--border)">
+              <div class="map" style="position:absolute">
+                <svg viewBox="0 0 100 60" preserveAspectRatio="none">
+                  <rect class="block" x="6" y="8" width="18" height="12" rx="2"/><rect class="block" x="70" y="34" width="18" height="14" rx="2"/>
+                  <path class="road minor" d="M0,30 H100 M40,0 V60"/>
+                  <path class="routealt" d="M10,46 C40,20 60,52 90,16"/>
+                  <path class="route" d="M10,46 C35,30 55,38 90,14"/>
+                </svg>
+                <span class="puck" style="left:10%;top:77%"></span>
+                <span class="mk" style="left:42%;top:54%"><svg width="22" height="28" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#00E676" stroke-width="2.5"/></svg></span>
+                <span class="mk" style="left:90%;top:24%"><svg width="22" height="28" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#FFC043" stroke-width="2.5"/></svg></span>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px;padding:14px">
+              <div class="row between"><b style="font-size:14px">1015 km · ~18h</b><span class="chip on">2 stops</span></div>
+              <div class="track">
+                <div class="line"></div>
+                <div class="node"><span class="b"><svg width="9" height="10" viewBox="0 0 8 9"><path fill="#00E676" d="M5 0 1 4.5h2L2.3 9 7 3.5H4.6L5 0Z"/></svg></span>
+                  <div class="ttl">Stop 1 · GreenCharge Lucknow</div><div class="meta">arrive 18% → 80% · ~45 min · ₹612 · 3 open</div></div>
+                <div class="node"><span class="b"><svg width="9" height="10" viewBox="0 0 8 9"><path fill="#00E676" d="M5 0 1 4.5h2L2.3 9 7 3.5H4.6L5 0Z"/></svg></span>
+                  <div class="ttl">Stop 2 · VoltHub Varanasi</div><div class="meta">arrive 22% → 80% · ~40 min · ₹540 · 5 open</div></div>
+              </div>
+            </div>
+            <button class="btn primary lg" data-goto="ua-booking" style="margin-top:14px">Reserve all stops</button>
+          </div>
+          <div class="tabbar">
+            <button data-goto="ua-home">🏠<span>Home</span></button><button class="on" data-goto="ua-plan">🧭<span>Plan</span></button>
+            <button class="fab" data-goto="ua-qr"><svg width="20" height="22" viewBox="0 0 20 22"><path fill="#050708" d="M11 1 3 12h5l-2 9 9-12h-5l2-8Z"/></svg></button>
+            <button data-goto="ua-trips">🧾<span>Trips</span></button><button data-goto="ua-profile">👤<span>Me</span></button>
+          </div>
+        </div>
+
+        <!-- STATION DETAILS -->
+        <div class="screen scr" id="ua-station">
+          <div class="body flush">
+            <div style="height:180px;background:linear-gradient(160deg,#0E2A1C,#0A0D0E);position:relative">
+              <div class="appbar" style="top:50px"><span class="back" data-goto="ua-home">←</span><span class="spacer"></span><span class="back">♡</span></div>
+              <div style="position:absolute;bottom:14px;left:16px"><div class="tag">⚡ Fast charging</div><h3 style="font-size:20px;margin-top:2px">GreenCharge Sector 62</h3></div>
+            </div>
+            <div style="padding:14px 16px 96px">
+              <div class="row between"><span class="sec2" style="font-size:13px">★ 4.6 (212) · 2.1 km · Open 24h</span><span class="chip on"><span class="dot d-av"></span> 3/4 open</span></div>
+              <div class="row" style="margin:14px 0"><span class="btn sec" style="flex:1">Directions</span><span class="btn sec" style="flex:1">Share</span></div>
+              <div class="tag">Chargers</div>
+              <div class="card" style="padding:6px 14px;margin-top:8px">
+                <div class="list-row"><span class="ico">⚡</span><div style="flex:1"><b style="font-size:14px">Bay 1 · CCS2 60kW</b><div class="muted" style="font-size:12px">₹18/kWh</div></div><span class="chip" style="padding:6px 11px"><span class="dot d-av"></span>Free</span><span class="btn primary" data-goto="ua-booking" style="padding:7px 12px;font-size:12px;margin-left:8px">Select</span></div>
+                <div class="list-row"><span class="ico">⚡</span><div style="flex:1"><b style="font-size:14px">Bay 2 · CCS2 60kW</b><div class="muted" style="font-size:12px">₹18/kWh</div></div><span class="chip" style="padding:6px 11px"><span class="dot d-bk"></span>Booked</span></div>
+                <div class="list-row"><span class="ico">🔌</span><div style="flex:1"><b style="font-size:14px">Bay 3 · Type2 22kW</b><div class="muted" style="font-size:12px">₹14/kWh</div></div><span class="chip" style="padding:6px 11px"><span class="dot d-oc"></span>In use</span></div>
+                <div class="list-row" style="border:none"><span class="ico">⚡</span><div style="flex:1"><b style="font-size:14px">Bay 4 · CCS2 60kW</b><div class="muted" style="font-size:12px">—</div></div><span class="chip" style="padding:6px 11px"><span class="dot d-mt"></span>Maint.</span></div>
+              </div>
+              <div class="tag" style="margin-top:16px">Amenities</div>
+              <div class="amen" style="margin-top:8px">☕ Café &nbsp; 🚻 Restroom &nbsp; 📶 Wi-Fi &nbsp; 🅿 Parking &nbsp; 🛒 Store</div>
+            </div>
+          </div>
+          <div style="position:absolute;left:12px;right:12px;bottom:12px"><button class="btn primary lg" data-goto="ua-booking">Select Bay 1</button></div>
+        </div>
+
+        <!-- BOOKING -->
+        <div class="screen scr" id="ua-booking">
+          <div class="appbar"><span class="back" data-goto="ua-station">←</span> Book · Bay 1</div>
+          <div class="body" style="padding-top:90px">
+            <div class="tag">Date</div>
+            <div class="row" style="gap:7px;margin:8px 0 14px">
+              <span class="chip on">Today</span><span class="chip">Wed</span><span class="chip">Thu</span><span class="chip">Fri</span>
+            </div>
+            <div class="tag">Available slots</div>
+            <div class="row" style="gap:7px;flex-wrap:wrap;margin:8px 0 14px">
+              <span class="chip">6:00</span><span class="chip on">7:00</span><span class="chip">7:30</span><span class="chip" style="opacity:.4">8:00</span><span class="chip">8:30</span>
+            </div>
+            <div class="tag">Duration</div>
+            <div class="seg" style="margin:8px 0 16px"><button>30m</button><button class="on">45m</button><button>60m</button></div>
+            <div class="card">
+              <div class="row between" style="font-size:13px"><span class="sec2">Energy ~24 kWh</span><span class="mono">₹432</span></div>
+              <div class="row between" style="font-size:13px;margin-top:8px"><span class="sec2">Booking fee</span><span class="mono">₹10</span></div>
+              <div class="row between" style="font-size:13px;margin-top:8px"><span style="color:var(--volt-400)">GOLD discount</span><span class="mono" style="color:var(--volt-400)">−₹40</span></div>
+              <div class="divider"></div>
+              <div class="row between"><b>Total</b><b class="mono" style="font-size:18px">₹402</b></div>
+            </div>
+            <div class="row" style="margin-top:12px;color:var(--amber-500);font-size:13px"><span>⏳ Slot held for</span><b class="mono">04:58</b></div>
+          </div>
+          <div style="position:absolute;left:12px;right:12px;bottom:12px"><button class="btn primary lg" data-goto="ua-payment">Continue to pay</button></div>
+        </div>
+
+        <!-- PAYMENT -->
+        <div class="screen scr" id="ua-payment">
+          <div class="appbar"><span class="back" data-goto="ua-booking">←</span> Payment</div>
+          <div class="body" style="padding-top:90px">
+            <div class="card">
+              <div class="muted" style="font-size:12px">GreenCharge · Bay 1 · 7:00–7:45</div>
+              <div class="muted" style="font-size:12px;margin-top:3px">Nexon EV · ~24 kWh</div>
+              <div class="row between" style="margin-top:10px"><b>Total</b><b class="mono" style="font-size:24px">₹402</b></div>
+              <div class="row" style="margin-top:6px;color:var(--amber-500);font-size:12px">⏳ Hold <b class="mono">03:42</b></div>
+            </div>
+            <div class="tag" style="margin-top:16px">Pay with</div>
+            <div style="margin-top:8px">
+              <div class="list-row"><span class="ico">📲</span><b style="flex:1;font-size:14px">UPI</b><span style="color:var(--volt-500)">◉</span></div>
+              <div class="list-row"><span class="ico">💳</span><b style="flex:1;font-size:14px">Card</b><span class="muted">○</span></div>
+              <div class="list-row" style="border:none"><span class="ico">🏦</span><b style="flex:1;font-size:14px">Netbanking</b><span class="muted">○</span></div>
+            </div>
+            <div class="card" style="margin-top:8px;display:flex;align-items:center;gap:10px"><span>🎁</span><span style="flex:1;font-size:13px">Use 120 reward points</span><span class="mono" style="color:var(--volt-400)">−₹24</span></div>
+            <p class="note" style="text-align:center;margin-top:14px">🔒 Secured by Razorpay</p>
+          </div>
+          <div style="position:absolute;left:12px;right:12px;bottom:12px"><button class="btn primary lg" data-goto="ua-qr">Pay ₹402</button></div>
+        </div>
+
+        <!-- QR PASS -->
+        <div class="screen scr" id="ua-qr">
+          <div class="body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding-top:80px">
+            <h3 style="font-size:18px">Your charging pass</h3>
+            <div class="ticket" style="width:250px">
+              <div class="hd">GreenCharge · Bay 1</div>
+              <div class="qr"><svg viewBox="0 0 7 7" shape-rendering="crispEdges"><rect width="7" height="7" fill="#050708"/><g fill="#00E676"><rect x="0" y="0" width="3" height="1"/><rect x="0" y="0" width="1" height="3"/><rect x="2" y="0" width="1" height="3"/><rect x="0" y="2" width="3" height="1"/><rect x="4" y="0" width="3" height="1"/><rect x="6" y="0" width="1" height="3"/><rect x="4" y="2" width="3" height="1"/><rect x="4" y="0" width="1" height="3"/><rect x="0" y="4" width="3" height="1"/><rect x="0" y="4" width="1" height="3"/><rect x="2" y="4" width="1" height="3"/><rect x="0" y="6" width="3" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></g></svg></div>
+              <div class="perf"></div>
+              <div style="padding:14px 16px;font-size:12px;color:var(--text-2)">Ria · Nexon EV · CCS2<br>Tue 7:00–7:45 PM<br><span class="valid" style="margin-top:6px">● Valid · <span class="mono">44:12</span></span></div>
+            </div>
+            <div class="row"><button class="btn sec">Directions</button><button class="btn ghost">Add to Wallet</button></div>
+            <p class="note">Show this to the operator to start.</p>
+          </div>
+          <div class="tabbar">
+            <button data-goto="ua-home">🏠<span>Home</span></button><button data-goto="ua-plan">🧭<span>Plan</span></button>
+            <button class="fab" data-goto="ua-qr"><svg width="20" height="22" viewBox="0 0 20 22"><path fill="#050708" d="M11 1 3 12h5l-2 9 9-12h-5l2-8Z"/></svg></button>
+            <button class="on" data-goto="ua-trips">🧾<span>Trips</span></button><button data-goto="ua-profile">👤<span>Me</span></button>
+          </div>
+        </div>
+
+        <!-- TRIPS -->
+        <div class="screen scr" id="ua-trips">
+          <div class="appbar">Trips</div>
+          <div class="body" style="padding-top:90px">
+            <div class="seg" style="margin-bottom:14px"><button class="on">Upcoming</button><button>Past</button></div>
+            <div class="stn" data-goto="ua-qr"><div class="t"><span class="dot d-av"></span> GreenCharge · Bay 1</div><div class="m">Today 7:00 PM · ₹402 · Confirmed</div></div>
+            <div class="stn"><div class="t"><span class="dot d-bk"></span> VoltHub Lucknow · Bay 2</div><div class="m">Tomorrow 2:30 PM · ₹612 · Confirmed</div></div>
+            <div class="tag" style="margin:16px 0 8px">Completed</div>
+            <div class="stn"><div class="t" style="color:var(--text-2)">EcoCharge DLF · Bay 1</div><div class="m">12 Jun · 21 kWh · ₹378 · Invoice ↓</div></div>
+            <div class="stn"><div class="t" style="color:var(--text-2)">VoltHub Mall Rd · Bay 3</div><div class="m">04 Jun · 18 kWh · ₹324 · Invoice ↓</div></div>
+          </div>
+          <div class="tabbar">
+            <button data-goto="ua-home">🏠<span>Home</span></button><button data-goto="ua-plan">🧭<span>Plan</span></button>
+            <button class="fab" data-goto="ua-qr"><svg width="20" height="22" viewBox="0 0 20 22"><path fill="#050708" d="M11 1 3 12h5l-2 9 9-12h-5l2-8Z"/></svg></button>
+            <button class="on" data-goto="ua-trips">🧾<span>Trips</span></button><button data-goto="ua-profile">👤<span>Me</span></button>
+          </div>
+        </div>
+
+        <!-- REWARDS -->
+        <div class="screen scr" id="ua-rewards">
+          <div class="appbar">Rewards</div>
+          <div class="body" style="padding-top:90px">
+            <div class="card" style="background:linear-gradient(135deg,#0E2A1C,#101415);box-shadow:var(--glow)">
+              <div class="row between"><b style="font-family:var(--fd)">GOLD ⚡</b><b class="mono" style="font-size:24px">1,240</b></div>
+              <div class="muted" style="font-size:12px;margin-top:2px">points</div>
+              <div class="cbar" style="margin-top:12px"><i style="width:62%"></i></div>
+              <div class="note" style="margin-top:6px">760 pts to next perk · 2× points · 10% off · priority</div>
+            </div>
+            <div class="row" style="margin-top:12px"><button class="btn sec" style="flex:1">Redeem</button><button class="btn primary" style="flex:1">Refer &amp; earn</button></div>
+            <div class="tag" style="margin:16px 0 8px">This week</div>
+            <div class="row" style="gap:10px">
+              <div class="card" style="flex:1;text-align:center"><b class="mono" style="font-size:20px;color:var(--volt-400)">120</b><div class="note">km clean</div></div>
+              <div class="card" style="flex:1;text-align:center"><b class="mono" style="font-size:20px">+50</b><div class="note">points</div></div>
+              <div class="card" style="flex:1;text-align:center"><b class="mono" style="font-size:20px">3</b><div class="note">sessions</div></div>
+            </div>
+            <div class="tag" style="margin:16px 0 8px">Activity</div>
+            <div class="list-row"><span class="ico">⚡</span><span style="flex:1;font-size:13px">Charging session</span><span class="mono" style="color:var(--volt-400)">+24</span></div>
+            <div class="list-row"><span class="ico">🎁</span><span style="flex:1;font-size:13px">Referral · Amit</span><span class="mono" style="color:var(--volt-400)">+200</span></div>
+            <div class="list-row" style="border:none"><span class="ico">🏷</span><span style="flex:1;font-size:13px">Redeemed discount</span><span class="mono muted">−120</span></div>
+          </div>
+          <div class="tabbar">
+            <button data-goto="ua-home">🏠<span>Home</span></button><button data-goto="ua-plan">🧭<span>Plan</span></button>
+            <button class="fab" data-goto="ua-qr"><svg width="20" height="22" viewBox="0 0 20 22"><path fill="#050708" d="M11 1 3 12h5l-2 9 9-12h-5l2-8Z"/></svg></button>
+            <button data-goto="ua-trips">🧾<span>Trips</span></button><button class="on" data-goto="ua-profile">👤<span>Me</span></button>
+          </div>
+        </div>
+
+        <!-- PROFILE -->
+        <div class="screen scr" id="ua-profile">
+          <div class="appbar">Profile</div>
+          <div class="body" style="padding-top:90px">
+            <div class="row" style="gap:14px"><div style="width:56px;height:56px;border-radius:50%;background:var(--grad-volt);display:grid;place-items:center;color:#050708;font-weight:700;font-size:20px">R</div><div><b style="font-size:16px">Ria Sharma</b><div class="muted" style="font-size:12px">+91 98765 43210 · ✓ verified</div></div><span class="spacer"></span><span class="chip on">GOLD ⚡</span></div>
+            <div class="tag" style="margin:18px 0 8px">My vehicles</div>
+            <div class="card" style="padding:6px 14px">
+              <div class="list-row"><span class="ico">🚗</span><div style="flex:1"><b style="font-size:14px">Tata Nexon EV ★</b><div class="muted" style="font-size:12px">CCS2 · 40.5 kWh · 312 km</div></div></div>
+              <div class="list-row" style="border:none;color:var(--volt-400)"><span class="ico">＋</span><b style="font-size:14px">Add vehicle</b></div>
+            </div>
+            <div class="tag" style="margin:16px 0 8px">Account</div>
+            <div class="list-row"><span class="ico">💳</span><span style="flex:1;font-size:14px">Membership · GOLD</span><span class="muted">renews 12 Jul ›</span></div>
+            <div class="list-row"><span class="ico">🧾</span><span style="flex:1;font-size:14px">Payments &amp; invoices</span><span class="muted">›</span></div>
+            <div class="list-row"><span class="ico">🛡</span><span style="flex:1;font-size:14px">Devices &amp; sessions</span><span class="muted">2 active ›</span></div>
+            <div class="list-row" style="border:none"><span class="ico">⚙</span><span style="flex:1;font-size:14px">Preferences</span><span class="muted">›</span></div>
+            <button class="btn sec lg" style="margin-top:16px" data-goto="ua-login">Log out</button>
+          </div>
+          <div class="tabbar">
+            <button data-goto="ua-home">🏠<span>Home</span></button><button data-goto="ua-plan">🧭<span>Plan</span></button>
+            <button class="fab" data-goto="ua-qr"><svg width="20" height="22" viewBox="0 0 20 22"><path fill="#050708" d="M11 1 3 12h5l-2 9 9-12h-5l2-8Z"/></svg></button>
+            <button data-goto="ua-trips">🧾<span>Trips</span></button><button class="on" data-goto="ua-profile">👤<span>Me</span></button>
+          </div>
+        </div>
+
+      </div></div><!-- /phone -->
+    </div>
+  </section>
+
+  <!-- ════════════════ USER WEBSITE ════════════════ -->
+  <section class="app" id="userweb">
+    <div class="mobwrap">
+      <div class="screenmenu">
+        <h4>User Website · pages</h4>
+        <button data-goto="web-landing" class="on"><span class="num">01</span> Landing</button>
+        <button data-goto="web-discover"><span class="num">02</span> Discover · Map</button>
+        <button data-goto="web-station"><span class="num">03</span> Station Detail</button>
+        <button data-goto="web-checkout"><span class="num">04</span> Checkout</button>
+        <button data-goto="web-bookings"><span class="num">05</span> My Bookings</button>
+      </div>
+
+      <div class="browser">
+        <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="url">https://charging-guru.com</div><span class="muted" style="font-size:12px">⟳</span></div>
+        <div class="viewport">
+
+          <!-- LANDING -->
+          <div class="screen on" id="web-landing">
+            <div class="webnav"><span class="brand"><span class="logo">⚡</span> charging guru</span><div class="spacer"></div><div class="links"><span>Discover</span><span>Plan a trip</span><span>For operators</span><span>Pricing</span></div><button class="btn primary" style="padding:9px 16px" data-goto="web-discover">Open app</button></div>
+            <div class="hero">
+              <span class="chip on">⚡ 5,000+ chargers · route-aware</span>
+              <h1>Charge with<br>certainty.</h1>
+              <p>Plan your route, reserve a guaranteed slot, pay online, and arrive to a charger that's waiting for you.</p>
+              <div class="row"><button class="btn primary lg" style="width:auto;padding:15px 24px" data-goto="web-discover">Find chargers near me</button><button class="btn sec lg" style="width:auto;padding:15px 24px" data-goto="web-station">Plan a trip</button></div>
+            </div>
+            <div class="feat">
+              <div class="panel"><h3>🧭 Route-aware planning</h3><p class="muted" style="font-size:13px">Tell us where you're going — we place the smartest charging stops with arrival SoC and ETA.</p></div>
+              <div class="panel"><h3>🔋 Real-time availability</h3><p class="muted" style="font-size:13px">See live charger status and reserve a slot so it's free when you arrive.</p></div>
+              <div class="panel"><h3>🎁 Rewards &amp; membership</h3><p class="muted" style="font-size:13px">Earn points on clean energy, unlock SILVER &amp; GOLD perks and priority booking.</p></div>
+            </div>
+          </div>
+
+          <!-- DISCOVER -->
+          <div class="screen" id="web-discover">
+            <div class="webnav"><span class="brand"><span class="logo">⚡</span> charging guru</span><div class="spacer"></div><div class="links"><span>Discover</span><span>Trips</span><span>Rewards</span></div><div style="width:32px;height:32px;border-radius:50%;background:var(--grad-volt)"></div></div>
+            <div style="display:grid;grid-template-columns:360px 1fr;height:560px">
+              <div style="border-right:1px solid var(--border);padding:18px;overflow:auto">
+                <div class="glass" style="border-radius:12px;padding:11px 14px;display:flex;gap:10px;align-items:center">🔍 <span class="sec2" style="font-size:14px">Search location</span></div>
+                <div class="row" style="gap:7px;margin:12px 0;flex-wrap:wrap"><span class="chip on">⚡ Fast</span><span class="chip">CCS2</span><span class="chip">≥50kW</span><span class="chip">★4.5+</span></div>
+                <div class="stn" data-goto="web-station"><div class="t"><span class="dot d-av"></span> GreenCharge Sector 62</div><div class="m">2.1 km · ⚡60kW CCS2 · ₹18 · 3/4 free</div></div>
+                <div class="stn"><div class="t"><span class="dot d-oc"></span> VoltHub Mall Road</div><div class="m">3.4 km · ⚡120kW CCS2 · ₹22 · ★4.7</div></div>
+                <div class="stn"><div class="t"><span class="dot d-av"></span> EcoCharge DLF Phase 3</div><div class="m">4.0 km · 🔌22kW Type2 · ₹14 · ★4.4</div></div>
+              </div>
+              <div style="position:relative">
+                <div class="map">
+                  <svg viewBox="0 0 100 60" preserveAspectRatio="none">
+                    <rect class="block" x="8" y="8" width="20" height="14" rx="2"/><rect class="block" x="40" y="6" width="20" height="12" rx="2"/><rect class="block" x="68" y="14" width="22" height="16" rx="2"/><rect class="block" x="12" y="34" width="22" height="16" rx="2"/><rect class="block" x="62" y="38" width="20" height="16" rx="2"/>
+                    <polygon class="water" points="0,52 40,46 100,54 100,60 0,60"/>
+                    <path class="road minor" d="M0,28 H100 M35,0 V60 M68,0 V60"/><path class="road major" d="M-2,16 C40,22 70,10 102,18"/>
+                  </svg>
+                  <span class="ripple" style="left:30%;top:38%"></span>
+                  <span class="mk" style="left:30%;top:38%" data-goto="web-station"><svg width="36" height="44" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#00E676" stroke-width="2"/><path fill="#00E676" d="M16 7 11 16h3l-1 6 5-8h-3l1-7Z"/></svg><span class="badge">3</span></span>
+                  <span class="mk" style="left:62%;top:32%"><svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#22D3EE" stroke-width="2"/></svg></span>
+                  <span class="mk" style="left:80%;top:54%"><svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#FFC043" stroke-width="2"/></svg></span>
+                  <span class="puck" style="left:46%;top:60%"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STATION (web) -->
+          <div class="screen" id="web-station">
+            <div class="webnav"><span class="brand"><span class="logo">⚡</span> charging guru</span><div class="spacer"></div><div class="links"><span data-goto="web-discover">← Back to map</span></div></div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:24px;padding:28px 60px">
+              <div>
+                <div style="height:240px;border-radius:18px;background:linear-gradient(160deg,#0E2A1C,#0A0D0E);display:flex;align-items:flex-end;padding:18px"><div><span class="chip on">⚡ Fast charging</span><h2 style="margin-top:8px">GreenCharge Sector 62</h2><div class="muted" style="font-size:13px;margin-top:4px">★ 4.6 (212) · Noida · Open 24h</div></div></div>
+                <h3 style="margin:22px 0 12px">Chargers</h3>
+                <div class="panel" style="padding:6px 16px">
+                  <div class="list-row"><span class="ico">⚡</span><div style="flex:1"><b>Bay 1 · CCS2 60kW</b><div class="muted" style="font-size:12px">₹18/kWh</div></div><span class="pill green">● Available</span><button class="btn primary" style="margin-left:12px;padding:8px 16px" data-goto="web-checkout">Book</button></div>
+                  <div class="list-row"><span class="ico">⚡</span><div style="flex:1"><b>Bay 2 · CCS2 60kW</b><div class="muted" style="font-size:12px">₹18/kWh</div></div><span class="pill amber">◐ Booked</span></div>
+                  <div class="list-row" style="border:none"><span class="ico">🔌</span><div style="flex:1"><b>Bay 3 · Type2 22kW</b><div class="muted" style="font-size:12px">₹14/kWh</div></div><span class="pill cyan">● In session</span></div>
+                </div>
+              </div>
+              <div>
+                <div class="panel"><h3>Amenities</h3><div class="amen">☕ Café · 🚻 Restroom · 📶 Wi-Fi · 🅿 Parking · 🛒 Store</div></div>
+                <div class="panel" style="margin-top:16px"><h3>Reviews · 4.6 ★</h3><p class="muted" style="font-size:13px">“Fast, clean, and the booking guaranteed my slot on a busy evening.” — Arjun</p><div class="divider"></div><p class="muted" style="font-size:13px">“Café made the 40-min wait easy.” — Meera</p></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CHECKOUT (web) -->
+          <div class="screen" id="web-checkout">
+            <div class="webnav"><span class="brand"><span class="logo">⚡</span> charging guru</span><div class="spacer"></div><span class="muted" style="font-size:13px">🔒 Secure checkout</span></div>
+            <div style="display:grid;grid-template-columns:1fr 380px;gap:24px;padding:28px 60px">
+              <div>
+                <h2>Checkout</h2>
+                <div class="panel" style="margin-top:16px"><h3>Slot</h3><div class="row" style="gap:7px;flex-wrap:wrap"><span class="chip on">7:00</span><span class="chip">7:30</span><span class="chip" style="opacity:.4">8:00</span><span class="chip">8:30</span></div></div>
+                <div class="panel" style="margin-top:16px"><h3>Payment method</h3><div class="row" style="gap:10px"><span class="chip on">📲 UPI</span><span class="chip">💳 Card</span><span class="chip">🏦 Netbanking</span></div><p class="note" style="margin-top:12px">🔒 Payments processed securely by Razorpay. We never store your card.</p></div>
+              </div>
+              <div class="panel" style="height:fit-content">
+                <h3>Order summary</h3>
+                <div class="row between" style="font-size:13px"><span class="sec2">GreenCharge · Bay 1</span></div>
+                <div class="row between" style="font-size:13px;margin-top:10px"><span class="sec2">Energy ~24 kWh</span><span class="mono">₹432</span></div>
+                <div class="row between" style="font-size:13px;margin-top:8px"><span class="sec2">Booking fee</span><span class="mono">₹10</span></div>
+                <div class="row between" style="font-size:13px;margin-top:8px"><span style="color:var(--volt-400)">GOLD discount</span><span class="mono" style="color:var(--volt-400)">−₹40</span></div>
+                <div class="divider"></div>
+                <div class="row between"><b>Total</b><b class="mono" style="font-size:20px">₹402</b></div>
+                <div class="row" style="margin:10px 0;color:var(--amber-500);font-size:12px">⏳ Slot held <b class="mono">03:42</b></div>
+                <button class="btn primary lg" data-goto="web-bookings">Pay ₹402</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOOKINGS (web) -->
+          <div class="screen" id="web-bookings">
+            <div class="webnav"><span class="brand"><span class="logo">⚡</span> charging guru</span><div class="spacer"></div><div class="links"><span data-goto="web-discover">Discover</span><span>Rewards</span></div><div style="width:32px;height:32px;border-radius:50%;background:var(--grad-volt)"></div></div>
+            <div style="padding:28px 60px">
+              <div class="pagehead"><h2>My bookings</h2><div class="seg" style="width:220px"><button class="on">Upcoming</button><button>Past</button></div></div>
+              <div class="panel" style="padding:0 16px">
+                <table>
+                  <tr><th>Station</th><th>Charger</th><th>When</th><th>Amount</th><th>Status</th><th></th></tr>
+                  <tr><td><b style="color:var(--text)">GreenCharge Sector 62</b></td><td>Bay 1 · CCS2</td><td>Today 7:00 PM</td><td class="mono">₹402</td><td><span class="pill green">● Confirmed</span></td><td><button class="btn sec" style="padding:6px 12px">View QR</button></td></tr>
+                  <tr><td><b style="color:var(--text)">VoltHub Lucknow</b></td><td>Bay 2 · CCS2</td><td>Tomorrow 2:30 PM</td><td class="mono">₹612</td><td><span class="pill amber">◐ Confirmed</span></td><td><button class="btn sec" style="padding:6px 12px">Manage</button></td></tr>
+                  <tr><td><b style="color:var(--text)">EcoCharge DLF</b></td><td>Bay 1 · Type2</td><td>12 Jun</td><td class="mono">₹378</td><td><span class="pill grey">✓ Completed</span></td><td><button class="btn sec" style="padding:6px 12px">Invoice</button></td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ OWNER APP ════════════════ -->
+  <section class="app" id="ownerapp">
+    <div class="mobwrap">
+      <div class="screenmenu">
+        <h4>Owner App · screens</h4>
+        <button data-goto="ow-dash" class="on"><span class="num">01</span> Dashboard</button>
+        <button data-goto="ow-scan"><span class="num">02</span> QR Scanner</button>
+        <button data-goto="ow-revenue"><span class="num">03</span> Revenue</button>
+        <button data-goto="ow-chargers"><span class="num">04</span> Charger Control</button>
+      </div>
+
+      <div class="phone"><div class="dynisland"></div><div class="display">
+        <div class="statusbar"><span>9:41</span><span class="r mono">5G ▤ 86%</span></div>
+
+        <!-- OWNER DASHBOARD -->
+        <div class="screen scr on" id="ow-dash">
+          <div class="appbar">GreenCharge Sector 62 ▾ <span class="spacer"></span><span>🔔</span></div>
+          <div class="body" style="padding-top:90px">
+            <div class="tag">Today</div>
+            <div class="row" style="gap:10px;margin:8px 0 16px">
+              <div class="card" style="flex:1;padding:13px"><div class="note">Revenue</div><b class="mono" style="font-size:18px">₹12,480</b><div class="up" style="font-size:11px">▲14%</div></div>
+              <div class="card" style="flex:1;padding:13px"><div class="note">Sessions</div><b class="mono" style="font-size:18px">38</b><div class="up" style="font-size:11px">▲6</div></div>
+              <div class="card" style="flex:1;padding:13px"><div class="note">Util.</div><b class="mono" style="font-size:18px">72%</b><div class="up" style="font-size:11px">▲8%</div></div>
+            </div>
+            <div class="tag">Live chargers</div>
+            <div class="row" style="gap:8px;margin:8px 0 16px;flex-wrap:wrap">
+              <span class="chip"><span class="dot d-av"></span> Bay 1</span><span class="chip"><span class="dot d-bk"></span> Bay 2</span><span class="chip"><span class="dot d-oc"></span> Bay 3</span><span class="chip"><span class="dot d-mt"></span> Bay 4</span>
+            </div>
+            <div class="tag">Upcoming bookings</div>
+            <div class="card" style="padding:6px 14px;margin-top:8px">
+              <div class="list-row"><div style="flex:1"><b style="font-size:14px">7:00 · Ria</b><div class="muted" style="font-size:12px">Bay 1 · CCS2</div></div><button class="btn primary" data-goto="ow-scan" style="padding:7px 14px;font-size:12px">Verify</button></div>
+              <div class="list-row" style="border:none"><div style="flex:1"><b style="font-size:14px">7:30 · Amit</b><div class="muted" style="font-size:12px">Bay 3 · Type2</div></div><span class="muted">›</span></div>
+            </div>
+            <div class="card" style="margin-top:12px;border-color:rgba(255,120,73,.3);display:flex;align-items:center;gap:10px"><span>🔧</span><span style="font-size:13px;flex:1">Bay 4 maintenance · 2 days left</span></div>
+          </div>
+          <div class="tabbar">
+            <button class="on" data-goto="ow-dash">📊<span>Dash</span></button><button data-goto="ow-revenue">💰<span>Revenue</span></button>
+            <button class="fab" data-goto="ow-scan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#050708" stroke-width="2.5"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/></svg></button>
+            <button data-goto="ow-chargers">⚡<span>Chargers</span></button><button>👤<span>Me</span></button>
+          </div>
+        </div>
+
+        <!-- OWNER SCANNER -->
+        <div class="screen scr" id="ow-scan">
+          <div class="appbar" style="color:#fff"><span class="back" data-goto="ow-dash">←</span> Scan pass</div>
+          <div class="viewfinder">
+            <div class="reticle"><span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span><span class="scanline"></span></div>
+          </div>
+          <div style="background:var(--bg);padding:16px 16px 90px">
+            <p class="muted" style="text-align:center;font-size:13px">Point at the customer's QR pass</p>
+            <div class="card" style="margin-top:12px;box-shadow:var(--glow)">
+              <div class="row" style="gap:10px"><span style="font-size:20px;color:var(--volt-400)">✓</span><b>Verified</b><span class="spacer"></span><span class="valid">● paid</span></div>
+              <div class="muted" style="font-size:13px;margin-top:8px">Ria Sharma · Nexon EV · CCS2<br>Bay 1 · 7:00–7:45 · ₹402</div>
+              <button class="btn primary lg" data-goto="ow-chargers" style="margin-top:12px">Start session</button>
+            </div>
+            <button class="btn sec lg" style="margin-top:10px">Enter code manually</button>
+          </div>
+        </div>
+
+        <!-- OWNER REVENUE -->
+        <div class="screen scr" id="ow-revenue">
+          <div class="appbar">Revenue <span class="spacer"></span><span class="chip" style="padding:5px 11px">This month ▾</span></div>
+          <div class="body" style="padding-top:90px">
+            <div class="card">
+              <div class="muted" style="font-size:12px">Total earnings</div>
+              <b class="mono" style="font-size:28px">₹3,84,200</b>
+              <div class="up" style="font-size:12px">▲ 18% vs last month</div>
+              <div class="bars" style="height:90px;margin-top:14px">
+                <div class="bar" style="height:40%"></div><div class="bar" style="height:62%"></div><div class="bar" style="height:50%"></div><div class="bar" style="height:78%"></div><div class="bar" style="height:66%"></div><div class="bar" style="height:90%"></div><div class="bar" style="height:72%"></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px;display:flex;align-items:center;gap:10px"><span>🏦</span><div style="flex:1"><b style="font-size:14px">Next payout</b><div class="muted" style="font-size:12px">18 Jun · auto</div></div><b class="mono">₹2,10,000</b></div>
+            <div class="tag" style="margin:16px 0 8px">By charger</div>
+            <div style="margin-bottom:6px"><div class="row between" style="font-size:13px"><span>Bay 1</span><span class="mono">₹1,40k · 72%</span></div><div class="cbar" style="height:8px;margin-top:5px"><i style="width:72%"></i></div></div>
+            <div style="margin-bottom:6px"><div class="row between" style="font-size:13px"><span>Bay 3</span><span class="mono">₹98k · 54%</span></div><div class="cbar" style="height:8px;margin-top:5px"><i style="width:54%"></i></div></div>
+            <button class="btn sec lg" style="margin-top:14px">Download statement</button>
+          </div>
+          <div class="tabbar">
+            <button data-goto="ow-dash">📊<span>Dash</span></button><button class="on" data-goto="ow-revenue">💰<span>Revenue</span></button>
+            <button class="fab" data-goto="ow-scan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#050708" stroke-width="2.5"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/></svg></button>
+            <button data-goto="ow-chargers">⚡<span>Chargers</span></button><button>👤<span>Me</span></button>
+          </div>
+        </div>
+
+        <!-- OWNER CHARGERS -->
+        <div class="screen scr" id="ow-chargers">
+          <div class="appbar"><span class="back" data-goto="ow-dash">←</span> Chargers</div>
+          <div class="body" style="padding-top:90px">
+            <div class="card" style="margin-bottom:12px">
+              <div class="row between"><b style="font-size:14px">⚡ Bay 1 · CCS2 60kW</b><span class="chip" style="padding:5px 10px"><span class="dot d-av"></span>Available</span></div>
+              <div class="seg" style="margin:12px 0"><button class="on">Available</button><button>Offline</button><button>Maint.</button></div>
+              <div class="row between" style="font-size:13px"><span class="muted">Price</span><span class="mono">₹18/kWh ✎</span></div>
+              <div class="row between" style="font-size:13px;margin-top:6px"><span class="muted">Today</span><span class="mono">12 sessions · ₹1,480</span></div>
+            </div>
+            <div class="card" style="margin-bottom:12px;border-color:rgba(34,211,238,.3)">
+              <div class="row between"><b style="font-size:14px">⚡ Bay 3 · in session</b><span class="chip" style="padding:5px 10px"><span class="dot d-oc"></span>Live</span></div>
+              <div class="row between" style="font-size:12px;margin:10px 0 5px"><span class="muted">18% → 82%</span><span class="mono">18 min left</span></div>
+              <div class="cbar anim" style="--to:64%"><i></i></div>
+            </div>
+            <div class="card" style="border-color:rgba(255,120,73,.3)">
+              <div class="row between"><b style="font-size:14px">🔧 Bay 4 · maintenance</b><span class="chip" style="padding:5px 10px"><span class="dot d-mt"></span>2d</span></div>
+              <div class="muted" style="font-size:12px;margin-top:8px">Firmware update · resumes 18 Jun</div>
+            </div>
+            <button class="btn primary lg" style="margin-top:14px">+ Add charger</button>
+          </div>
+          <div class="tabbar">
+            <button data-goto="ow-dash">📊<span>Dash</span></button><button data-goto="ow-revenue">💰<span>Revenue</span></button>
+            <button class="fab" data-goto="ow-scan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#050708" stroke-width="2.5"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/></svg></button>
+            <button class="on" data-goto="ow-chargers">⚡<span>Chargers</span></button><button>👤<span>Me</span></button>
+          </div>
+        </div>
+
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ════════════════ ADMIN ════════════════ -->
+  <section class="app" id="admin">
+    <div class="browser" style="width:1180px">
+      <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="url">https://admin.charging-guru.com</div></div>
+      <div class="viewport" style="height:680px">
+        <div class="dash">
+          <div class="rail">
+            <div class="logo-row"><span class="logo" style="width:30px;height:30px;border-radius:9px">⚡</span> Admin</div>
+            <a class="on" data-goto="ad-overview">📊 Overview</a>
+            <a data-goto="ad-map">🗺 Network Map</a>
+            <a data-goto="ad-users">👥 Users</a>
+            <a data-goto="ad-stations">⚡ Stations</a>
+            <a style="opacity:.5">💳 Payments</a>
+            <a style="opacity:.5">🚩 Fraud</a>
+            <a style="opacity:.5">🩺 System</a>
+            <a style="opacity:.5">📜 Audit</a>
+            <div class="spacer" style="flex:1"></div>
+            <a style="opacity:.7">◐ AK · 2FA ✓</a>
+          </div>
+          <div class="content">
+
+            <!-- OVERVIEW -->
+            <div class="screen on" id="ad-overview">
+              <div class="pagehead"><h2>Overview</h2><div class="row"><span class="chip">Last 30 days ▾</span><button class="btn sec" style="padding:8px 14px">Export</button></div></div>
+              <div class="kpis">
+                <div class="kpi"><div class="lbl">DAU</div><div class="val">14.2k</div><div class="delta up">▲ 6%</div></div>
+                <div class="kpi"><div class="lbl">GMV</div><div class="val">₹48L</div><div class="delta up">▲ 12%</div></div>
+                <div class="kpi"><div class="lbl">Bookings</div><div class="val">12.4k</div><div class="delta up">▲ 9%</div></div>
+                <div class="kpi"><div class="lbl">Pay success</div><div class="val">98.4%</div><div class="delta up">▲ 0.3%</div></div>
+                <div class="kpi"><div class="lbl">Refunds</div><div class="val">1.1%</div><div class="delta down">▼ 0.2%</div></div>
+                <div class="kpi"><div class="lbl">Active now</div><div class="val">312</div><div class="delta up">live</div></div>
+              </div>
+              <div class="grid2">
+                <div class="panel"><h3>GMV trend</h3><div class="bars"><div class="bar" style="height:50%"></div><div class="bar" style="height:64%"></div><div class="bar" style="height:58%"></div><div class="bar" style="height:78%"></div><div class="bar" style="height:70%"></div><div class="bar" style="height:88%"></div><div class="bar" style="height:82%"></div><div class="bar" style="height:96%"></div></div></div>
+                <div class="panel"><h3>Booking funnel</h3>
+                  <div style="font-size:13px"><div class="row between"><span class="sec2">Created</span><span class="mono">12.4k</span></div><div class="cbar" style="margin:4px 0 12px"><i style="width:100%"></i></div>
+                  <div class="row between"><span class="sec2">Paid</span><span class="mono">11.9k</span></div><div class="cbar" style="margin:4px 0 12px"><i style="width:96%"></i></div>
+                  <div class="row between"><span class="sec2">Completed</span><span class="mono">11.1k · 89%</span></div><div class="cbar" style="margin:4px 0"><i style="width:89%"></i></div></div>
+                </div>
+              </div>
+              <div class="panel" style="margin-top:16px"><h3>Top stations</h3>
+                <table>
+                  <tr><th>Station</th><th>City</th><th>Sessions</th><th>GMV</th><th>Util</th><th>Rating</th></tr>
+                  <tr><td><b style="color:var(--text)">GreenCharge Sector 62</b></td><td>Noida</td><td>1,204</td><td class="mono">₹4.1L</td><td><span class="pill green">72%</span></td><td>4.6 ★</td></tr>
+                  <tr><td><b style="color:var(--text)">VoltHub Mall Road</b></td><td>Lucknow</td><td>980</td><td class="mono">₹3.6L</td><td><span class="pill green">68%</span></td><td>4.7 ★</td></tr>
+                  <tr><td><b style="color:var(--text)">EcoCharge DLF</b></td><td>Gurgaon</td><td>742</td><td class="mono">₹2.4L</td><td><span class="pill amber">54%</span></td><td>4.4 ★</td></tr>
+                </table>
+              </div>
+            </div>
+
+            <!-- NETWORK MAP -->
+            <div class="screen" id="ad-map">
+              <div class="pagehead"><h2>Network map</h2><div class="row"><span class="chip on">◉ Live</span><span class="chip">Status ▾</span><span class="chip">City ▾</span></div></div>
+              <div style="position:relative;height:440px;border-radius:16px;overflow:hidden;border:1px solid var(--border)">
+                <div class="map">
+                  <svg viewBox="0 0 100 44" preserveAspectRatio="none">
+                    <rect class="block" x="6" y="6" width="16" height="10" rx="1.5"/><rect class="block" x="30" y="4" width="18" height="9" rx="1.5"/><rect class="block" x="58" y="8" width="18" height="11" rx="1.5"/><rect class="block" x="80" y="5" width="14" height="9" rx="1.5"/><rect class="block" x="14" y="26" width="20" height="12" rx="1.5"/><rect class="block" x="50" y="28" width="18" height="11" rx="1.5"/>
+                    <polygon class="water" points="0,38 50,33 100,40 100,44 0,44"/>
+                    <path class="road minor" d="M0,20 H100 M40,0 V44 M72,0 V44"/><path class="road major" d="M-2,12 C40,18 70,8 102,16"/>
+                  </svg>
+                  <span class="mk" style="left:18%;top:22%"><svg width="26" height="32" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#00E676" stroke-width="2"/></svg><span class="badge">12</span></span>
+                  <span class="mk" style="left:40%;top:30%"><svg width="26" height="32" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#00E676" stroke-width="2"/></svg><span class="badge">8</span></span>
+                  <span class="ripple" style="left:64%;top:24%"></span>
+                  <span class="mk" style="left:64%;top:24%"><svg width="26" height="32" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#FF7849" stroke-width="2"/></svg></span>
+                  <span class="mk" style="left:84%;top:34%"><svg width="26" height="32" viewBox="0 0 30 38"><path d="M15 1C8 1 3 6 3 12.6 3 20 15 30 15 30s12-10 12-17.4C27 6 22 1 15 1Z" fill="#101415" stroke="#22D3EE" stroke-width="2"/></svg></span>
+                </div>
+                <div class="glass" style="position:absolute;top:14px;right:14px;border-radius:12px;padding:12px 14px;width:180px">
+                  <b style="font-size:13px">GreenCharge Sector 62</b>
+                  <div class="row" style="margin-top:6px;font-size:12px"><span class="pill green">● 3/4 open</span></div>
+                  <div class="muted" style="font-size:12px;margin-top:8px;font-family:var(--fm)">today ₹12k · 72% util</div>
+                  <button class="btn sec" style="width:100%;margin-top:8px;padding:7px" data-goto="ad-stations">Open detail</button>
+                </div>
+              </div>
+              <div class="row" style="margin-top:12px;font-size:12px;color:var(--text-2);gap:16px"><span><span class="dot d-av"></span> available</span><span><span class="dot d-oc"></span> in session</span><span><span class="dot d-mt"></span> maintenance</span><span class="spacer"></span><span class="muted">5,012 stations · 96.2% online · 312 sessions</span></div>
+            </div>
+
+            <!-- USERS -->
+            <div class="screen" id="ad-users">
+              <div class="pagehead"><h2>Users</h2><div class="row"><span class="chip">🔍 phone / email / id</span><span class="chip">Status ▾</span></div></div>
+              <div class="panel" style="padding:0 16px">
+                <table>
+                  <tr><th>User</th><th>Phone</th><th>Tier</th><th>Bookings</th><th>Status</th><th></th></tr>
+                  <tr><td><b style="color:var(--text)">Ria Sharma</b></td><td class="mono">+91 98•••43</td><td><span class="pill green">GOLD</span></td><td>38</td><td><span class="pill green">● Active</span></td><td>⋯</td></tr>
+                  <tr><td><b style="color:var(--text)">Amit Kumar</b></td><td class="mono">+91 90•••11</td><td><span class="pill grey">FREE</span></td><td>4</td><td><span class="pill amber">⏸ Suspended</span></td><td>⋯</td></tr>
+                  <tr><td><b style="color:var(--text)">Meera Nair</b></td><td class="mono">+91 99•••27</td><td><span class="pill cyan">SILVER</span></td><td>17</td><td><span class="pill green">● Active</span></td><td>⋯</td></tr>
+                  <tr><td><b style="color:var(--text)">Fleet · BlueDart</b></td><td class="mono">—</td><td><span class="pill green">FLEET</span></td><td>1,240</td><td><span class="pill green">● Active</span></td><td>⋯</td></tr>
+                </table>
+              </div>
+              <p class="note" style="margin-top:12px">PII masked by default · reveal &amp; all actions are audited (actor, before/after, reason, IP).</p>
+            </div>
+
+            <!-- STATIONS -->
+            <div class="screen" id="ad-stations">
+              <div class="pagehead"><h2>Stations</h2><div class="row"><span class="chip on">Pending 7</span><span class="chip">Active</span><span class="chip">Suspended</span></div></div>
+              <div class="grid2" style="grid-template-columns:1fr 360px">
+                <div class="panel" style="padding:0 16px">
+                  <table>
+                    <tr><th>Station</th><th>Owner</th><th>City</th><th>Status</th></tr>
+                    <tr style="cursor:pointer"><td><b style="color:var(--text)">VoltHub Varanasi</b></td><td>S. Gupta</td><td>VNS</td><td><span class="pill amber">⏳ Pending</span></td></tr>
+                    <tr><td><b style="color:var(--text)">GreenCharge Sector 62</b></td><td>S. Mehra</td><td>Noida</td><td><span class="pill green">● Active</span></td></tr>
+                    <tr><td><b style="color:var(--text)">EcoCharge DLF</b></td><td>R. Verma</td><td>GGN</td><td><span class="pill green">● Active</span></td></tr>
+                  </table>
+                </div>
+                <div class="panel">
+                  <h3>Approval review · VoltHub Varanasi</h3>
+                  <div class="list-row"><span class="ico">📄</span><span style="flex:1;font-size:13px">KYC documents</span><span class="pill green">✓</span></div>
+                  <div class="list-row"><span class="ico">🧾</span><span style="flex:1;font-size:13px">GSTIN verified</span><span class="pill green">✓</span></div>
+                  <div class="list-row"><span class="ico">📍</span><span style="flex:1;font-size:13px">Location pin</span><span class="muted">map ›</span></div>
+                  <div class="list-row" style="border:none"><span class="ico">⚡</span><span style="flex:1;font-size:13px">4 chargers · ₹16–22/kWh</span></div>
+                  <div class="row" style="margin-top:14px"><button class="btn primary" style="flex:1">Approve</button><button class="btn sec" style="flex:1">Reject</button></div>
+                  <p class="note" style="margin-top:10px">Action requires reason · written to audit log.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ DESIGN SYSTEM ════════════════ -->
+  <section class="app" id="design">
+    <div style="max-width:980px;width:100%">
+      <h2 style="font-size:24px;margin-bottom:6px">Design System</h2>
+      <p class="muted" style="margin-bottom:22px">Live tokens. Full specs in <span class="mono">design/01–05 *.md</span> · tokens in <span class="mono">tokens.css / tokens.json</span>.</p>
+
+      <div class="tag">Volt · energy / primary</div>
+      <div class="row" style="gap:10px;margin:8px 0 20px;flex-wrap:wrap">
+        <div class="card" style="padding:0;width:120px;overflow:hidden"><div style="height:54px;background:#4DFFA6"></div><div style="padding:8px"><b style="font-size:12px">volt/300</b><div class="mono note">#4DFFA6</div></div></div>
+        <div class="card" style="padding:0;width:120px;overflow:hidden"><div style="height:54px;background:#00E676"></div><div style="padding:8px"><b style="font-size:12px">volt/500</b><div class="mono note">#00E676</div></div></div>
+        <div class="card" style="padding:0;width:120px;overflow:hidden"><div style="height:54px;background:#00A455"></div><div style="padding:8px"><b style="font-size:12px">volt/700</b><div class="mono note">#00A455</div></div></div>
+        <div class="card" style="padding:0;width:120px;overflow:hidden"><div style="height:54px;background:#00532B"></div><div style="padding:8px"><b style="font-size:12px">volt/900</b><div class="mono note">#00532B</div></div></div>
+      </div>
+
+      <div class="tag">Charger status</div>
+      <div class="row" style="gap:18px;margin:8px 0 20px;flex-wrap:wrap;font-size:13px;color:var(--text-2)">
+        <span><span class="dot d-av"></span> Available</span><span><span class="dot d-bk"></span> Booked</span><span><span class="dot d-oc"></span> In session</span><span><span class="dot d-of"></span> Offline</span><span><span class="dot d-mt"></span> Maintenance</span>
+      </div>
+
+      <div class="tag">Components</div>
+      <div class="row" style="gap:12px;margin:10px 0 14px;flex-wrap:wrap">
+        <button class="btn primary">Reserve all stops</button><button class="btn sec">Directions</button><button class="btn ghost">Refer &amp; earn</button>
+        <span class="chip on">⚡ Fast</span><span class="chip">CCS2</span>
+      </div>
+      <div class="row" style="gap:14px;align-items:stretch;flex-wrap:wrap">
+        <div class="card" style="display:flex;gap:16px;align-items:center">
+          <svg class="ring" width="92" height="92" viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="#222829" stroke-width="8"/><circle class="ringfill" cx="60" cy="60" r="52" fill="none" stroke="#00E676" stroke-width="8" stroke-linecap="round" stroke-dasharray="327" stroke-dashoffset="59" transform="rotate(-90 60 60)"/><text x="60" y="62" text-anchor="middle" class="pct">82%</text><text x="60" y="76" text-anchor="middle" class="sub">STATE OF CHARGE</text></svg>
+          <div><b>Battery Ring</b><div class="note">pulses while charging</div></div>
+        </div>
+        <div class="card" style="flex:1;min-width:260px;display:flex;flex-direction:column;justify-content:center;gap:10px">
+          <div class="row between"><b>Charge Bar</b><span class="mono muted">18% → 82%</span></div>
+          <div class="cbar anim" style="--to:82%"><i></i></div>
+          <div class="note">live fill with travelling shimmer</div>
+        </div>
+      </div>
+      <p class="note" style="margin-top:22px">Fonts shown: Space Grotesk + Inter + JetBrains Mono (web stand-ins for Satoshi / Inter / Geist Mono).</p>
+    </div>
+  </section>
+
+  </div><!-- /stage -->
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

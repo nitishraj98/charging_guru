@@ -1,0 +1,113 @@
+name: charging-guru
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Local dev stack — brings up Postgres + Redis, runs migrations, then the API.
+#
+# Quick start:
+#   docker compose up          (first run — builds image + seeds DB)
+#   docker compose up -d       (detached)
+#   docker compose logs -f api (stream API logs)
+#   docker compose down        (stop, keep data)
+#   docker compose down -v     (stop + wipe all volumes)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── PostgreSQL 16 + PostGIS ─────────────────────────────────────────────────
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chargingguru
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chargingguru"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  # ── Redis 7 ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Alembic migrations (init container — runs once, exits 0) ────────────────
+  #
+  # Separating migrations from the API process means:
+  #   • The API never starts with a stale schema.
+  #   • Restarting the API container doesn't re-run migrations.
+  #   • Migration logs are cleanly isolated.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: alembic upgrade head
+    env_file: ./backend/.env.example
+    environment:
+      CG_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/chargingguru
+      CG_REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ── FastAPI application (hot-reload in dev) ──────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    # Override the production CMD with dev uvicorn (--reload watches /app).
+    command: >
+      uvicorn app.main:app
+        --host 0.0.0.0
+        --port 8000
+        --reload
+        --reload-dir /app/app
+        --log-level info
+    env_file: ./backend/.env.example
+    environment:
+      # Override env_file values with docker-internal service hostnames.
+      CG_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/chargingguru
+      CG_REDIS_URL: redis://redis:6379/0
+      CG_ENV: local
+      CG_DEBUG: "true"
+      CG_OTP_DEBUG: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source so --reload picks up edits without rebuilding the image.
+      - ./backend:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health/live || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+ 

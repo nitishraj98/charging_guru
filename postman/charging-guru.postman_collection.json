@@ -1,0 +1,670 @@
+{
+  "info": {
+    "_postman_id": "cg-api-v1-collection",
+    "name": "Charging Guru API",
+    "description": "Complete API collection for the Charging Guru EV platform.\n\n## Quick start\n1. Import this file **and** `charging-guru-local.postman_environment.json`\n2. Select the **Charging Guru — Local** environment\n3. Run **Auth → OTP Request** then **Auth → OTP Verify** — `access_token` is saved automatically\n4. All subsequent requests use `{{access_token}}` — no manual copy-paste needed\n\n## Auto-chaining\nTest scripts in each response automatically save IDs to collection variables:\n- `access_token`, `refresh_token` — set by OTP Verify\n- `station_id`, `charger_id` — set by Station Discovery\n- `booking_id` — set by Create Booking\n- `razorpay_order_id` — set by Create Payment Order\n- `qr_token` — set by Verify Payment\n\n## Roles\n- **User** flow: Auth → Discovery → Slots → Create Booking → Payment → (owner scans QR)\n- **Owner** flow: Auth with owner phone → Charger Status / QR Verify / Session Start+Complete\n- **Admin** flow: Auth with admin phone → Admin endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",           "value": "http://localhost:8000", "type": "string" },
+    { "key": "access_token",       "value": "",                      "type": "string" },
+    { "key": "refresh_token",      "value": "",                      "type": "string" },
+    { "key": "request_id",         "value": "",                      "type": "string" },
+    { "key": "debug_code",         "value": "",                      "type": "string" },
+    { "key": "station_id",         "value": "",                      "type": "string" },
+    { "key": "charger_id",         "value": "",                      "type": "string" },
+    { "key": "booking_id",         "value": "",                      "type": "string" },
+    { "key": "slot_start",         "value": "",                      "type": "string" },
+    { "key": "razorpay_order_id",  "value": "",                      "type": "string" },
+    { "key": "qr_token",           "value": "",                      "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "🏥 Health",
+      "item": [
+        {
+          "name": "Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/health/live", "host": ["{{base_url}}"], "path": ["health","live"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Readiness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/health/ready", "host": ["{{base_url}}"], "path": ["health","ready"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+
+    {
+      "name": "🔐 Auth",
+      "description": "OTP-based phone authentication. Run in order: OTP Request → OTP Verify. access_token is saved automatically.",
+      "item": [
+        {
+          "name": "1. OTP Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+919876543210\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/auth/otp/request", "host": ["{{base_url}}"], "path": ["api","v1","auth","otp","request"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "var r = pm.response.json();",
+                "pm.collectionVariables.set('request_id', r.request_id);",
+                "pm.collectionVariables.set('debug_code', r.debug_code || '');",
+                "console.log('OTP request_id:', r.request_id);",
+                "if (r.debug_code) console.log('OTP code (DEV):', r.debug_code);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "2. OTP Verify",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"request_id\": \"{{request_id}}\",\n  \"code\": \"{{debug_code}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/auth/otp/verify", "host": ["{{base_url}}"], "path": ["api","v1","auth","otp","verify"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "var r = pm.response.json();",
+                "pm.collectionVariables.set('access_token',  r.access_token  || '');",
+                "pm.collectionVariables.set('refresh_token', r.refresh_token || '');",
+                "pm.test('access_token received', () => pm.expect(r.access_token).to.be.a('string'));",
+                "console.log('✅ Logged in. access_token saved.');"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "3. Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/auth/refresh", "host": ["{{base_url}}"], "path": ["api","v1","auth","refresh"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "var r = pm.response.json();",
+                "pm.collectionVariables.set('access_token',  r.access_token  || '');",
+                "pm.collectionVariables.set('refresh_token', r.refresh_token || '');"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "4. Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/auth/logout", "host": ["{{base_url}}"], "path": ["api","v1","auth","logout"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+
+    {
+      "name": "👤 Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/users/me", "host": ["{{base_url}}"], "path": ["api","v1","users","me"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('has phone', () => pm.expect(pm.response.json().phone).to.be.a('string'));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Rahul Sharma\",\n  \"email\": \"rahul@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/users/me", "host": ["{{base_url}}"], "path": ["api","v1","users","me"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+
+    {
+      "name": "🏗️ Stations",
+      "item": [
+        {
+          "name": "Discover Nearby Stations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/stations?lat=28.6280&lng=77.3649&radius_km=10",
+              "host": ["{{base_url}}"],
+              "path": ["api","v1","stations"],
+              "query": [
+                { "key": "lat",       "value": "28.6280" },
+                { "key": "lng",       "value": "77.3649" },
+                { "key": "radius_km", "value": "10" }
+              ]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "var r = pm.response.json();",
+                "if (r.length > 0) {",
+                "  pm.collectionVariables.set('station_id', r[0].id);",
+                "  console.log('station_id saved:', r[0].id);",
+                "  pm.test('has distance_km', () => pm.expect(r[0].distance_km).to.be.a('number'));",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Get Station Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/stations/{{station_id}}", "host": ["{{base_url}}"], "path": ["api","v1","stations","{{station_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "var r = pm.response.json();",
+                "if (r.chargers && r.chargers.length > 0) {",
+                "  pm.collectionVariables.set('charger_id', r.chargers[0].id);",
+                "  console.log('charger_id saved:', r.chargers[0].id);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Create Station (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"PowerHub Connaught Place\",\n  \"address\": \"1 Connaught Place, New Delhi\",\n  \"city\": \"New Delhi\",\n  \"state\": \"Delhi\",\n  \"pincode\": \"110001\",\n  \"lat\": 28.6315,\n  \"lng\": 77.2167,\n  \"amenities\": [\"cafe\", \"parking\", \"restroom\"],\n  \"chargers\": [\n    {\n      \"label\": \"Bay A1\",\n      \"charger_type\": \"DC\",\n      \"power_kw\": 50,\n      \"connector_type\": \"CCS2\",\n      \"price_per_kwh\": 1500\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/owner/stations", "host": ["{{base_url}}"], "path": ["api","v1","owner","stations"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 201', () => pm.response.to.have.status(201));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Update Charger Status (Owner)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"MAINTENANCE\",\n  \"reason\": \"Scheduled firmware upgrade\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/chargers/{{charger_id}}/status", "host": ["{{base_url}}"], "path": ["api","v1","chargers","{{charger_id}}","status"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Get Available Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/chargers/{{charger_id}}/slots", "host": ["{{base_url}}"], "path": ["api","v1","chargers","{{charger_id}}","slots"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "var slots = pm.response.json();",
+                "pm.test('32 slots (06:00-22:00 @ 30min)', () => pm.expect(slots.length).to.equal(32));",
+                "var available = slots.filter(s => s.available);",
+                "if (available.length > 0) {",
+                "  pm.collectionVariables.set('slot_start', available[0].slot_start);",
+                "  console.log('slot_start saved:', available[0].slot_start);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+
+    {
+      "name": "📅 Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "event": [{
+            "listen": "prerequest",
+            "script": {
+              "exec": [
+                "// Set slot_start to tomorrow 10:00 UTC if not already set by slot endpoint",
+                "if (!pm.collectionVariables.get('slot_start')) {",
+                "  var d = new Date();",
+                "  d.setDate(d.getDate() + 1);",
+                "  d.setUTCHours(10, 0, 0, 0);",
+                "  pm.collectionVariables.set('slot_start', d.toISOString());",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }, {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 201', () => pm.response.to.have.status(201));",
+                "var r = pm.response.json();",
+                "pm.collectionVariables.set('booking_id', r.id);",
+                "console.log('booking_id saved:', r.id);",
+                "pm.test('PENDING_PAYMENT', () => pm.expect(r.status).to.equal('PENDING_PAYMENT'));",
+                "pm.test('amount is integer paise', () => pm.expect(r.amount).to.be.a('number'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",  "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Idempotency-Key","value": "{{$guid}}", "description": "Prevents duplicate bookings on retry" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"charger_id\": \"{{charger_id}}\",\n  \"slot_start\": \"{{slot_start}}\",\n  \"duration_minutes\": 30\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/bookings", "host": ["{{base_url}}"], "path": ["api","v1","bookings"] }
+          }
+        },
+        {
+          "name": "List My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/bookings", "host": ["{{base_url}}"], "path": ["api","v1","bookings"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('array', () => pm.expect(pm.response.json()).to.be.an('array'));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Get Booking by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/bookings/{{booking_id}}", "host": ["{{base_url}}"], "path": ["api","v1","bookings","{{booking_id}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+
+    {
+      "name": "💳 Payments",
+      "description": "Full Razorpay payment lifecycle.\n\nIn local dev (CG_OTP_DEBUG=true) the Razorpay calls hit the real gateway — use test credentials.\n\nFlow: Create Order → (user pays in SDK) → Verify → booking becomes CONFIRMED + qr_token issued.",
+      "item": [
+        {
+          "name": "1. Create Payment Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"booking_id\": \"{{booking_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/payments/order", "host": ["{{base_url}}"], "path": ["api","v1","payments","order"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 201', () => pm.response.to.have.status(201));",
+                "var r = pm.response.json();",
+                "pm.collectionVariables.set('razorpay_order_id', r.razorpay_order_id);",
+                "console.log('razorpay_order_id saved:', r.razorpay_order_id);",
+                "pm.test('PENDING status', () => pm.expect(r.status).to.equal('PENDING'));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "2. Verify Payment (client-side)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"{{razorpay_order_id}}\",\n  \"razorpay_payment_id\": \"pay_REPLACE_WITH_ACTUAL\",\n  \"razorpay_signature\": \"REPLACE_WITH_ACTUAL_SIGNATURE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/payments/verify", "host": ["{{base_url}}"], "path": ["api","v1","payments","verify"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "var r = pm.response.json();",
+                "if (r.qr_token) {",
+                "  pm.collectionVariables.set('qr_token', r.qr_token);",
+                "  console.log('qr_token saved (length):', r.qr_token.length);",
+                "}",
+                "pm.test('CONFIRMED', () => pm.expect(r.booking_status).to.equal('CONFIRMED'));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "3. Razorpay Webhook (simulate)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",          "value": "application/json" },
+              { "key": "X-Razorpay-Signature",  "value": "REPLACE_WITH_HMAC_SHA256_OF_BODY" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.captured\",\n  \"payload\": {\n    \"payment\": {\n      \"entity\": {\n        \"id\": \"pay_test_001\",\n        \"order_id\": \"{{razorpay_order_id}}\"\n      }\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/payments/webhook", "host": ["{{base_url}}"], "path": ["api","v1","payments","webhook"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200 (idempotent)', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Get Payment by Booking",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/payments/booking/{{booking_id}}", "host": ["{{base_url}}"], "path": ["api","v1","payments","booking","{{booking_id}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Cancel & Refund Booking",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/payments/{{booking_id}}/refund", "host": ["{{base_url}}"], "path": ["api","v1","payments","{{booking_id}}","refund"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('CANCELLED', () => pm.expect(pm.response.json().status).to.equal('CANCELLED'));"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+
+    {
+      "name": "📱 QR",
+      "description": "Owner scans user's QR at the station → booking transitions CONFIRMED → CHECKED_IN.\nRequires ROLE_STATION_OWNER or ROLE_ADMIN.",
+      "item": [
+        {
+          "name": "Verify QR (check-in)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qr_token\": \"{{qr_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/qr/verify", "host": ["{{base_url}}"], "path": ["api","v1","qr","verify"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('CHECKED_IN', () => pm.expect(pm.response.json().status).to.equal('CHECKED_IN'));"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+
+    {
+      "name": "⚡ Sessions",
+      "description": "Owner controls the physical charging session lifecycle.\nRequires ROLE_STATION_OWNER or ROLE_ADMIN.\n\nFlow: QR Verify (CHECKED_IN) → Start → (charging) → Complete",
+      "item": [
+        {
+          "name": "Start Charging Session",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/sessions/{{booking_id}}/start", "host": ["{{base_url}}"], "path": ["api","v1","sessions","{{booking_id}}","start"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('IN_PROGRESS', () => pm.expect(pm.response.json().status).to.equal('IN_PROGRESS'));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Complete Charging Session",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/sessions/{{booking_id}}/complete", "host": ["{{base_url}}"], "path": ["api","v1","sessions","{{booking_id}}","complete"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('COMPLETED', () => pm.expect(pm.response.json().status).to.equal('COMPLETED'));"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+
+    {
+      "name": "👑 Admin",
+      "description": "Platform management endpoints.\nRequires ROLE_ADMIN. Log in with the admin phone number to get a valid access_token.",
+      "item": [
+        {
+          "name": "Analytics Overview",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/admin/analytics/overview", "host": ["{{base_url}}"], "path": ["api","v1","admin","analytics","overview"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "var r = pm.response.json();",
+                "['total_users','total_stations','active_stations','pending_stations','total_chargers','bookings_today','revenue_today_paise'].forEach(k => {",
+                "  pm.test('has ' + k, () => pm.expect(r).to.have.property(k));",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api","v1","admin","users"],
+              "query": [
+                { "key": "page",     "value": "1" },
+                { "key": "per_page", "value": "20" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('has items + total', () => { var r = pm.response.json(); pm.expect(r.items).to.be.an('array'); pm.expect(r.total).to.be.a('number'); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "List Stations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/stations?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api","v1","admin","stations"],
+              "query": [
+                { "key": "page",     "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "status",   "value": "PENDING_APPROVAL", "disabled": true }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Approve Station",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/admin/stations/{{station_id}}/approve", "host": ["{{base_url}}"], "path": ["api","v1","admin","stations","{{station_id}}","approve"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('ACTIVE', () => pm.expect(pm.response.json().status).to.equal('ACTIVE'));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Reject Station",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Site inspection failed — insufficient power supply\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/admin/stations/{{station_id}}/reject", "host": ["{{base_url}}"], "path": ["api","v1","admin","stations","{{station_id}}","reject"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('REJECTED', () => pm.expect(pm.response.json().status).to.equal('REJECTED'));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Expire Stale Holds (Maintenance)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/admin/maintenance/expire-holds", "host": ["{{base_url}}"], "path": ["api","v1","admin","maintenance","expire-holds"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('has expired_count', () => pm.expect(pm.response.json().expired_count).to.be.a('number'));"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+
+    {
+      "name": "📖 Error Examples",
+      "description": "Reference requests that intentionally produce specific error codes. Useful for front-end error handling.",
+      "item": [
+        {
+          "name": "401 — No token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/users/me", "host": ["{{base_url}}"], "path": ["api","v1","users","me"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('401 UNAUTHORIZED', () => pm.response.to.have.status(401));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "403 — User tries admin endpoint",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/admin/analytics/overview", "host": ["{{base_url}}"], "path": ["api","v1","admin","analytics","overview"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('403 or 200 (if admin)', () => pm.expect([200, 403]).to.include(pm.response.code));"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "404 — Non-existent station",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/stations/00000000-0000-7000-8000-000000000000", "host": ["{{base_url}}"], "path": ["api","v1","stations","00000000-0000-7000-8000-000000000000"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('404 NOT_FOUND', () => pm.response.to.have.status(404));", "pm.test('RFC 9457 format', () => { var r = pm.response.json(); pm.expect(r.code).to.be.a('string'); pm.expect(r.title).to.be.a('string'); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "422 — Validation error",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"charger_id\": \"not-a-uuid\",\n  \"slot_start\": \"not-a-date\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/v1/bookings", "host": ["{{base_url}}"], "path": ["api","v1","bookings"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('422 VALIDATION_ERROR', () => pm.response.to.have.status(422));"], "type": "text/javascript" } }]
+        }
+      ]
+    }
+
+  ]
+}

@@ -1,0 +1,141 @@
+/* Charging Guru — Design Tokens (CSS custom properties)
+ * Dark-mode-first. Import into web-user / web-admin global stylesheet.
+ * :root = Dark (default). [data-theme="light"] = daytime driving mode.
+ */
+
+:root {
+  /* ── Brand: Volt ─────────────────────────────── */
+  --volt-50:  #E6FFF2;
+  --volt-100: #B3FFD9;
+  --volt-200: #80FFBF;
+  --volt-300: #4DFFA6;
+  --volt-400: #26F593;
+  --volt-500: #00E676;   /* primary */
+  --volt-600: #00C766;
+  --volt-700: #00A455;
+  --volt-800: #007D41;
+  --volt-900: #00532B;
+
+  /* ── Neutrals: Carbon ────────────────────────── */
+  --carbon-1000: #050708;
+  --carbon-950:  #0A0D0E;
+  --carbon-900:  #101415;
+  --carbon-800:  #181D1F;
+  --carbon-700:  #222829;
+  --carbon-600:  #2E3638;
+  --carbon-500:  #495154;
+  --carbon-400:  #6B7479;
+  --carbon-300:  #98A1A6;
+  --carbon-200:  #C2C9CD;
+  --carbon-100:  #E6EBED;
+  --carbon-0:    #FFFFFF;
+
+  /* ── Secondary: Cyan (route / data / in-session) ─ */
+  --cyan-400: #4DDFF2;
+  --cyan-500: #22D3EE;
+  --cyan-700: #0E9DB5;
+
+  /* ── Semantic / status ───────────────────────── */
+  --amber-500:  #FFC043;
+  --orange-500: #FF7849;
+  --red-500:    #FF5A5F;
+
+  --status-available:   var(--volt-500);
+  --status-booked:      var(--amber-500);
+  --status-occupied:    var(--cyan-500);
+  --status-offline:     var(--carbon-500);
+  --status-maintenance: var(--orange-500);
+
+  /* ── Roles (semantic surface/text — Dark) ────── */
+  --bg:              var(--carbon-950);
+  --surface:         var(--carbon-900);
+  --surface-raised:  var(--carbon-800);
+  --border:          var(--carbon-700);
+  --border-strong:   var(--carbon-600);
+  --text-primary:    var(--carbon-100);
+  --text-secondary:  var(--carbon-300);
+  --text-tertiary:   var(--carbon-400);
+  --text-disabled:   var(--carbon-500);
+  --accent:          var(--volt-500);
+  --on-accent:       var(--carbon-1000);
+  --focus-ring:      var(--volt-400);
+
+  /* ── Glass (floating UI over map) ────────────── */
+  --glass-fill:   rgba(16, 20, 21, 0.72);
+  --glass-stroke: rgba(255, 255, 255, 0.08);
+  --glass-blur:   24px;
+
+  /* ── Gradients ───────────────────────────────── */
+  --grad-soc:    linear-gradient(90deg, #FF5A5F 0%, #FFC043 35%, #00E676 70%);
+  --grad-volt:   linear-gradient(135deg, #26F593 0%, #00C766 100%);
+  --grad-canvas: radial-gradient(120% 80% at 50% -10%, #0E2A1C 0%, #0A0D0E 55%);
+
+  /* ── Radius ──────────────────────────────────── */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* ── Spacing (4pt base) ──────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── Elevation (dark = subtle shadow + glow) ──── */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,.40);
+  --shadow-md:  0 8px 24px rgba(0,0,0,.45);
+  --shadow-lg:  0 16px 48px rgba(0,0,0,.55);
+  --shadow-glow-volt: 0 0 0 1px rgba(0,230,118,.35), 0 0 24px rgba(0,230,118,.35);
+  --shadow-glow-cyan: 0 0 20px rgba(34,211,238,.30);
+
+  /* ── Typography ──────────────────────────────── */
+  --font-display: "Satoshi", "SF Pro Display", Inter, system-ui, sans-serif;
+  --font-ui:      Inter, "SF Pro Text", system-ui, sans-serif;
+  --font-mono:    "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+
+  --text-display-xl: 600 40px/44px var(--font-display);
+  --text-display:    600 32px/38px var(--font-display);
+  --text-h1:         600 28px/34px var(--font-display);
+  --text-h2:         600 24px/30px var(--font-display);
+  --text-h3:         600 20px/26px var(--font-display);
+  --text-title:      600 18px/24px var(--font-ui);
+  --text-body-lg:    400 16px/24px var(--font-ui);
+  --text-body:       400 14px/20px var(--font-ui);
+  --text-caption:    500 12px/16px var(--font-ui);
+  --text-micro:      500 11px/14px var(--font-ui);
+
+  /* ── Motion ──────────────────────────────────── */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decel:    cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --dur-xl:   480ms;
+  --dur-charge-pulse: 1600ms;  /* charging animation loop */
+}
+
+/* ── Light mode (daytime driving) ───────────────── */
+[data-theme="light"] {
+  --bg:             #F4F7F6;
+  --surface:        #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --border:         #E2E8E6;
+  --border-strong:  #CBD5D2;
+  --text-primary:   #0A0D0E;
+  --text-secondary: #495154;
+  --text-tertiary:  #6B7479;
+  --accent:         #00A455;   /* darker Volt for contrast on light */
+  --on-accent:      #FFFFFF;
+  --glass-fill:     rgba(255,255,255,0.72);
+  --glass-stroke:   rgba(10,13,14,0.08);
+}
