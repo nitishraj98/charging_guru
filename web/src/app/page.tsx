@@ -328,6 +328,29 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
   );
 }
 
+/* ── Final CTA — India network nodes & edges ── */
+const CTA_NODES = [
+  { id: "del", name: "Delhi",     x: 235, y:  95, r: 7,   c: "#00E676", stations: 340 },
+  { id: "jai", name: "Jaipur",    x: 185, y: 140, r: 5,   c: "#22D3EE", stations: 128 },
+  { id: "ahm", name: "Ahmedabad", x: 142, y: 205, r: 5.5, c: "#FFC043", stations: 156 },
+  { id: "luc", name: "Lucknow",   x: 298, y: 122, r: 4.5, c: "#22D3EE", stations:  94 },
+  { id: "pat", name: "Patna",     x: 355, y: 150, r: 4.5, c: "#00E676", stations:  72 },
+  { id: "kol", name: "Kolkata",   x: 408, y: 200, r: 6.5, c: "#22D3EE", stations: 210 },
+  { id: "mum", name: "Mumbai",    x: 138, y: 322, r: 8,   c: "#00E676", stations: 280 },
+  { id: "pun", name: "Pune",      x: 155, y: 365, r: 5,   c: "#22D3EE", stations: 148 },
+  { id: "hyd", name: "Hyderabad", x: 268, y: 362, r: 6.5, c: "#FFC043", stations: 188 },
+  { id: "che", name: "Chennai",   x: 308, y: 444, r: 6,   c: "#22D3EE", stations: 175 },
+  { id: "ben", name: "Bengaluru", x: 242, y: 440, r: 7.5, c: "#00E676", stations: 290 },
+  { id: "koc", name: "Kochi",     x: 218, y: 512, r: 4.5, c: "#C4B5FD", stations:  64 },
+] as const;
+
+const CTA_EDGES: [string, string][] = [
+  ["del","jai"],["del","luc"],["jai","ahm"],["del","ahm"],
+  ["luc","pat"],["pat","kol"],["ahm","mum"],["mum","pun"],
+  ["pun","hyd"],["hyd","che"],["hyd","kol"],["che","ben"],
+  ["ben","koc"],["ben","pun"],["del","pat"],["mum","hyd"],
+];
+
 /* ── Final CTA ── */
 function FinalCTA({ isLight }: { isLight: boolean }) {
   const [particles] = useState(() => Array.from({ length: 28 }, (_, i) => ({
@@ -355,47 +378,32 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
 
   return (
     <div ref={sectionRef} className="section-fade" style={{
-      padding: "0 60px 80px",
-      background: isLight ? "linear-gradient(180deg, #F6F8FA, #EEF3F7)" : t.bg,
+      background: isLight ? "linear-gradient(135deg,#F2F8F5 0%,#EDF4FF 50%,#F2F8F5 100%)" : t.bg,
+      overflow: "hidden", position: "relative",
+      minHeight: "90vh", display: "grid", gridTemplateColumns: "1fr 1fr",
     }}>
-      <div style={{
-        position: "relative", overflow: "hidden",
-        background: isLight
-          ? "linear-gradient(145deg,#E0F2EC,#EEF8F2 40%,#E4F0FB 80%,#EEF8F2)"
-          : "linear-gradient(145deg,#040C08,#0C2319 40%,#07101A 80%,#0A1A10)",
-        border: `1.5px solid ${isLight ? "rgba(0,184,94,.25)" : "rgba(0,230,118,.15)"}`,
-        borderRadius: 28, padding: "80px 0",
-        boxShadow: isLight
-          ? "0 8px 80px rgba(0,0,0,.12), 0 0 0 1px rgba(0,184,94,.12), inset 0 1px 0 rgba(255,255,255,.8)"
-          : "0 0 0 1px rgba(0,230,118,.1), 0 0 140px rgba(0,230,118,.06)",
-      }}>
-        {/* Particles */}
-        {particles.map(p => (
-          <div key={p.id} style={{
-            position: "absolute", borderRadius: "50%",
-            left: `${p.x}%`, top: `${p.y}%`,
-            width: p.size, height: p.size,
-            background: p.color,
-            boxShadow: isLight ? `0 0 ${p.size * 2}px ${p.color}50` : `0 0 ${p.size * 3}px ${p.color}`,
-            pointerEvents: "none",
-            opacity: isLight ? 0.3 : 0.55,
-            animation: `particle-float ${p.dur}s ease-in-out ${p.del}s infinite`,
-          }} />
-        ))}
-
-        {/* Central radial glow */}
-        <div style={{
-          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-          width: 900, height: 450, borderRadius: "50%", pointerEvents: "none",
-          background: `radial-gradient(ellipse, ${isLight ? "rgba(0,210,106,.12)" : "rgba(0,230,118,.1)"} 0%, ${isLight ? "rgba(14,165,233,.05)" : "rgba(34,211,238,.04)"} 50%, transparent 70%)`,
-          animation: "float-slow 8s ease-in-out infinite",
+      {/* Ambient particles — left half only */}
+      {particles.map(p => (
+        <div key={p.id} style={{
+          position: "absolute", borderRadius: "50%",
+          left: `${p.x * 0.48}%`, top: `${p.y}%`,
+          width: p.size, height: p.size, background: p.color,
+          boxShadow: isLight ? `0 0 ${p.size * 2}px ${p.color}50` : `0 0 ${p.size * 3}px ${p.color}`,
+          pointerEvents: "none", opacity: isLight ? 0.2 : 0.45,
+          animation: `particle-float ${p.dur}s ease-in-out ${p.del}s infinite`,
         }} />
+      ))}
+      {/* Left aurora */}
+      <div style={{
+        position: "absolute", top: "15%", left: 0,
+        width: 640, height: 640, borderRadius: "50%", pointerEvents: "none",
+        background: isLight
+          ? "radial-gradient(ellipse, rgba(0,210,106,.09) 0%, transparent 65%)"
+          : "radial-gradient(ellipse, rgba(0,230,118,.07) 0%, transparent 65%)",
+      }} />
 
-        {/* Two-column layout */}
-        <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 0, maxWidth: 1200, margin: "0 auto", padding: "0 60px" }}>
-
-          {/* Left — copy */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      {/* ── Left column ── */}
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", zIndex: 1, padding: "80px 52px 80px 80px" }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 24,
               background: isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.08)",
@@ -418,12 +426,41 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
                 backgroundClip: "text",
               }}>Drive further.</span>
             </h2>
-            <p style={{ color: t.textSub, fontSize: 16, lineHeight: 1.75, marginBottom: 40, maxWidth: 420 }}>
+            <p style={{ color: t.textSub, fontSize: 16, lineHeight: 1.75, marginBottom: 24, maxWidth: 420 }}>
               Join 50,000+ EV drivers who never worry about empty stations. Free to start — no credit card required.
             </p>
 
+            {/* Social proof */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, padding: "14px 18px", borderRadius: 14, background: isLight ? "rgba(255,255,255,.55)" : "rgba(255,255,255,.04)", border: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.07)"}`, backdropFilter: "blur(8px)" }}>
+              <div style={{ display: "flex" }}>
+                {["#00E676","#22D3EE","#FFC043","#C4B5FD","#4DFFA6"].map((c, i) => (
+                  <div key={c} style={{ width: 30, height: 30, borderRadius: "50%", border: `2px solid ${isLight ? "#E0F2EC" : "#0C2319"}`, background: `linear-gradient(135deg,${c}40,${c}20)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: c, marginLeft: i > 0 ? -8 : 0, position: "relative", zIndex: 10 - i }}>
+                    {["A","P","R","M","S"][i]}
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>2,840 drivers joined this week</div>
+                <div style={{ fontSize: 11, color: "#FFC043" }}>★★★★★ <span style={{ color: t.textMuted }}>4.9 average rating</span></div>
+              </div>
+            </div>
+
+            {/* Mini stats row */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 28 }}>
+              {[
+                { value: "5,200+", label: "Stations", color: accent },
+                { value: "42",     label: "Cities",   color: "#22D3EE" },
+                { value: "₹340",   label: "Avg saved", color: "#FFC043" },
+              ].map(s => (
+                <div key={s.label} style={{ padding: "12px 14px", borderRadius: 12, background: isLight ? "rgba(255,255,255,.5)" : "rgba(255,255,255,.04)", border: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.07)"}`, backdropFilter: "blur(6px)" }}>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 20, fontWeight: 800, color: s.color, marginBottom: 2 }}>{s.value}</div>
+                  <div style={{ fontSize: 10.5, color: t.textMuted }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
             {/* CTAs */}
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
               <Link href="/plan" style={{
                 padding: "15px 32px", borderRadius: 14, fontSize: 15, fontWeight: 700,
                 background: "linear-gradient(135deg,#00D26A,#00A855)", color: "#FFF",
@@ -446,31 +483,6 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
               >Browse chargers</Link>
             </div>
 
-            {/* App store buttons */}
-            <div style={{ display: "flex", gap: 10, marginBottom: 32, flexWrap: "wrap" }}>
-              {[
-                { label: "App Store", sub: "Download on the", icon: "🍎" },
-                { label: "Google Play", sub: "Get it on", icon: "▶" },
-              ].map(store => (
-                <div key={store.label} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 18px", borderRadius: 12,
-                  background: isLight ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.06)",
-                  border: `1px solid ${isLight ? "rgba(0,0,0,.1)" : "rgba(255,255,255,.1)"}`,
-                  cursor: "pointer", transition: "all .2s",
-                }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.1)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isLight ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.06)"; (e.currentTarget as HTMLDivElement).style.transform = "none"; }}
-                >
-                  <span style={{ fontSize: 20 }}>{store.icon}</span>
-                  <div>
-                    <div style={{ fontSize: 9, color: t.textMuted, fontWeight: 600 }}>{store.sub}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{store.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
             {/* Trust badges */}
             <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
               {[
@@ -485,118 +497,121 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
                 </div>
               ))}
             </div>
-          </div>
+      </div>
 
-          {/* Vertical divider */}
-          <div style={{ width: 1, margin: "0 60px", background: isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.07)" }} />
+      {/* ── Right column — India charging network (full bleed) ── */}
+      <div style={{ position: "relative", overflow: "hidden" }}>
+        {/* Right aurora */}
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: isLight
+            ? "radial-gradient(ellipse at 55% 38%, rgba(0,210,106,.08) 0%, rgba(34,211,238,.04) 45%, transparent 70%)"
+            : "radial-gradient(ellipse at 55% 38%, rgba(0,230,118,.06) 0%, rgba(34,211,238,.03) 45%, transparent 70%)",
+        }} />
 
-          {/* Right — animated EV + charging station illustration */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="300" height="320" viewBox="0 0 300 320" style={{ overflow: "visible" }}>
-              {/* Ground shadow */}
-              <ellipse cx="150" cy="305" rx="120" ry="10" fill={isLight ? "rgba(0,0,0,.06)" : "rgba(0,0,0,.4)"} />
+        <svg width="100%" height="100%" viewBox="0 0 500 600"
+          style={{ position: "absolute", inset: 0 }}
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true">
 
-              {/* Charging station pole */}
-              <rect x="220" y="60" width="14" height="220" rx="5" fill={isLight ? "#D1D9E0" : "#1A2226"} />
-              {/* Station housing */}
-              <rect x="205" y="60" width="44" height="80" rx="10" fill={isLight ? "#E8EFF4" : "#1E2830"} stroke={isLight ? "#C8D5DE" : "#2A3640"} strokeWidth="1.5" />
-              {/* Station screen */}
-              <rect x="212" y="68" width="30" height="20" rx="5" fill={isLight ? "#BAE6FD" : "#0C2A3A"} />
-              <rect x="214" y="70" width="26" height="16" rx="3" fill={isLight ? "#E0F2FE" : "#0A1F2D"} />
-              {/* Screen glow + percentage */}
-              <text x="227" y="81" textAnchor="middle" fontSize="9" fontFamily="'JetBrains Mono',monospace" fontWeight="700" fill={accent}>78%</text>
-              {/* Charging bolt on station */}
-              <circle cx="227" cy="100" r="10" fill={`${accent}20`} />
-              <text x="227" y="104" textAnchor="middle" fontSize="14" fill={accent}>⚡</text>
-              {/* Station status LED */}
-              <circle cx="240" cy="64" r="3" fill="#00E676" style={{ filter: "drop-shadow(0 0 4px #00E676)", animation: "glow-pulse 2s ease-in-out infinite" }} />
+          {/* Subtle grid */}
+          {Array.from({ length: 13 }, (_, i) => (
+            <line key={`v${i}`} x1={i * 42} y1="0" x2={i * 42} y2="600"
+              stroke={isLight ? "rgba(0,0,0,.028)" : "rgba(255,255,255,.022)"} strokeWidth="1" />
+          ))}
+          {Array.from({ length: 15 }, (_, i) => (
+            <line key={`h${i}`} x1="0" y1={i * 42} x2="500" y2={i * 42}
+              stroke={isLight ? "rgba(0,0,0,.028)" : "rgba(255,255,255,.022)"} strokeWidth="1" />
+          ))}
 
-              {/* Charging cable — from station down to car */}
-              <path d="M219 140 Q219 200 180 210 Q160 215 145 215"
-                fill="none" stroke={accent} strokeWidth="4" strokeLinecap="round"
-                strokeDasharray="8 5"
-                style={{ animation: "route-dash 1.8s linear infinite" }} />
-              {/* Cable plug circle */}
-              <circle cx="143" cy="215" r="6" fill={accent} style={{ filter: `drop-shadow(0 0 6px ${accent})` }} />
+          {/* Network edges */}
+          {CTA_EDGES.map(([a, b], i) => {
+            const fn = CTA_NODES.find(n => n.id === a)!;
+            const tn = CTA_NODES.find(n => n.id === b)!;
+            return (
+              <line key={i}
+                x1={fn.x} y1={fn.y} x2={tn.x} y2={tn.y}
+                stroke={isLight ? "rgba(0,184,94,.2)" : "rgba(0,230,118,.15)"}
+                strokeWidth="1.2"
+              />
+            );
+          })}
 
-              {/* EV Car body */}
-              <rect x="30" y="195" width="140" height="55" rx="14" fill={isLight ? "#E2EAF0" : "#1A2226"} stroke={isLight ? "#C8D5DE" : "#2A3640"} strokeWidth="1.5" />
-              {/* Car roof */}
-              <path d="M55 195 Q80 158 120 155 Q150 152 175 165 L180 195Z"
-                fill={isLight ? "#E2EAF0" : "#1A2226"} stroke={isLight ? "#C8D5DE" : "#2A3640"} strokeWidth="1.5" />
-              {/* Windshield */}
-              <path d="M62 195 Q83 165 115 162 Q140 160 160 172 L163 195Z"
-                fill={isLight ? "#BAE6FD" : "#0C2A3A"} opacity=".75" />
-              {/* Front window */}
-              <rect x="33" y="200" width="35" height="24" rx="4"
-                fill={isLight ? "#BAE6FD" : "#0C2A3A"} opacity=".6" />
+          {/* Animated energy packets */}
+          {([
+            { path: "M235,95 L185,140 L142,205 L138,322", color: "#00E676", dur: "5s",  begin: "0s"   },
+            { path: "M408,200 L268,362 L242,440",          color: "#22D3EE", dur: "7s",  begin: "1.5s" },
+            { path: "M235,95 L298,122 L355,150 L408,200",  color: "#FFC043", dur: "6s",  begin: "0.8s" },
+            { path: "M138,322 L155,365 L268,362 L308,444", color: "#00E676", dur: "8s",  begin: "3s"   },
+            { path: "M242,440 L218,512",                   color: "#C4B5FD", dur: "4.5s",begin: "2.2s" },
+          ] as const).map((anim, i) => (
+            <circle key={i} r="4" fill={anim.color}
+              style={{ filter: `drop-shadow(0 0 5px ${anim.color})` }}>
+              <animateMotion path={anim.path} dur={anim.dur} repeatCount="indefinite" begin={anim.begin} />
+            </circle>
+          ))}
 
-              {/* Charge port area */}
-              <rect x="136" y="208" width="16" height="10" rx="3"
-                fill={isLight ? "#CBD5E1" : "#2A3640"} stroke={isLight ? "#94A3B8" : "#374151"} strokeWidth="1" />
+          {/* City nodes */}
+          {CTA_NODES.map((n, i) => (
+            <g key={n.id}>
+              {/* Outer pulse ring */}
+              <circle cx={n.x} cy={n.y} r={n.r} fill={n.c} opacity="0">
+                <animate attributeName="r"
+                  values={`${n.r};${n.r * 3.8};${n.r}`}
+                  dur={`${3.2 + (i % 3) * 0.9}s`} repeatCount="indefinite"
+                  begin={`${(i * 0.5) % 3}s`} />
+                <animate attributeName="opacity"
+                  values=".25;0;.25"
+                  dur={`${3.2 + (i % 3) * 0.9}s`} repeatCount="indefinite"
+                  begin={`${(i * 0.5) % 3}s`} />
+              </circle>
+              {/* Inner glow halo */}
+              <circle cx={n.x} cy={n.y} r={n.r * 1.7}
+                fill={n.c} opacity={isLight ? 0.1 : 0.09} />
+              {/* Core dot */}
+              <circle cx={n.x} cy={n.y} r={n.r} fill={n.c}
+                style={{ filter: `drop-shadow(0 0 ${n.r + 2}px ${n.c})` }} />
+              {/* City label */}
+              <text x={n.x + n.r + 6} y={n.y + 3}
+                fontSize="9.5" fontWeight="700" fontFamily="'Space Grotesk',sans-serif"
+                fill={isLight ? "#374151" : "#C9D1D9"}>{n.name}</text>
+              <text x={n.x + n.r + 6} y={n.y + 15}
+                fontSize="8" fontFamily="sans-serif"
+                fill={isLight ? "#9CA3AF" : "#6B7479"}>{n.stations} stations</text>
+            </g>
+          ))}
 
-              {/* Battery bar inside car */}
-              <rect x="70" y="208" width="60" height="9" rx="4.5"
-                fill={isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.08)"} />
-              <rect x="70" y="208" width="0" height="9" rx="4.5"
-                fill={accent} className="charge-fill"
-                style={{ filter: `drop-shadow(0 0 3px ${accent})` }} />
+          {/* Header badge */}
+          <rect x="18" y="18" width="174" height="40" rx="10"
+            fill={isLight ? "rgba(255,255,255,.84)" : "rgba(13,18,22,.84)"}
+            stroke={isLight ? "rgba(0,184,94,.22)" : "rgba(0,230,118,.18)"} strokeWidth="1" />
+          <text x="30" y="34" fontSize="8.5" fontWeight="700" letterSpacing="1.2"
+            fontFamily="'Space Grotesk',sans-serif"
+            fill={isLight ? "#6B7280" : "#8B949E"}>INDIA COVERAGE</text>
+          <text x="30" y="50" fontSize="10.5" fontWeight="700"
+            fontFamily="'Space Grotesk',sans-serif"
+            fill={isLight ? "#111827" : "#E6EBED"}>5,200+ charging stations</text>
 
-              {/* Battery label */}
-              <text x="100" y="217" textAnchor="middle" fontSize="6.5" fontFamily="'JetBrains Mono',monospace" fontWeight="700" fill={isLight ? "#374151" : "#6B7479"}>78%</text>
+          {/* Live status strip */}
+          <rect x="18" y="558" width="464" height="28" rx="8"
+            fill={isLight ? "rgba(255,255,255,.62)" : "rgba(13,18,22,.62)"}
+            stroke={isLight ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.05)"} strokeWidth="1" />
+          <circle cx="32" cy="572" r="3.5" fill="#00E676">
+            <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
+          </circle>
+          <text x="42" y="576" fontSize="8.5" fontFamily="'JetBrains Mono',monospace" fontWeight="500"
+            fill={isLight ? "#4B5563" : "#8B949E"}>
+            42 cities · 99.8% uptime · 50,000+ drivers · live
+          </text>
+        </svg>
 
-              {/* Headlight glow */}
-              <ellipse cx="172" cy="218" rx="7" ry="5" fill="#22D3EE" opacity=".7"
-                style={{ animation: "glow-pulse 2.5s ease-in-out infinite" }} />
-
-              {/* Wheels */}
-              <circle cx="72"  cy="250" r="16" fill={isLight ? "#D1D9E0" : "#1E2830"} />
-              <circle cx="72"  cy="250" r="10" fill={isLight ? "#B8C5D0" : "#263038"} />
-              <circle cx="72"  cy="250" r="4"  fill={isLight ? "#94A3B8" : "#374151"} />
-              <circle cx="148" cy="250" r="16" fill={isLight ? "#D1D9E0" : "#1E2830"} />
-              <circle cx="148" cy="250" r="10" fill={isLight ? "#B8C5D0" : "#263038"} />
-              <circle cx="148" cy="250" r="4"  fill={isLight ? "#94A3B8" : "#374151"} />
-
-              {/* Floating reward card */}
-              <g style={{ animation: "float 4s ease-in-out infinite" }}>
-                <rect x="20" y="120" width="88" height="50" rx="8"
-                  fill={isLight ? "rgba(255,255,255,.92)" : "rgba(14,20,22,.92)"}
-                  stroke={isLight ? "rgba(255,192,67,.3)" : "rgba(255,192,67,.25)"}
-                  strokeWidth="1.5" />
-                <rect x="20" y="120" width="88" height="50" rx="8" fill="none"
-                  style={{ filter: `drop-shadow(0 4px 16px rgba(255,192,67,.2))` }} />
-                <text x="30" y="139" fontSize="7.5" fontWeight="700" fontFamily="'Space Grotesk',sans-serif" fill="#FFC043">🏆 REWARDS</text>
-                <text x="30" y="154" fontSize="11" fontWeight="800" fontFamily="'JetBrains Mono',monospace" fill={isLight ? "#0D1621" : "#E6EBED"}>+840 pts</text>
-                <text x="30" y="163" fontSize="7" fontFamily="sans-serif" fill={isLight ? "#6B7280" : "#6B7479"}>Gold tier · This session</text>
-              </g>
-
-              {/* Floating session card */}
-              <g style={{ animation: "float 5s ease-in-out 1.5s infinite" }}>
-                <rect x="188" y="175" width="96" height="56" rx="8"
-                  fill={isLight ? "rgba(255,255,255,.92)" : "rgba(14,20,22,.92)"}
-                  stroke={isLight ? "rgba(0,184,94,.25)" : "rgba(0,230,118,.2)"}
-                  strokeWidth="1.5" />
-                <text x="198" y="194" fontSize="7.5" fontWeight="700" fontFamily="'Space Grotesk',sans-serif" fill={accent}>⚡ CHARGING</text>
-                <text x="198" y="208" fontSize="11" fontWeight="800" fontFamily="'JetBrains Mono',monospace" fill={isLight ? "#0D1621" : "#E6EBED"}>100 kW</text>
-                <text x="198" y="220" fontSize="7" fontFamily="sans-serif" fill={isLight ? "#6B7280" : "#6B7479"}>22 min remaining</text>
-                {/* Mini progress bar */}
-                <rect x="198" y="223" width="66" height="3" rx="1.5" fill={isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.08)"} />
-                <rect x="198" y="223" width="51" height="3" rx="1.5" fill={accent} style={{ filter: `drop-shadow(0 0 3px ${accent})` }} />
-              </g>
-
-              {/* Ambient energy particles */}
-              {[
-                { cx: 140, cy: 170, r: 2.5, c: "#00E676", del: "0s" },
-                { cx: 200, cy: 155, r: 2, c: "#22D3EE", del: ".7s" },
-                { cx: 105, cy: 175, r: 1.8, c: "#FFC043", del: "1.4s" },
-                { cx: 165, cy: 140, r: 2.2, c: "#C4B5FD", del: "2.1s" },
-              ].map((p, i) => (
-                <circle key={i} cx={p.cx} cy={p.cy} r={p.r} fill={p.c}
-                  style={{ filter: `drop-shadow(0 0 4px ${p.c})`, animation: `particle-float 3s ease-in-out ${p.del} infinite` }} />
-              ))}
-            </svg>
-          </div>
-        </div>
+        {/* Left-edge fade to blend with left column */}
+        <div style={{
+          position: "absolute", left: 0, top: 0, bottom: 0, width: 80, pointerEvents: "none",
+          background: isLight
+            ? "linear-gradient(90deg,#F2F8F5,transparent)"
+            : `linear-gradient(90deg,${t.bg},transparent)`,
+        }} />
       </div>
     </div>
   );

@@ -382,6 +382,7 @@ a { color: inherit; }
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: transparent;
   display: inline-block;
 }
 [data-theme="light"] .footer-covered-gradient {
@@ -389,6 +390,7 @@ a { color: inherit; }
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: transparent;
   display: inline-block;
 }
 

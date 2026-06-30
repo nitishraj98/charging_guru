@@ -196,7 +196,7 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
       ref={sectionRef}
       className="section-fade"
       style={{
-        padding: "100px 60px 120px",
+        padding: "100px 60px 80px",
         background: isLight
           ? "linear-gradient(180deg,#EEF3F7 0%,#F6F8FA 100%)"
           : t.bg,
@@ -223,7 +223,7 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
       <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
 
         {/* ── Section header ── */}
-        <div style={{ textAlign: "center", marginBottom: 64 }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18,
             background: isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.08)",
@@ -247,6 +247,7 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
             <span style={{
               background: `linear-gradient(90deg,${accent},${isLight ? "#06B6D4" : "#22D3EE"})`,
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+              color: "transparent", display: "inline-block",
             }}>to know.</span>
           </h2>
           <p style={{ color: t.textSub, fontSize: 16, lineHeight: 1.75, maxWidth: 480, margin: "0 auto" }}>
@@ -255,7 +256,7 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
         </div>
 
         {/* ── Two-column layout ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "360px 1fr", gap: 64, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 48, alignItems: "start" }}>
 
           {/* ── Left: sticky panel ── */}
           <div style={{ position: "sticky", top: 100, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -354,10 +355,75 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
                 </div>
               </div>
             </div>
+
+            {/* ── Need help? quick actions ── */}
+            <div style={{
+              background: isLight ? "rgba(255,255,255,.75)" : "rgba(255,255,255,.03)",
+              border: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.06)"}`,
+              borderRadius: 16, padding: "18px 20px", backdropFilter: "blur(8px)",
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: t.text, marginBottom: 14 }}>
+                Need a hand? 👋
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[
+                  { icon: "💬", label: "Live chat", sub: "< 2 min reply", color: accent },
+                  { icon: "📧", label: "Email support", sub: "2 hr response", color: "#22D3EE" },
+                  { icon: "📞", label: "Call us", sub: "Mon–Sat · 9–6", color: "#FFC043" },
+                ].map(opt => (
+                  <button key={opt.label} style={{
+                    width: "100%", display: "flex", alignItems: "center", gap: 10,
+                    padding: "9px 12px", borderRadius: 10, border: "none",
+                    background: isLight ? "rgba(0,0,0,.03)" : "rgba(255,255,255,.03)",
+                    cursor: "pointer", transition: "background .15s",
+                  }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = isLight ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.06)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = isLight ? "rgba(0,0,0,.03)" : "rgba(255,255,255,.03)"; }}
+                  >
+                    <span style={{ fontSize: 16 }}>{opt.icon}</span>
+                    <div style={{ flex: 1, textAlign: "left" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: t.text, lineHeight: 1.2 }}>{opt.label}</div>
+                      <div style={{ fontSize: 10, color: t.textMuted }}>{opt.sub}</div>
+                    </div>
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, color: opt.color,
+                      padding: "2px 7px", borderRadius: 6,
+                      background: `${opt.color}15`,
+                    }}>→</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* ── Right: accordion + contact ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+
+            {/* Quick stats bar */}
+            <div style={{
+              display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0,
+              background: isLight ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.03)",
+              border: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.06)"}`,
+              borderRadius: 14, overflow: "hidden", marginBottom: 4,
+              backdropFilter: "blur(8px)",
+              opacity: visible ? 1 : 0,
+              transition: "opacity .5s",
+            }}>
+              {[
+                { value: "< 2h",   label: "Support reply", color: "#22D3EE" },
+                { value: "99.8%",  label: "Uptime",        color: accent      },
+                { value: "100%",   label: "Refund rate",   color: "#00E676"   },
+                { value: "8 sec",  label: "Avg check-in",  color: "#FFC043"   },
+              ].map((s, i) => (
+                <div key={s.label} style={{
+                  padding: "14px 16px",
+                  borderRight: i < 3 ? `1px solid ${isLight ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.05)"}` : "none",
+                }}>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 16, fontWeight: 800, color: s.color, marginBottom: 2 }}>{s.value}</div>
+                  <div style={{ fontSize: 10, color: t.textMuted }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
 
             {filtered.map((f, i) => (
               <div

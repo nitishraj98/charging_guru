@@ -45,44 +45,15 @@ const PLANS = [
   },
 ];
 
-function CashbackCalc({ isLight }: { isLight: boolean }) {
-  const [spend, setSpend] = useState(2000);
-  const silverBack = Math.round(spend * 0.05);
-  const goldBack   = Math.round(spend * 0.10);
-  const goldNet    = goldBack - 399;
+const TRUST_STRIP = [
+  { icon: "⚡", label: "Instant booking confirmation" },
+  { icon: "🔒", label: "PCI-DSS L1 payments" },
+  { icon: "🔄", label: "Free cancellation" },
+  { icon: "🏆", label: "Earn reward points" },
+  { icon: "📍", label: "5,200+ charging stations" },
+  { icon: "⏱️", label: "15-min guaranteed hold" },
+];
 
-  return (
-    <div style={{
-      background: isLight ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.03)",
-      border: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.07)"}`,
-      borderRadius: 16, padding: "20px 24px", maxWidth: 440, margin: "32px auto 0",
-      backdropFilter: "blur(8px)",
-    }}>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: isLight ? "#64748B" : "#6B7479", marginBottom: 12 }}>CASHBACK CALCULATOR</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
-        <span style={{ fontSize: 13, color: isLight ? "#334155" : "#98A1A6", flexShrink: 0 }}>Monthly charging spend</span>
-        <input
-          type="range" min={500} max={10000} step={500} value={spend}
-          onChange={e => setSpend(+e.target.value)}
-          style={{ flex: 1, accentColor: "#00D26A" }}
-        />
-        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 14, fontWeight: 700, color: isLight ? "#0F172A" : "#E6EBED", flexShrink: 0 }}>₹{spend.toLocaleString()}</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(148,163,184,.08)", border: "1px solid rgba(148,163,184,.15)" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", letterSpacing: ".08em", marginBottom: 4 }}>SILVER SAVES</div>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 20, fontWeight: 700, color: "#94A3B8" }}>₹{silverBack}</div>
-          <div style={{ fontSize: 10, color: isLight ? "#94A3B8" : "#6B7479", marginTop: 2 }}>5% back · net +₹{silverBack - 149}</div>
-        </div>
-        <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,192,67,.08)", border: "1px solid rgba(255,192,67,.2)" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#FFC043", letterSpacing: ".08em", marginBottom: 4 }}>GOLD SAVES</div>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 20, fontWeight: 700, color: "#FFC043" }}>₹{goldBack}</div>
-          <div style={{ fontSize: 10, color: goldNet > 0 ? "#00E676" : "#6B7479", marginTop: 2 }}>10% back · net {goldNet >= 0 ? "+" : ""}₹{goldNet}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -106,7 +77,7 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
       id="pricing"
       className="section-fade"
       style={{
-        padding: "0 60px 120px",
+        padding: "100px 60px 80px",
         background: isLight
           ? "linear-gradient(180deg, #F6F8FA 0%, #EFF4F8 50%, #F6F8FA 100%)"
           : t.bg,
@@ -131,9 +102,9 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
         maskImage: "radial-gradient(ellipse at 50% 100%, black 40%, transparent 75%)",
       }} />
 
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 48 }}>
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18,
             background: "rgba(255,192,67,.08)",
@@ -180,8 +151,29 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
           </div>
         </div>
 
+        {/* Trust strip */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(6, 1fr)",
+          gap: 0, marginBottom: 32,
+          background: isLight ? "rgba(255,255,255,.6)" : "rgba(255,255,255,.025)",
+          border: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.06)"}`,
+          borderRadius: 16, overflow: "hidden",
+          backdropFilter: "blur(8px)",
+        }}>
+          {TRUST_STRIP.map((item, i) => (
+            <div key={item.label} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+              padding: "14px 8px",
+              borderRight: i < TRUST_STRIP.length - 1 ? `1px solid ${isLight ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.05)"}` : "none",
+            }}>
+              <span style={{ fontSize: 18 }}>{item.icon}</span>
+              <span style={{ fontSize: 10.5, fontWeight: 600, color: t.textMuted, textAlign: "center", lineHeight: 1.3 }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Plans */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 18, maxWidth: 960, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
           {PLANS.map((plan, i) => {
             const price = plan.price === 0 ? 0 : yearly ? Math.round(plan.price * 0.8) : plan.price;
             const hovered = hoveredPlan === plan.name;
@@ -193,8 +185,8 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
                 style={{
                   position: "relative",
                   background: plan.highlight
-                    ? isLight ? "linear-gradient(160deg,#FFFBEB,#FFFFFF)" : "linear-gradient(160deg,#1A1200,#111517)"
-                    : isLight ? "rgba(255,255,255,.8)" : "#0E1416",
+                    ? isLight ? "linear-gradient(160deg,#FFFBEB,#FFFFFF)" : "linear-gradient(160deg,#201800,#1C2026)"
+                    : isLight ? "rgba(255,255,255,.8)" : "#1C2430",
                   border: `1.5px solid ${plan.highlight
                     ? (isLight ? "rgba(255,192,67,.4)" : "rgba(255,192,67,.3)")
                     : hovered ? plan.color + "30" : (isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.05)")}`,
@@ -278,8 +270,6 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
           })}
         </div>
 
-        {/* Cashback calculator */}
-        <CashbackCalc isLight={isLight} />
       </div>
     </section>
   );

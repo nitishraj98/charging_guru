@@ -1,13 +1,6 @@
 "use client";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { Tok } from "./tokens";
-
-const FEATURED = {
-  name: "Arjun Singh", av: "AS", city: "Bengaluru", vehicle: "BYD Atto 3",
-  badge: "Gold Member", badgeColor: "#FFC043",
-  text: "Gold membership means I always get priority lanes at peak hours. The app even tells me my car's expected SoC when I arrive. Planned a Bengaluru → Hyderabad run last month — 500 km, 2 stops, zero drama. This is what EV ownership was supposed to feel like.",
-  stats: [{ v: "12", l: "Trips planned" }, { v: "840km", l: "Longest journey" }, { v: "4,200", l: "Reward points" }],
-};
 
 const TESTIMONIALS = [
   { name: "Ravi Menon",   av: "RM", city: "Delhi",     vehicle: "Tata Nexon EV",    badge: "Gold Member",     badgeColor: "#FFC043", text: "Did Delhi→Jaipur in my Nexon EV. Charging Guru pre-booked both stops. Zero anxiety, zero wait. This is how EV road trips should work." },
@@ -24,14 +17,14 @@ function SmallCard({ r, isLight, t }: { r: typeof TESTIMONIALS[0]; isLight: bool
   return (
     <div style={{
       flexShrink: 0, width: 320,
-      background: isLight ? "rgba(255,255,255,.9)" : "#0E1416",
-      border: `1px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.05)"}`,
+      background: isLight ? "rgba(255,255,255,.9)" : "#1C2430",
+      border: `1px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.11)"}`,
       borderRadius: 18, padding: "20px",
       margin: "0 7px",
       backdropFilter: "blur(8px)",
       boxShadow: isLight
         ? "0 2px 20px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.04)"
-        : "0 0 0 1px rgba(255,255,255,.03)",
+        : "0 0 0 1px rgba(255,255,255,.08), 0 4px 24px rgba(0,0,0,.3)",
     }}>
       <div style={{ color: "#FFC043", fontSize: 12, marginBottom: 12, letterSpacing: 2 }}>★★★★★</div>
       <p style={{ color: t.textSub, fontSize: 13.5, lineHeight: 1.75, marginBottom: 16 }}>
@@ -66,8 +59,6 @@ function SmallCard({ r, isLight, t }: { r: typeof TESTIMONIALS[0]; isLight: bool
 
 export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok }) {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [hoveredStat, setHoveredStat] = useState<number | null>(null);
-
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -89,7 +80,7 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
         padding: "0 0 120px",
         background: isLight
           ? "linear-gradient(180deg, #F8FAFD 0%, #F0F5F9 50%, #F6F8FA 100%)"
-          : "#060809",
+          : "#0D1117",
         overflow: "hidden", position: "relative",
       }}
     >
@@ -141,83 +132,10 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
         </div>
       </div>
 
-      {/* ── Featured hero testimonial ── */}
-      <div style={{ padding: "0 60px", marginBottom: 48, position: "relative" }}>
-        <div style={{
-          background: isLight
-            ? "linear-gradient(145deg,#FFFBEB,#FFFFFF,#F0FFF8)"
-            : "linear-gradient(145deg,#100E00,#0E1416,#0A1510)",
-          border: `1.5px solid ${isLight ? "rgba(255,192,67,.3)" : "rgba(255,192,67,.2)"}`,
-          borderRadius: 28, padding: "48px 52px",
-          maxWidth: 1100, margin: "0 auto",
-          boxShadow: isLight
-            ? "0 8px 64px rgba(255,192,67,.1), 0 2px 16px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.8) inset"
-            : "0 0 0 1px rgba(255,192,67,.12), 0 0 80px rgba(255,192,67,.06)",
-          position: "relative", overflow: "hidden",
-        }}>
-          {/* Background accent */}
-          <div style={{
-            position: "absolute", top: -40, right: -40, width: 320, height: 320, borderRadius: "50%",
-            background: isLight
-              ? "radial-gradient(ellipse, rgba(255,192,67,.12) 0%, transparent 65%)"
-              : "radial-gradient(ellipse, rgba(255,192,67,.08) 0%, transparent 65%)",
-            pointerEvents: "none",
-          }} />
-
-          <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr auto", gap: 48, alignItems: "center" }}>
-            <div>
-              <div style={{ color: "#FFC043", fontSize: 16, marginBottom: 20, letterSpacing: 2 }}>★★★★★</div>
-              {/* Big quote mark */}
-              <div style={{ fontFamily: "Georgia,serif", fontSize: 80, lineHeight: 0.6, color: isLight ? "rgba(255,192,67,.15)" : "rgba(255,192,67,.1)", marginBottom: 12, userSelect: "none" }}>&ldquo;</div>
-              <p style={{ fontSize: 18, fontWeight: 500, color: t.text, lineHeight: 1.7, maxWidth: 560 }}>
-                {FEATURED.text}
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28 }}>
-                <div style={{
-                  width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
-                  background: "linear-gradient(135deg,#FFC043,#F59E0B)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 16, color: "#020A04",
-                  boxShadow: "0 0 16px rgba(255,192,67,.4)",
-                }}>{FEATURED.av}</div>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 15, fontWeight: 800, color: t.text }}>{FEATURED.name}</span>
-                    <span style={{ fontSize: 9, fontWeight: 800, color: "#FFC043", background: "rgba(255,192,67,.12)", border: "1px solid rgba(255,192,67,.3)", borderRadius: 6, padding: "2px 8px" }}>GOLD MEMBER</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>{FEATURED.vehicle} · {FEATURED.city}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Stats column */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 150 }}>
-              {FEATURED.stats.map((s, i) => (
-                <div key={s.l}
-                  onMouseEnter={() => setHoveredStat(i)}
-                  onMouseLeave={() => setHoveredStat(null)}
-                  style={{
-                    textAlign: "center", padding: "16px 20px", borderRadius: 16,
-                    background: hoveredStat === i
-                      ? (isLight ? "rgba(255,192,67,.1)" : "rgba(255,192,67,.07)")
-                      : (isLight ? "rgba(255,255,255,.6)" : "rgba(255,255,255,.03)"),
-                    border: `1px solid ${hoveredStat === i ? "rgba(255,192,67,.3)" : (isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.07)")}`,
-                    transition: "all .2s",
-                    cursor: "default",
-                  }}>
-                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 24, fontWeight: 800, color: "#FFC043" }}>{s.v}</div>
-                  <div style={{ fontSize: 10, color: t.textMuted, marginTop: 3 }}>{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* ── Marquee rows ── */}
       <div style={{ position: "relative", marginBottom: 14, overflow: "hidden" }}>
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(90deg, ${isLight ? "#F8FAFD" : "#060809"}, transparent)` }} />
-        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(-90deg, ${isLight ? "#F8FAFD" : "#060809"}, transparent)` }} />
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(90deg, ${isLight ? "#F8FAFD" : "#0D1117"}, transparent)` }} />
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(-90deg, ${isLight ? "#F8FAFD" : "#0D1117"}, transparent)` }} />
         <div
           style={{ display: "flex", width: "max-content", animation: "slide-left 44s linear infinite" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.animationPlayState = "paused"; }}
@@ -230,8 +148,8 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
       </div>
 
       <div style={{ position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(90deg, ${isLight ? "#F0F5F9" : "#060809"}, transparent)` }} />
-        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(-90deg, ${isLight ? "#F0F5F9" : "#060809"}, transparent)` }} />
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(90deg, ${isLight ? "#F0F5F9" : "#0D1117"}, transparent)` }} />
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(-90deg, ${isLight ? "#F0F5F9" : "#0D1117"}, transparent)` }} />
         <div
           style={{ display: "flex", width: "max-content", animation: "slide-left 60s linear infinite reverse" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.animationPlayState = "paused"; }}
