@@ -2,6 +2,7 @@
 bonus, redeem) + membership tier catalog/upgrade."""
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -12,6 +13,7 @@ from app.models.user import User
 
 USER_PHONE = "+919876543210"
 _VALID_SIG = "valid_sig"
+_VALID_WEBHOOK_SIG = "valid_webhook_sig"
 
 
 async def _login(client, phone=USER_PHONE) -> dict:
@@ -26,6 +28,26 @@ async def _login(client, phone=USER_PHONE) -> dict:
 
 def _auth(tokens: dict) -> dict:
     return {"Authorization": f"Bearer {tokens['access_token']}"}
+
+
+async def _upgrade_membership(client, user_tokens, tier: str):
+    """Real order -> Razorpay -> verify flow, using the FakeRazorpayGateway's
+    valid_sig bypass (mirrors booking payment tests)."""
+    r = await client.post(
+        "/api/v1/membership/order", json={"tier": tier}, headers=_auth(user_tokens)
+    )
+    assert r.status_code == 201, r.text
+    order = r.json()
+    r = await client.post(
+        "/api/v1/membership/verify",
+        json={
+            "razorpay_order_id": order["razorpay_order_id"],
+            "razorpay_payment_id": f"pay_mem_{order['id']}",
+            "razorpay_signature": _VALID_SIG,
+        },
+        headers=_auth(user_tokens),
+    )
+    return r
 
 
 def _future_slot() -> str:
@@ -173,13 +195,13 @@ async def test_membership_tier_catalog_and_upgrade(client, seed_station):
     r = await client.get("/api/v1/membership/me", headers=_auth(user))
     assert r.json()["tier"] == "FREE"
 
-    r = await client.post("/api/v1/membership/upgrade", json={"tier": "GOLD"}, headers=_auth(user))
+    r = await _upgrade_membership(client, user, "GOLD")
     assert r.status_code == 200, r.text
     assert r.json()["tier"] == "GOLD"
     assert r.json()["points_multiplier"] == 2.0
 
-    # Re-upgrading to the same tier is rejected
-    r = await client.post("/api/v1/membership/upgrade", json={"tier": "GOLD"}, headers=_auth(user))
+    # Re-ordering the same tier once already on it is rejected
+    r = await client.post("/api/v1/membership/order", json={"tier": "GOLD"}, headers=_auth(user))
     assert r.status_code == 409
     assert r.json()["code"] == "ALREADY_ON_TIER"
 
@@ -187,9 +209,102 @@ async def test_membership_tier_catalog_and_upgrade(client, seed_station):
 @pytest.mark.asyncio
 async def test_gold_member_earns_double_points_per_session(client, seed_station):
     user = await _login(client)
-    await client.post("/api/v1/membership/upgrade", json={"tier": "GOLD"}, headers=_auth(user))
+    await _upgrade_membership(client, user, "GOLD")
     await _completed_booking(client, seed_station, user)
 
     r = await client.get("/api/v1/rewards/summary", headers=_auth(user))
     # 10 * 2.0 (GOLD multiplier) + 25 (first booking bonus, unaffected by multiplier) = 45
     assert r.json()["points"] == 45
+
+
+@pytest.mark.asyncio
+async def test_membership_free_tier_cannot_be_ordered(client, seed_station):
+    user = await _login(client)
+    r = await client.post("/api/v1/membership/order", json={"tier": "FREE"}, headers=_auth(user))
+    assert r.status_code == 409
+    assert r.json()["code"] in ("FREE_TIER_NO_PAYMENT", "ALREADY_ON_TIER")
+
+
+@pytest.mark.asyncio
+async def test_membership_order_is_idempotent_while_pending(client, seed_station):
+    user = await _login(client)
+    r1 = await client.post("/api/v1/membership/order", json={"tier": "SILVER"}, headers=_auth(user))
+    r2 = await client.post("/api/v1/membership/order", json={"tier": "SILVER"}, headers=_auth(user))
+    assert r1.status_code == r2.status_code == 201
+    assert r1.json()["razorpay_order_id"] == r2.json()["razorpay_order_id"]
+
+
+@pytest.mark.asyncio
+async def test_membership_verify_rejects_bad_signature(client, seed_station):
+    user = await _login(client)
+    r = await client.post("/api/v1/membership/order", json={"tier": "SILVER"}, headers=_auth(user))
+    order = r.json()
+
+    r = await client.post(
+        "/api/v1/membership/verify",
+        json={
+            "razorpay_order_id": order["razorpay_order_id"],
+            "razorpay_payment_id": "pay_bad",
+            "razorpay_signature": "not_the_right_signature",
+        },
+        headers=_auth(user),
+    )
+    assert r.status_code == 400
+    assert r.json()["code"] == "INVALID_PAYMENT_SIGNATURE"
+
+    # Tier must remain unchanged after a failed verify.
+    r = await client.get("/api/v1/membership/me", headers=_auth(user))
+    assert r.json()["tier"] == "FREE"
+
+
+@pytest.mark.asyncio
+async def test_membership_verify_is_idempotent(client, seed_station):
+    user = await _login(client)
+    r = await client.post("/api/v1/membership/order", json={"tier": "SILVER"}, headers=_auth(user))
+    order = r.json()
+    verify_payload = {
+        "razorpay_order_id": order["razorpay_order_id"],
+        "razorpay_payment_id": f"pay_mem_{order['id']}",
+        "razorpay_signature": _VALID_SIG,
+    }
+
+    r1 = await client.post("/api/v1/membership/verify", json=verify_payload, headers=_auth(user))
+    assert r1.status_code == 200, r1.text
+    assert r1.json()["tier"] == "SILVER"
+
+    # Re-posting the identical verify payload (e.g. client retry) hits the
+    # already-CAPTURED short-circuit and must not error or double-charge.
+    r2 = await client.post("/api/v1/membership/verify", json=verify_payload, headers=_auth(user))
+    assert r2.status_code == 200, r2.text
+    assert r2.json()["tier"] == "SILVER"
+
+
+@pytest.mark.asyncio
+async def test_membership_webhook_confirms_tier_as_fallback(client, seed_station):
+    """The shared /payments/webhook receiver must also recognise membership
+    orders (not just booking orders) since Razorpay posts to one URL."""
+    user = await _login(client)
+    r = await client.post("/api/v1/membership/order", json={"tier": "GOLD"}, headers=_auth(user))
+    order = r.json()
+
+    webhook_body = json.dumps({
+        "event": "payment.captured",
+        "payload": {
+            "payment": {
+                "entity": {
+                    "id": "pay_webhook_mem_001",
+                    "order_id": order["razorpay_order_id"],
+                }
+            }
+        },
+    }).encode()
+
+    r = await client.post(
+        "/api/v1/payments/webhook",
+        content=webhook_body,
+        headers={"X-Razorpay-Signature": _VALID_WEBHOOK_SIG, "Content-Type": "application/json"},
+    )
+    assert r.status_code == 200
+
+    r2 = await client.get("/api/v1/membership/me", headers=_auth(user))
+    assert r2.json()["tier"] == "GOLD"

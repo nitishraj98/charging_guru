@@ -44,5 +44,19 @@ class MembershipMeOut(ORMModel):
     discount_pct: int
 
 
-class MembershipUpgradeIn(StrictModel):
+class MembershipOrderIn(StrictModel):
     tier: MembershipTier
+
+
+class MembershipOrderOut(ORMModel):
+    id: uuid.UUID
+    tier: MembershipTier
+    razorpay_order_id: str
+    amount: int  # paise
+    created_at: datetime
+
+
+class MembershipVerifyIn(StrictModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str

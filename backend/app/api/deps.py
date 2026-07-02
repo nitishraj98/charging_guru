@@ -16,6 +16,7 @@ from app.core.razorpay import RazorpayGateway, get_razorpay_gateway
 from app.models.user import User
 from app.repositories.admin_repo import AdminRepo
 from app.repositories.booking_repo import BookingRepo, SlotRepo
+from app.repositories.membership_payment_repo import MembershipPaymentRepo
 from app.repositories.otp_repo import OtpRepo
 from app.repositories.payment_repo import PaymentRepo
 from app.repositories.session_repo import SessionRepo
@@ -71,7 +72,8 @@ def get_payment_service(
     db: AsyncSession = Depends(get_db),
     gateway: RazorpayGateway = Depends(get_razorpay_gateway),
 ) -> PaymentService:
-    return PaymentService(PaymentRepo(db), BookingRepo(db), gateway, db)
+    membership = MembershipService(UserRepo(db), MembershipPaymentRepo(db), gateway, db)
+    return PaymentService(PaymentRepo(db), BookingRepo(db), gateway, db, membership)
 
 
 def get_session_service(db: AsyncSession = Depends(get_db)) -> SessionService:
@@ -88,8 +90,11 @@ def get_reward_service(db: AsyncSession = Depends(get_db)) -> RewardService:
     return RewardService(RewardRepo(db), UserRepo(db), db)
 
 
-def get_membership_service(db: AsyncSession = Depends(get_db)) -> MembershipService:
-    return MembershipService(UserRepo(db), db)
+def get_membership_service(
+    db: AsyncSession = Depends(get_db),
+    gateway: RazorpayGateway = Depends(get_razorpay_gateway),
+) -> MembershipService:
+    return MembershipService(UserRepo(db), MembershipPaymentRepo(db), gateway, db)
 
 
 async def get_current_user(

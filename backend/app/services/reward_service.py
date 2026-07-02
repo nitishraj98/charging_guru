@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import uuid
 
-from app.core.errors import ConflictError, NotFoundError
+from app.core.errors import AppError, ConflictError, NotFoundError
+from app.core.razorpay import RazorpayGateway
 from app.domain.policies import (
     FIRST_BOOKING_BONUS_POINTS,
     GOLD_TIER_POINTS_THRESHOLD,
@@ -19,12 +20,14 @@ from app.domain.policies import (
     REFERRAL_BONUS_POINTS,
     SILVER_TIER_POINTS_THRESHOLD,
 )
-from app.models.enums import MembershipTier, RewardTransactionType
+from app.models.enums import MembershipTier, PaymentStatus, RewardTransactionType
+from app.models.membership_payment import MembershipPayment
 from app.models.reward import RewardTransaction
 from app.models.user import User
+from app.repositories.membership_payment_repo import MembershipPaymentRepo
 from app.repositories.reward_repo import RewardRepo
 from app.repositories.user_repo import UserRepo
-from app.schemas.rewards import RewardSummaryOut, RewardTransactionOut
+from app.schemas.rewards import MembershipVerifyIn, RewardSummaryOut, RewardTransactionOut
 
 _TIER_ORDER = [MembershipTier.FREE, MembershipTier.SILVER, MembershipTier.GOLD]
 _TIER_THRESHOLDS = {
@@ -125,8 +128,20 @@ class RewardService:
 
 
 class MembershipService:
-    def __init__(self, users: UserRepo, session):
+    """Membership tier purchase — real Razorpay order/verify, same pattern
+    as PaymentService for bookings (order create → client pays → signature
+    verify → webhook as idempotent fallback)."""
+
+    def __init__(
+        self,
+        users: UserRepo,
+        payments: MembershipPaymentRepo,
+        gateway: RazorpayGateway,
+        session,
+    ):
         self.users = users
+        self.payments = payments
+        self.gateway = gateway
         self.session = session
 
     def tier_catalog(self) -> list[dict]:
@@ -142,13 +157,65 @@ class MembershipService:
             "points_multiplier": meta.points_multiplier, "discount_pct": meta.discount_pct,
         }
 
-    async def upgrade(self, user: User, tier: MembershipTier) -> dict:
+    async def create_order(self, user: User, tier: MembershipTier) -> MembershipPayment:
         if tier not in MEMBERSHIP_TIERS:
             raise NotFoundError("Unknown membership tier.", code="UNKNOWN_TIER")
         if tier == user.membership_tier:
             raise ConflictError(f"You are already on the {tier.value} plan.", code="ALREADY_ON_TIER")
-        # No real payment gateway wired for membership yet — this mirrors the
-        # test-mode instant-success pattern used elsewhere in the app.
-        user.membership_tier = tier
+        if tier == MembershipTier.FREE:
+            raise ConflictError("The Free plan has no payment required.", code="FREE_TIER_NO_PAYMENT")
+
+        # Idempotent — reuse an existing pending order for the same tier.
+        existing = await self.payments.get_pending_for_user_tier(user.id, tier)
+        if existing:
+            return existing
+
+        amount = MEMBERSHIP_TIERS[tier].price_paise
+        order = await self.gateway.create_order(
+            amount_paise=amount,
+            receipt=f"mem_{user.id}_{tier.value}"[:40],
+        )
+        payment = MembershipPayment(
+            user_id=user.id, tier=tier, amount=amount, razorpay_order_id=order["id"],
+        )
+        return await self.payments.add(payment)
+
+    async def verify_payment(self, user: User, payload: MembershipVerifyIn) -> dict:
+        payment = await self.payments.get_by_order(payload.razorpay_order_id)
+        if payment is None or payment.user_id != user.id:
+            raise NotFoundError("Payment order not found.", code="PAYMENT_NOT_FOUND")
+
+        # Idempotent — webhook may have already confirmed this.
+        if payment.status == PaymentStatus.CAPTURED:
+            user.membership_tier = payment.tier
+            await self.session.flush()
+            return self.current(user)
+
+        ok = self.gateway.verify_payment_signature(
+            payload.razorpay_order_id, payload.razorpay_payment_id, payload.razorpay_signature,
+        )
+        if not ok:
+            payment.status = PaymentStatus.FAILED
+            raise AppError("Payment signature mismatch.", code="INVALID_PAYMENT_SIGNATURE")
+
+        payment.razorpay_payment_id = payload.razorpay_payment_id
+        payment.razorpay_signature = payload.razorpay_signature
+        payment.status = PaymentStatus.CAPTURED
+        user.membership_tier = payment.tier
         await self.session.flush()
         return self.current(user)
+
+    async def handle_webhook_event(self, event_name: str, entity: dict) -> None:
+        """Idempotent fallback confirmation — mirrors PaymentService.handle_webhook
+        but for membership_payments. Called from the shared webhook receiver."""
+        if event_name == "payment.captured":
+            order_id = entity.get("order_id", "")
+            payment_id = entity.get("id", "")
+            payment = await self.payments.get_by_order(order_id)
+            if payment is None or payment.status == PaymentStatus.CAPTURED:
+                return
+            payment.razorpay_payment_id = payment_id
+            payment.status = PaymentStatus.CAPTURED
+            user = await self.users.get(payment.user_id)
+            if user is not None:
+                user.membership_tier = payment.tier
