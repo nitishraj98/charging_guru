@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -7,7 +7,81 @@ import { checkAuth } from "@/lib/auth";
 import { planRoute, PlanResult, ChargingStop } from "@/lib/services/routePlanner";
 import { listVehicles, STATIC_VEHICLES } from "@/lib/services/vehicleService";
 import type { UserVehicle } from "@/lib/services/vehicleService";
+import { decodePolyline } from "@/lib/services/googleMaps";
 import { routes } from "@/lib/api";
+
+function RouteMap({ plan, isLight }: { plan: PlanResult; isLight: boolean }) {
+  const mapRef     = useRef<HTMLDivElement>(null);
+  const leafletMap = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !mapRef.current) return;
+    let cancelled = false;
+
+    (async () => {
+      const L = (await import("leaflet")).default;
+      if (cancelled || !mapRef.current) return;
+
+      if (!leafletMap.current) {
+        leafletMap.current = L.map(mapRef.current, { zoomControl: false, attributionControl: true });
+        L.control.zoom({ position: "topright" }).addTo(leafletMap.current);
+      }
+      const map = leafletMap.current;
+
+      // Clear previous layers (route redraw on plan change)
+      map.eachLayer(l => map.removeLayer(l));
+
+      L.tileLayer(
+        isLight
+          ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          : "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png",
+        { attribution: "© OSM © CARTO", maxZoom: 20, subdomains: "abcd" },
+      ).addTo(map);
+
+      const bounds: Array<[number, number]> = [];
+
+      if (plan.polyline) {
+        const points = decodePolyline(plan.polyline);
+        L.polyline(points, { color: isLight ? "#00A855" : "#00E676", weight: 4, opacity: 0.85 }).addTo(map);
+        bounds.push(...points);
+      }
+
+      const pinIcon = (label: string, color: string) => L.divIcon({
+        className: "",
+        html: `<div style="
+          background:${color};color:#050708;font-weight:800;font-size:11px;
+          width:26px;height:26px;border-radius:50% 50% 50% 0;
+          transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;
+          border:2.5px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(0,0,0,.35);
+        "><span style="transform:rotate(45deg);">${label}</span></div>`,
+        iconSize: [26, 26], iconAnchor: [13, 26],
+      });
+
+      if (bounds.length > 0) {
+        L.marker(bounds[0], { icon: pinIcon("A", isLight ? "#00A855" : "#00E676") }).addTo(map);
+        L.marker(bounds[bounds.length - 1], { icon: pinIcon("B", "#FF5A5F") }).addTo(map);
+      }
+
+      plan.recommended_stops.forEach((stop, i) => {
+        if (!stop.lat || !stop.lng) return;
+        L.marker([stop.lat, stop.lng], { icon: pinIcon(String(i + 1), "#FFC043") })
+          .addTo(map)
+          .bindTooltip(stop.station_name, { direction: "top", offset: [0, -24] });
+        bounds.push([stop.lat, stop.lng]);
+      });
+
+      if (bounds.length > 0) {
+        map.fitBounds(L.latLngBounds(bounds), { padding: [32, 32] });
+      } else {
+        map.setView([20.5937, 78.9629], 5); // India-wide fallback
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [plan, isLight]);
+
+  return <div ref={mapRef} style={{ width: "100%", height: "100%" }} />;
+}
 
 function AvailBadge({ avail, isLight }: { avail: string; isLight: boolean }) {
   const map: Record<string, { color: string; bg: string; label: string }> = {
@@ -203,6 +277,12 @@ function ResultsInner() {
         {/* Left: stops */}
         <div>
           <DataSourceBadge source={plan.data_source} isLight={isLight} />
+
+          {plan.polyline && (
+            <div style={{ height: 280, borderRadius: 20, overflow: "hidden", border: `1px solid ${cardBorder}`, marginBottom: 20 }}>
+              <RouteMap plan={plan} isLight={isLight} />
+            </div>
+          )}
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: textPrimary }}>Recommended Charging Stops</h2>

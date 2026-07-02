@@ -198,6 +198,35 @@ export async function getDirections(
   });
 }
 
+// Decode a Google encoded polyline string into [lat, lng] points.
+// https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+export function decodePolyline(encoded: string): Array<[number, number]> {
+  const points: Array<[number, number]> = [];
+  let index = 0, lat = 0, lng = 0;
+
+  while (index < encoded.length) {
+    let shift = 0, result = 0, byte: number;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+
+    shift = 0; result = 0;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+
+    points.push([lat / 1e5, lng / 1e5]);
+  }
+
+  return points;
+}
+
 // Geocode a free-text string to lat/lng (fallback when no place_id available)
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number }> {
   if (!mapsReady()) throw new Error("Google Maps not loaded");
