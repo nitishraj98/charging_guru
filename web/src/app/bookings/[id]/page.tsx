@@ -5,6 +5,7 @@ import { bookings, payments, Booking, PaymentRecord } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Skeleton, BookingDetailSkeleton } from "@/components/Skeleton";
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; icon: string }> = {
   PENDING_PAYMENT: { label: "Pending Payment", color: "#FFC043", bg: "rgba(255,192,67,.1)",  icon: "⏳" },
@@ -176,9 +177,15 @@ export default function BookingDetailPage() {
   if (loading) return (
     <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: 16 }}>
-        <span className="spinner" style={{ width: 32, height: 32, borderWidth: 3, borderColor: "#222829", borderTopColor: accent }} />
-        <span style={{ color: textSub, fontSize: 14 }}>Loading booking…</span>
+      <div style={{ maxWidth: 640, margin: "0 auto", padding: "36px 24px 80px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+          <Skeleton width={38} height={38} radius={10} />
+          <div>
+            <Skeleton width={140} height={18} style={{ marginBottom: 6 }} />
+            <Skeleton width={100} height={12} />
+          </div>
+        </div>
+        <BookingDetailSkeleton cardBg={cardBg} cardBorder={cardBorder} />
       </div>
     </div>
   );

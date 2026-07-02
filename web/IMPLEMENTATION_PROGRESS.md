@@ -26,11 +26,10 @@
 | Component | Status | Notes |
 |-----------|--------|-------|
 | `PlacesAutocomplete.tsx` | ✅ Done | Debounced, keyboard nav, Google attribution |
+| `Skeleton.tsx` | ✅ Done | Shimmer primitive + `TripsSkeleton`, `BookingDetailSkeleton` layouts |
 
 ## Pending
 
-- [ ] Skeleton loaders on trips/bookings pages (currently use spinners)
 - [ ] Reviews endpoint from backend (currently shows "coming soon" placeholder)
 - [ ] Station-level stats from backend (sessions today, uptime)
-- [ ] Map polyline overlay on plan results page
 - [ ] `IMPLEMENTATION_PROGRESS.md` tracking for mobile/admin work

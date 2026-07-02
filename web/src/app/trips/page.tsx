@@ -9,6 +9,7 @@ import { bookings, Booking } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
+import { TripsSkeleton } from "@/components/Skeleton";
 
 const TABS = ["Upcoming", "Past"];
 const UPCOMING = ["PENDING_PAYMENT", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS"];
@@ -218,12 +219,7 @@ export default function TripsPage() {
           </div>
         </div>
 
-        {loading && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "28px 0", color: textSub, fontSize: 14 }}>
-            <span className="spinner" style={{ borderColor: cardBorder, borderTopColor: accent, width: 20, height: 20 }} />
-            Loading trips…
-          </div>
-        )}
+        {loading && <TripsSkeleton cardBg={cardBg} cardBorder={cardBorder} />}
 
         {!loading && loadError && (
           <div style={{ padding: "18px 20px", borderRadius: 16, background: "rgba(255,90,95,.07)", border: "1px solid rgba(255,90,95,.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>

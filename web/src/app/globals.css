@@ -179,6 +179,23 @@ a { color: inherit; }
   100% { transform: translateX(400%); }
 }
 
+/* Skeleton loaders */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(148,163,184,.14);
+}
+[data-theme="light"] .skeleton { background: rgba(100,116,139,.12); }
+.skeleton::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+[data-theme="light"] .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+}
+
 @keyframes pulse-glow {
   0%, 100% { box-shadow: var(--glow); }
   50%       { box-shadow: var(--glow-lg); }
