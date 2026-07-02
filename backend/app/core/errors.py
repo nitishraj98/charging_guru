@@ -6,6 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.core.config import settings
+
 PROBLEM_CONTENT_TYPE = "application/problem+json"
 _ERROR_BASE = "https://api.charging-guru.com/errors/"
 
@@ -61,7 +63,7 @@ class GoneError(AppError):
 
 
 def _problem(request: Request, status: int, code: str, title: str, detail: str) -> JSONResponse:
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status,
         media_type=PROBLEM_CONTENT_TYPE,
         content={
@@ -74,6 +76,16 @@ def _problem(request: Request, status: int, code: str, title: str, detail: str) 
             "trace_id": getattr(request.state, "request_id", None),
         },
     )
+    # CORSMiddleware never sees responses built by exception handlers — they
+    # short-circuit the ASGI send chain it wraps — so without this, every
+    # error response (esp. unhandled 500s) looks like a CORS failure in the
+    # browser instead of surfacing the real error.
+    origin = request.headers.get("origin")
+    if origin and origin in settings.cors_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Vary"] = "Origin"
+    return response
 
 
 def register_exception_handlers(app: FastAPI) -> None:
