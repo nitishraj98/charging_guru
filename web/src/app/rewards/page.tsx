@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Zap, Users, Gift, Star, Copy, Check, ChevronRight, ArrowUpRight } from "lucide-react";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -21,25 +22,19 @@ interface RewardTransaction {
 }
 
 const MOCK_SUMMARY: RewardSummary = {
-  points: 340,
-  tier: "SILVER",
-  next_tier: "GOLD",
-  points_to_next: 160,
+  points: 340, tier: "SILVER", next_tier: "GOLD", points_to_next: 160,
 };
-
 const MOCK_HISTORY: RewardTransaction[] = [
-  { id: "1", type: "earned",   points: 25,  description: "First booking bonus",                  created_at: new Date(Date.now() - 7  * 864e5).toISOString() },
-  { id: "2", type: "earned",   points: 10,  description: "Completed session at DLF Cyber Hub",  created_at: new Date(Date.now() - 5  * 864e5).toISOString() },
+  { id: "1", type: "earned",   points:  25, description: "First booking bonus",                 created_at: new Date(Date.now() - 7  * 864e5).toISOString() },
+  { id: "2", type: "earned",   points:  10, description: "Completed session at DLF Cyber Hub",  created_at: new Date(Date.now() - 5  * 864e5).toISOString() },
   { id: "3", type: "redeemed", points: -50, description: "Discount applied on booking",         created_at: new Date(Date.now() - 3  * 864e5).toISOString() },
-  { id: "4", type: "earned",   points: 10,  description: "Completed session at Sector 18 Hub",  created_at: new Date(Date.now() - 1  * 864e5).toISOString() },
+  { id: "4", type: "earned",   points:  10, description: "Completed session at Sector 18 Hub",  created_at: new Date(Date.now() - 1  * 864e5).toISOString() },
 ];
 
-const TIER_COLOR: Record<string, string> = {
-  FREE: "#6B7479", SILVER: "#94A3B8", GOLD: "#FFC043",
-};
-
-const TIER_LABEL: Record<string, string> = {
-  FREE: "Free", SILVER: "Silver", GOLD: "Gold",
+const TIER_META: Record<string, { color: string; label: string; icon: string }> = {
+  FREE:   { color: "#6B7479", label: "Free",   icon: "○" },
+  SILVER: { color: "#94A3B8", label: "Silver", icon: "◈" },
+  GOLD:   { color: "#FFC043", label: "Gold",   icon: "★" },
 };
 
 export default function RewardsPage() {
@@ -48,9 +43,8 @@ export default function RewardsPage() {
   const [summary, setSummary] = useState<RewardSummary | null>(null);
   const [history, setHistory] = useState<RewardTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied]   = useState(false);
 
-  const bg         = isLight ? "#F8FAFC" : "#0A0D0E";
   const cardBg     = isLight ? "#FFFFFF" : "#101415";
   const cardBorder = isLight ? "#E2E8F0" : "#222829";
   const textPrimary= isLight ? "#0F172A" : "#E6EBED";
@@ -69,39 +63,38 @@ export default function RewardsPage() {
         const token = tok ? decodeURIComponent(tok[1]) : "";
         const headers: Record<string, string> = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = `Bearer ${token}`;
-
         const [sRes, hRes] = await Promise.all([
           fetch(`${BASE}/api/v1/rewards/summary`, { headers }),
-          fetch(`${BASE}/api/v1/rewards/history`, { headers }),
+          fetch(`${BASE}/api/v1/rewards/history`,  { headers }),
         ]);
-
         setSummary(sRes.ok ? await sRes.json() : MOCK_SUMMARY);
         setHistory(hRes.ok ? await hRes.json() : MOCK_HISTORY);
       } catch {
-        setSummary(MOCK_SUMMARY);
-        setHistory(MOCK_HISTORY);
-      } finally {
-        setLoading(false);
-      }
+        setSummary(MOCK_SUMMARY); setHistory(MOCK_HISTORY);
+      } finally { setLoading(false); }
     }
     checkAuth().then(ok => { if (!ok) { router.push("/login"); return; } load(); });
   }, [router]);
 
-  const tierColor = TIER_COLOR[summary?.tier ?? "FREE"];
-  const progress = summary
-    ? Math.round((summary.points / (summary.points + summary.points_to_next)) * 100)
-    : 0;
+  const tierMeta = TIER_META[summary?.tier ?? "FREE"] ?? TIER_META.FREE;
+  const nextMeta = TIER_META[summary?.next_tier ?? "GOLD"] ?? TIER_META.GOLD;
+  const progress  = summary ? Math.round((summary.points / (summary.points + summary.points_to_next)) * 100) : 0;
 
   const referralCode = "GURU-DEMO";
   function copyCode() {
     navigator.clipboard.writeText(referralCode).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
     });
   }
 
+  const TX_ICON_MAP: Record<string, React.ReactNode> = {
+    earned:   <Zap size={16} strokeWidth={2} color={accent} />,
+    redeemed: <Gift size={16} strokeWidth={2} color="#A78BFA" />,
+    expired:  <Star size={16} strokeWidth={2} color={textMuted} />,
+  };
+
   if (loading) return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: 16 }}>
         <span className="spinner" style={{ width: 32, height: 32, borderWidth: 3, borderColor: "#222829", borderTopColor: accent }} />
@@ -111,142 +104,159 @@ export default function RewardsPage() {
   );
 
   return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
-
-      <div className="fade-up" style={{ maxWidth: 600, margin: "0 auto", padding: "36px 24px 80px" }}>
+      <div className="fade-up" style={{ maxWidth: 620, margin: "0 auto", padding: "36px 24px 100px" }}>
 
         {/* Header */}
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: textPrimary, marginBottom: 4 }}>Rewards</h1>
-          <p style={{ fontSize: 14, color: textSub }}>Earn points with every charge. Redeem for discounts.</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: textPrimary, marginBottom: 4, letterSpacing: "-.02em" }}>Rewards</h1>
+            <p style={{ fontSize: 14, color: textSub }}>Earn points with every charge. Redeem for discounts.</p>
+          </div>
+          <button onClick={() => router.push("/membership")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 18px", borderRadius: 11, background: `${tierMeta.color}14`, border: `1px solid ${tierMeta.color}40`, color: tierMeta.color, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            {tierMeta.icon} {tierMeta.label} Member
+            <ChevronRight size={13} strokeWidth={2.5} />
+          </button>
         </div>
 
         {/* Points balance card */}
         {summary && (
           <div style={{
-            background: isLight
-              ? "linear-gradient(135deg,#F0FDF4,#ECFDF5)"
-              : "linear-gradient(135deg,#0C2319,#101415)",
-            border: `1px solid ${accentBrd}`,
-            borderRadius: 20, padding: "24px", marginBottom: 16,
-            boxShadow: isLight ? "0 2px 12px rgba(0,210,106,.1)" : "0 0 0 1px rgba(0,230,118,.08)",
+            background: isLight ? "linear-gradient(135deg,#F0FDF4,#ECFDF5)" : "linear-gradient(135deg,#091F13,#0C1810,#101415)",
+            border: `1px solid ${accentBrd}`, borderRadius: 24, padding: "28px 26px", marginBottom: 16,
+            boxShadow: isLight ? "0 4px 24px rgba(0,210,106,.12)" : "0 0 0 1px rgba(0,164,85,.1),0 8px 48px rgba(0,230,118,.06)",
+            position: "relative", overflow: "hidden",
           }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: accent, marginBottom: 6, textTransform: "uppercase" }}>Total Points</div>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 52, fontWeight: 700, color: textPrimary, lineHeight: 1 }}>
+            <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: isLight ? "rgba(0,210,106,.07)" : "rgba(0,230,118,.04)", pointerEvents: "none" }} />
+            <div style={{ position: "relative" }}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: accent, marginBottom: 10, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                <Star size={10} strokeWidth={2.5} /> Total balance
+              </div>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginBottom: 8 }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 60, fontWeight: 800, color: textPrimary, lineHeight: 1, letterSpacing: "-.02em" }}>
                   {summary.points}
                 </div>
-                <div style={{ fontSize: 13, color: textSub, marginTop: 6 }}>≈ ₹{Math.floor(summary.points * 0.2)} redeemable</div>
+                <div style={{ paddingBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: textSub }}>pts</div>
+                  <div style={{ fontSize: 12, color: textMuted }}>≈ ₹{Math.floor(summary.points * 0.2)}</div>
+                </div>
               </div>
-              <div style={{
-                padding: "6px 14px", borderRadius: 999, fontSize: 13, fontWeight: 700,
-                background: `${tierColor}20`,
-                border: `1.5px solid ${tierColor}`,
-                color: tierColor,
-              }}>
-                {TIER_LABEL[summary.tier] ?? summary.tier} Member
-              </div>
-            </div>
-
-            {/* Progress to next tier */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: textSub, marginBottom: 8 }}>
-                <span>{summary.points} pts</span>
-                <span>{summary.points_to_next} pts to {TIER_LABEL[summary.next_tier] ?? summary.next_tier}</span>
-              </div>
-              <div style={{ height: 6, borderRadius: 999, background: isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.08)", overflow: "hidden" }}>
-                <div style={{
-                  height: "100%", width: `${progress}%`, borderRadius: 999,
-                  background: `linear-gradient(90deg,${accent},${tierColor})`,
-                  transition: "width .6s ease",
-                }} />
+              <div style={{ marginTop: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: textSub, marginBottom: 8 }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: tierMeta.color, display: "inline-block" }} />
+                    {tierMeta.label}
+                  </span>
+                  <span style={{ color: textMuted }}>{summary.points_to_next} pts to {nextMeta.label}</span>
+                </div>
+                <div style={{ height: 7, borderRadius: 999, background: "rgba(255,255,255,.07)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${progress}%`, borderRadius: 999, background: `linear-gradient(90deg,${accent},${tierMeta.color})`, transition: "width .8s cubic-bezier(.4,0,.2,1)", boxShadow: `0 0 8px ${accent}60` }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: textMuted, marginTop: 6 }}>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace" }}>0</span>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace" }}>{summary.points + summary.points_to_next}</span>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Referral card */}
+        {/* Quick actions */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+          <button onClick={() => router.push("/discover")} style={{ padding: "18px", borderRadius: 18, textAlign: "left", background: cardBg, border: `1px solid ${cardBorder}`, cursor: "pointer", transition: "all .15s", boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = accentBrd; e.currentTarget.style.transform = "translateY(-2px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.transform = "none"; }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: accentDim, border: `1px solid ${accentBrd}`, display: "grid", placeItems: "center", marginBottom: 12, color: accent }}>
+              <Zap size={18} strokeWidth={2} />
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: textPrimary, marginBottom: 4 }}>Charge now</div>
+            <div style={{ fontSize: 12, color: textSub }}>Earn +10 pts / session</div>
+          </button>
+          <button onClick={() => router.push("/membership")} style={{ padding: "18px", borderRadius: 18, textAlign: "left", background: isLight ? "linear-gradient(135deg,#FFF9EC,#FFFBF0)" : "linear-gradient(135deg,#1A1200,#2A1D00)", border: `1px solid ${isLight ? "#FCD34D60" : "#FFC04330"}`, cursor: "pointer", transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "none"; }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,192,67,.15)", border: "1px solid rgba(255,192,67,.3)", display: "grid", placeItems: "center", marginBottom: 12, color: "#FFC043" }}>
+              <Star size={18} strokeWidth={2} />
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: textPrimary, marginBottom: 4 }}>Upgrade plan</div>
+            <div style={{ fontSize: 12, color: "#FFC043" }}>Earn 2× on Gold</div>
+          </button>
+        </div>
+
+        {/* Referral */}
         <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "20px 22px", marginBottom: 16, boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: textMuted, marginBottom: 14, textTransform: "uppercase" }}>Refer a Friend</div>
-          <p style={{ fontSize: 14, color: textSub, marginBottom: 16 }}>Earn <strong style={{ color: accent }}>50 points</strong> for every friend who completes their first booking.</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <Users size={13} strokeWidth={2} color={textMuted} />
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: textMuted, textTransform: "uppercase" }}>Refer a Friend</span>
+          </div>
+          <p style={{ fontSize: 14, color: textSub, marginBottom: 16, lineHeight: 1.6 }}>
+            Earn <strong style={{ color: accent }}>50 points</strong> for every friend who completes their first booking.
+          </p>
           <div style={{ display: "flex", gap: 10 }}>
-            <div style={{
-              flex: 1, padding: "12px 16px", borderRadius: 12,
-              background: raisedBg, border: `1px solid ${cardBorder}`,
-              fontFamily: "'JetBrains Mono',monospace", fontSize: 16, fontWeight: 700,
-              color: textPrimary, letterSpacing: ".1em",
-            }}>{referralCode}</div>
-            <button onClick={copyCode} style={{
-              padding: "12px 20px", borderRadius: 12,
-              background: copied ? accentDim : accent,
-              border: copied ? `1px solid ${accentBrd}` : "none",
-              color: copied ? (isLight ? "#059669" : "#4DFFA6") : "#050708",
-              fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
-              transition: "all .15s",
-            }}>
-              {copied ? "Copied!" : "Copy code"}
+            <div style={{ flex: 1, padding: "12px 16px", borderRadius: 12, background: raisedBg, border: `1px solid ${cardBorder}`, fontFamily: "'JetBrains Mono',monospace", fontSize: 16, fontWeight: 700, color: textPrimary, letterSpacing: ".1em" }}>
+              {referralCode}
+            </div>
+            <button onClick={copyCode} style={{ display: "flex", alignItems: "center", gap: 6, padding: "12px 20px", borderRadius: 12, background: copied ? accentDim : accent, border: copied ? `1px solid ${accentBrd}` : "none", color: copied ? (isLight ? "#059669" : "#4DFFA6") : "#050708", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", transition: "all .2s" }}>
+              {copied ? <><Check size={13} strokeWidth={2.5} /> Copied!</> : <><Copy size={13} strokeWidth={2} /> Copy code</>}
             </button>
           </div>
         </div>
 
         {/* Ways to earn */}
         <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "20px 22px", marginBottom: 16, boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: textMuted, marginBottom: 14, textTransform: "uppercase" }}>Ways to Earn</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <ArrowUpRight size={13} strokeWidth={2} color={textMuted} />
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: textMuted, textTransform: "uppercase" }}>Ways to Earn</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {[
-              { icon: "⚡", label: "Complete a session",   pts: "+10 pts" },
-              { icon: "🎉", label: "First booking bonus",  pts: "+25 pts" },
-              { icon: "👥", label: "Refer a friend",       pts: "+50 pts" },
-            ].map(item => (
-              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderRadius: 14, background: raisedBg }}>
-                <span style={{ fontSize: 22, width: 40, height: 40, borderRadius: 12, background: cardBg, border: `1px solid ${cardBorder}`, display: "grid", placeItems: "center", flexShrink: 0 }}>{item.icon}</span>
+              { Icon: Zap,   label: "Complete a session",  pts: "+10 pts", color: accent },
+              { Icon: Gift,  label: "First booking bonus", pts: "+25 pts", color: "#FFC043" },
+              { Icon: Users, label: "Refer a friend",      pts: "+50 pts", color: "#A78BFA" },
+              { Icon: Star,  label: "Gold member bonus",   pts: "+2×",     color: "#FFC043" },
+            ].map((item, i, arr) => (
+              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: i < arr.length - 1 ? `1px solid ${cardBorder}` : "none" }}>
+                <span style={{ width: 40, height: 40, borderRadius: 12, background: `${item.color}14`, border: `1px solid ${item.color}25`, display: "grid", placeItems: "center", flexShrink: 0, color: item.color }}>
+                  <item.Icon size={17} strokeWidth={2} />
+                </span>
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: textPrimary }}>{item.label}</span>
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: accent, fontSize: 14, fontWeight: 700 }}>{item.pts}</span>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: item.color, fontSize: 13, fontWeight: 700, background: `${item.color}14`, padding: "3px 10px", borderRadius: 8 }}>{item.pts}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Transaction history */}
-        <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "20px 22px", boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: textMuted, marginBottom: 14, textTransform: "uppercase" }}>History</div>
+        {/* History */}
+        <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, overflow: "hidden", boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
+          <div style={{ padding: "18px 22px", borderBottom: `1px solid ${cardBorder}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: textMuted, textTransform: "uppercase" }}>History</div>
+            <span style={{ fontSize: 12, color: textMuted }}>{history.length} transactions</span>
+          </div>
           {history.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "32px 0", color: textSub }}>
-              <div style={{ fontSize: 32, marginBottom: 10 }}>⭐</div>
+            <div style={{ textAlign: "center", padding: "40px 0", color: textSub }}>
+              <Star size={32} strokeWidth={1.5} color={textMuted} style={{ margin: "0 auto 10px", display: "block" }} />
               <p style={{ fontSize: 14 }}>No transactions yet. Start charging to earn points!</p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {history.map((tx, i) => (
-                <div key={tx.id} style={{
-                  display: "flex", alignItems: "center", gap: 14, padding: "13px 0",
-                  borderBottom: i < history.length - 1 ? `1px solid ${cardBorder}` : "none",
-                }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                    background: raisedBg, border: `1px solid ${cardBorder}`,
-                    display: "grid", placeItems: "center", fontSize: 16,
-                  }}>
-                    {tx.type === "earned" ? "⭐" : tx.type === "redeemed" ? "🔄" : "⏱"}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: textPrimary, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.description}</div>
-                    <div style={{ fontSize: 11, color: textMuted }}>
-                      {new Date(tx.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                    </div>
-                  </div>
-                  <div style={{
-                    fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 15,
-                    color: tx.points > 0 ? accent : "#FF5A5F",
-                    flexShrink: 0,
-                  }}>
-                    {tx.points > 0 ? "+" : ""}{tx.points}
+            history.map((tx, i) => (
+              <div key={tx.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 22px", borderBottom: i < history.length - 1 ? `1px solid ${cardBorder}` : "none", transition: "background .1s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = raisedBg; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: raisedBg, border: `1px solid ${cardBorder}`, display: "grid", placeItems: "center" }}>
+                  {TX_ICON_MAP[tx.type]}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: textPrimary, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.description}</div>
+                  <div style={{ fontSize: 11, color: textMuted }}>
+                    {new Date(tx.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                   </div>
                 </div>
-              ))}
-            </div>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 14, flexShrink: 0, color: tx.points > 0 ? accent : "#FF5A5F", background: tx.points > 0 ? accentDim : "rgba(255,90,95,.08)", padding: "4px 10px", borderRadius: 8 }}>
+                  {tx.points > 0 ? "+" : ""}{tx.points}
+                </div>
+              </div>
+            ))
           )}
         </div>
 
@@ -254,4 +264,3 @@ export default function RewardsPage() {
     </div>
   );
 }
-

@@ -47,7 +47,7 @@ function JourneyNewInner() {
   const journeyId = `JRN-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
   return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
       <div className="fade-up" style={{ maxWidth: 520, margin: "0 auto", padding: "40px 24px 80px", textAlign: "center" }}>
 

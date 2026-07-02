@@ -114,7 +114,7 @@ export default function BecomeOwnerPage() {
   };
 
   if (loading) return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", gap: 16, flexDirection: "column" }}>
         <span className="spinner" style={{ width: 28, height: 28, borderWidth: 3, borderColor: "#222829", borderTopColor: accent }} />
@@ -124,7 +124,7 @@ export default function BecomeOwnerPage() {
   );
 
   return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
 
       <div className="fade-up" style={{ maxWidth: 600, margin: "0 auto", padding: "36px 24px 80px" }}>
@@ -196,7 +196,7 @@ export default function BecomeOwnerPage() {
 
         {/* Benefits */}
         {!existing && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 28 }}>
+          <div className="become-benefits-grid" style={{ marginBottom: 28 }}>
             {[
               { icon: "💰", title: "Earn Revenue",    desc: "Set your own pricing per kWh" },
               { icon: "📊", title: "Real-time Data",  desc: "Live bookings & charger status" },
@@ -232,7 +232,7 @@ export default function BecomeOwnerPage() {
                   />
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div className="become-form-row" style={{ gap: 14 }}>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: textSub, marginBottom: 6 }}>
                       GST Number (optional)

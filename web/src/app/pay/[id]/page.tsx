@@ -4,6 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { bookings, payments, Booking, PaymentOrder } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
+import { useTheme } from "@/contexts/ThemeContext";
 
 declare global {
   interface Window {
@@ -55,12 +56,11 @@ const PAY_METHODS = [
   },
 ];
 
-function HoldTimer({ expiresAt }: { expiresAt?: string }) {
+function HoldTimer({ expiresAt, isLight }: { expiresAt?: string; isLight: boolean }) {
   const total = 15 * 60;
   function calcSecs() {
     if (!expiresAt) return total;
-    const remaining = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
-    return remaining;
+    return Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
   }
   const [secs, setSecs] = useState(calcSecs);
   const ref = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -74,22 +74,22 @@ function HoldTimer({ expiresAt }: { expiresAt?: string }) {
   const s = (secs % 60).toString().padStart(2, "0");
   const pct = Math.min(100, (secs / total) * 100);
   const expired = secs === 0;
+  const timerColor = expired ? "#FF5A5F" : "#FFC043";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <svg width="28" height="28" viewBox="0 0 36 36" style={{ flexShrink: 0 }}>
-        <circle cx="18" cy="18" r="15" fill="none" stroke="#222829" strokeWidth="3"/>
-        <circle cx="18" cy="18" r="15" fill="none" stroke={expired ? "#FF5A5F" : "#FFC043"} strokeWidth="3"
-          strokeLinecap="round"
-          strokeDasharray="94.2"
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: isLight?"rgba(255,192,67,.07)":"rgba(255,192,67,.04)", border: `1px solid rgba(255,192,67,${expired?".35":".18"})` }}>
+      <svg width="32" height="32" viewBox="0 0 36 36" style={{ flexShrink: 0 }}>
+        <circle cx="18" cy="18" r="15" fill="none" stroke={isLight?"#E2E8F0":"#222829"} strokeWidth="3"/>
+        <circle cx="18" cy="18" r="15" fill="none" stroke={timerColor} strokeWidth="3"
+          strokeLinecap="round" strokeDasharray="94.2"
           strokeDashoffset={94.2 * (1 - pct / 100)}
           transform="rotate(-90 18 18)"
         />
       </svg>
       <div>
-        <div style={{ fontSize: 11, color: expired ? "#FF5A5F" : "#FFC043", fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase" }}>
-          {expired ? "Slot hold expired" : "Slot held for"}
+        <div style={{ fontSize: 11, color: timerColor, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", marginBottom: 2 }}>
+          {expired ? "Slot hold expired" : "Slot hold expires in"}
         </div>
-        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 18, color: expired ? "#FF5A5F" : "#FFC043" }}>
+        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, fontSize: 20, color: timerColor }}>
           {expired ? "00:00" : `${m}:${s}`}
         </div>
       </div>
@@ -100,6 +100,7 @@ function HoldTimer({ expiresAt }: { expiresAt?: string }) {
 export default function PayPage() {
   const router = useRouter();
   const { id: bookingId } = useParams<{ id: string }>();
+  const { isLight } = useTheme();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [order, setOrder] = useState<PaymentOrder | null>(null);
   const [method, setMethod] = useState("upi");
@@ -107,7 +108,17 @@ export default function PayPage() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
 
-  // Load Razorpay Checkout.js
+  const bg          = isLight ? "#F8FAFC"              : "#080B0C";
+  const cardBg      = isLight ? "#FFFFFF"              : "#101415";
+  const cardBorder  = isLight ? "#E2E8F0"              : "#1E2426";
+  const raisedBg    = isLight ? "#F1F5F9"              : "#181D1F";
+  const textPrimary = isLight ? "#0F172A"              : "#E6EBED";
+  const textSub     = isLight ? "#64748B"              : "#6B7479";
+  const textMuted   = isLight ? "#94A3B8"              : "#495154";
+  const accent      = isLight ? "#00D26A"              : "#00E676";
+  const accentDim   = isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.07)";
+  const accentBrd   = isLight ? "rgba(0,210,106,.30)" : "rgba(0,230,118,.22)";
+
   useEffect(() => {
     if (typeof window === "undefined" || window.Razorpay) return;
     const script = document.createElement("script");
@@ -133,10 +144,8 @@ export default function PayPage() {
 
   async function handlePay() {
     if (!order || !booking) return;
-    setPaying(true);
-    setError("");
+    setPaying(true); setError("");
 
-    // Test-mode fallback when no live Razorpay key is configured
     if (!window.Razorpay || !RZP_KEY) {
       try {
         const result = await payments.verify(
@@ -192,139 +201,123 @@ export default function PayPage() {
     : "";
 
   if (loading) return (
-    <div style={{ background: "#0A0D0E", minHeight: "100vh" }}>
+    <div style={{ background: bg, minHeight: "100vh" }}>
       <NavBar />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: 16 }}>
-        <div className="spinner" style={{ width: 32, height: 32, borderWidth: 3, borderColor: "#222829", borderTopColor: "#00E676" }} />
-        <span style={{ color: "#6B7479", fontSize: 14 }}>Preparing payment…</span>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${cardBorder}`, borderTopColor: accent, animation: "spin .8s linear infinite" }}/>
+        <span style={{ color: textSub, fontSize: 14 }}>Preparing payment…</span>
       </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   return (
-    <div style={{ background: "#0A0D0E", minHeight: "100vh" }}>
+    <div style={{ background: bg, minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
+      <style suppressHydrationWarning>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes fade-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+        @keyframes glow-pulse{0%,100%{box-shadow:0 0 24px ${accentBrd}}50%{box-shadow:0 0 48px rgba(0,230,118,.4)}}
+        .pay-fade{animation:fade-up .4s cubic-bezier(.16,1,.3,1) both}
+        .method-row{transition:all .15s cubic-bezier(.16,1,.3,1)}
+        .method-row:hover{transform:translateX(3px)}
+        .pay-btn-active{animation:glow-pulse 2.2s ease-in-out infinite}
+        .pay-btn{transition:all .2s cubic-bezier(.16,1,.3,1)}
+        .pay-btn:hover:not(:disabled){transform:translateY(-2px)}
+      `}</style>
       <NavBar />
-      <div className="fade-up" style={{ maxWidth: 520, margin: "0 auto", padding: "36px 24px" }}>
+
+      <div className="pay-fade" style={{ maxWidth: 500, margin: "0 auto", padding: "36px 24px 80px" }}>
 
         {/* Back + title */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
-          <button onClick={() => router.back()} style={{
-            width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center",
-            background: "#101415", border: "1px solid #222829", color: "#E6EBED",
-            cursor: "pointer", flexShrink: 0,
-          }}>←</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
+          <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 12, display: "grid", placeItems: "center", background: cardBg, border: `1px solid ${cardBorder}`, color: textPrimary, cursor: "pointer", flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          </button>
           <div>
-            <h2 style={{ fontSize: 20, marginBottom: 2 }}>Secure Checkout</h2>
-            <p style={{ color: "#6B7479", fontSize: 13 }}>🔒 256-bit SSL · Powered by Razorpay</p>
+            <h2 style={{ fontSize: 21, fontWeight: 800, color: textPrimary, marginBottom: 3 }}>Secure Checkout</h2>
+            <p style={{ color: textSub, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+              256-bit SSL · PCI-DSS · Powered by Razorpay
+            </p>
           </div>
         </div>
 
         {/* Booking summary */}
         {booking && (
-          <div style={{
-            background: "linear-gradient(135deg,#0E2A1C,#101415)",
-            border: "1px solid rgba(0,230,118,.2)", borderRadius: 18, padding: "18px 20px",
-            marginBottom: 24,
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+          <div style={{ background: isLight?"linear-gradient(135deg,#F0FDF4,#ECFDF5)":"linear-gradient(135deg,#091A0F,#101415)", border: `1px solid ${accentBrd}`, borderRadius: 20, padding: "18px 20px", marginBottom: 20 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: isLight?"#16A34A":accent, marginBottom: 12, opacity: .7 }}>Booking Summary</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
               <div>
-                <div style={{ fontSize: 12, color: "#6B7479", marginBottom: 4, fontWeight: 500 }}>BOOKING SUMMARY</div>
-                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 3 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: textPrimary, marginBottom: 3 }}>
                   {booking.charger?.label ?? "Bay 1"} · {booking.charger?.connector_type ?? "CCS2"} {booking.charger?.power_kw ?? ""}kW
                 </div>
-                <div style={{ fontSize: 13, color: "#98A1A6" }}>{slotTime}</div>
+                <div style={{ fontSize: 13, color: textSub }}>{slotTime}</div>
+                {booking.station?.name && <div style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>{booking.station.name}</div>}
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 11, color: "#6B7479", marginBottom: 4 }}>TOTAL</div>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 28, color: "#E6EBED" }}>
+              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 16 }}>
+                <div style={{ fontSize: 10, color: textMuted, marginBottom: 3, letterSpacing: ".06em" }}>TOTAL</div>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, fontSize: 30, color: textPrimary, lineHeight: 1 }}>
                   ₹{totalRs.toLocaleString("en-IN")}
                 </div>
               </div>
             </div>
-            {order && <HoldTimer expiresAt={booking.hold_expires_at} />}
+            {order && <HoldTimer expiresAt={booking.hold_expires_at} isLight={isLight}/>}
           </div>
         )}
 
         {/* Payment method */}
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "#6B7479", marginBottom: 12 }}>
-          Payment Method
-        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: textMuted, marginBottom: 12 }}>Payment Method</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
-          {PAY_METHODS.map(m => (
-            <div
-              key={m.id}
-              onClick={() => setMethod(m.id)}
-              style={{
-                display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-                borderRadius: 14, cursor: "pointer", transition: "all .15s",
-                background: method === m.id ? "#181D1F" : "#101415",
-                border: `1.5px solid ${method === m.id ? "#00A455" : "#222829"}`,
-                boxShadow: method === m.id ? "0 0 0 3px rgba(0,164,85,.1)" : "none",
-              }}
-            >
-              <span style={{ flexShrink: 0 }}>{m.icon}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{m.label}</div>
-                <div style={{ fontSize: 12, color: "#6B7479" }}>{m.desc}</div>
+          {PAY_METHODS.map(m => {
+            const isSel = method === m.id;
+            return (
+              <div key={m.id} className="method-row" onClick={() => setMethod(m.id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 16, cursor: "pointer", background: isSel?accentDim:cardBg, border: `1.5px solid ${isSel?accentBrd:cardBorder}`, boxShadow: isSel?(isLight?"0 0 0 3px rgba(0,210,106,.10)":"0 0 0 3px rgba(0,230,118,.08)"):"none" }}>
+                <span style={{ flexShrink: 0 }}>{m.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: textPrimary, marginBottom: 2 }}>{m.label}</div>
+                  <div style={{ fontSize: 12, color: textSub }}>{m.desc}</div>
+                </div>
+                <span style={{ fontSize: 18, color: isSel?accent:textMuted, transition: "color .15s", flexShrink: 0 }}>
+                  {isSel ? "◉" : "○"}
+                </span>
               </div>
-              <span style={{ color: method === m.id ? "#00E676" : "#495154", fontSize: 18, flexShrink: 0 }}>
-                {method === m.id ? "◉" : "○"}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Rewards row */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 12, padding: "13px 16px",
-          background: "#101415", border: "1px solid #222829", borderRadius: 14, marginBottom: 24,
-        }}>
-          <span style={{
-            width: 36, height: 36, borderRadius: 10, display: "grid", placeItems: "center",
-            background: "#181D1F", border: "1px solid #222829", fontSize: 16, flexShrink: 0,
-          }}>🎁</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 16, marginBottom: 24 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 11, display: "grid", placeItems: "center", background: raisedBg, border: `1px solid ${cardBorder}`, fontSize: 16, flexShrink: 0 }}>🎁</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>Use 120 reward points</div>
-            <div style={{ fontSize: 12, color: "#6B7479" }}>Save ₹24 on this booking</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary, marginBottom: 2 }}>Use 120 reward points</div>
+            <div style={{ fontSize: 12, color: textSub }}>Save ₹24 on this booking</div>
           </div>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#26F593", fontSize: 14, fontWeight: 700 }}>−₹24</div>
-        </div>
-
-        {/* Security row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginBottom: 24 }}>
-          {["🔒 256-bit SSL", "✓ PCI-DSS", "⚡ Razorpay"].map(b => (
-            <span key={b} style={{ fontSize: 11, color: "#495154", fontWeight: 500 }}>{b}</span>
-          ))}
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: accent, fontSize: 14, fontWeight: 700 }}>−₹24</div>
         </div>
 
         {error && (
-          <div style={{
-            padding: "12px 16px", borderRadius: 12, marginBottom: 16,
-            background: "rgba(255,90,95,.1)", border: "1px solid rgba(255,90,95,.3)",
-            color: "#FF5A5F", fontSize: 13,
-          }}>{error}</div>
+          <div style={{ padding: "12px 16px", borderRadius: 12, marginBottom: 16, background: "rgba(255,90,95,.08)", border: "1px solid rgba(255,90,95,.22)", color: "#FF5A5F", fontSize: 13 }}>{error}</div>
         )}
 
+        {/* Pay button */}
         <button
           onClick={handlePay}
           disabled={paying || !order}
-          className={order && !paying ? "pulse-glow" : ""}
-          style={{
-            width: "100%", padding: "18px 20px", borderRadius: 14,
-            background: (paying || !order) ? "#222829" : "#00E676",
-            color: (paying || !order) ? "#6B7479" : "#050708",
-            fontSize: 16, fontWeight: 700, border: "none",
-            cursor: (paying || !order) ? "not-allowed" : "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            transition: "background .15s",
-          }}>
-          {paying
-            ? <><span className="spinner" />Opening payment…</>
-            : `Pay ₹${totalRs.toLocaleString("en-IN")} →`}
+          className={`pay-btn ${order && !paying ? "pay-btn-active" : ""}`}
+          style={{ width: "100%", padding: "18px 20px", borderRadius: 16, background: paying||!order?(isLight?"#E2E8F0":"#1A2218"):accent, color: paying||!order?textSub:"#050708", fontSize: 16, fontWeight: 800, border: "none", cursor: paying||!order?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: paying||!order?"none":isLight?"0 6px 28px rgba(0,210,106,.45)":"0 0 40px rgba(0,230,118,.28)" }}>
+          {paying ? (
+            <><span style={{ width: 18, height: 18, borderRadius: "50%", border: `2.5px solid ${textMuted}`, borderTopColor: "transparent", display: "inline-block", animation: "spin .7s linear infinite" }}/> Opening payment…</>
+          ) : (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#050708"/></svg>
+              Pay ₹{totalRs.toLocaleString("en-IN")} →
+            </>
+          )}
         </button>
 
-        <p style={{ fontSize: 11, color: "#495154", textAlign: "center", marginTop: 12 }}>
-          Slot will be confirmed immediately after payment
+        <p style={{ fontSize: 11, color: textMuted, textAlign: "center", marginTop: 12 }}>
+          Slot confirmed immediately after payment · No extra charges
         </p>
       </div>
     </div>

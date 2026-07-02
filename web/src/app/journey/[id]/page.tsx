@@ -57,7 +57,7 @@ export default function JourneyDetailPage() {
   }, [id]);
 
   if (loading) return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
         <span className="spinner" style={{ width: 32, height: 32, borderWidth: 3, borderColor: cardBorder, borderTopColor: accent }} />
@@ -66,7 +66,7 @@ export default function JourneyDetailPage() {
   );
 
   if (!journey) return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
       <div style={{ padding: 40, color: "#FF5A5F" }}>Journey not found.</div>
     </div>
@@ -77,7 +77,7 @@ export default function JourneyDetailPage() {
   const nextStop = journey.stops.find(s => s.status === "pending" || s.status === "confirmed");
 
   return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
 
       <div className="fade-up" style={{ maxWidth: 760, margin: "0 auto", padding: "36px 24px 80px" }}>
@@ -114,7 +114,7 @@ export default function JourneyDetailPage() {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 20, alignItems: "start" }}>
+        <div className="journey-layout" style={{ gap: 20, alignItems: "start" }}>
           {/* Left: stop tabs + QR */}
           <div>
             {/* Stop selector */}
@@ -192,7 +192,7 @@ export default function JourneyDetailPage() {
           </div>
 
           {/* Right: journey timeline */}
-          <div>
+          <div className="journey-sidebar">
             <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 18, padding: "18px 20px" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: textMuted, marginBottom: 16 }}>Journey Timeline</div>
 
