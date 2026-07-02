@@ -318,9 +318,17 @@ export const rewards = {
 export interface MembershipTierInfo {
   tier: MembershipTier; price_paise: number; points_multiplier: number; discount_pct: number;
 }
+export interface MembershipOrder {
+  id: string; tier: MembershipTier; razorpay_order_id: string; amount: number; created_at: string;
+}
 export const membership = {
   tiers: () => request<MembershipTierInfo[]>("/api/v1/membership/tiers", {}, false),
   me: () => request<MembershipTierInfo>("/api/v1/membership/me"),
-  upgrade: (tier: MembershipTier) =>
-    request<MembershipTierInfo>("/api/v1/membership/upgrade", { method: "POST", body: JSON.stringify({ tier }) }),
+  createOrder: (tier: MembershipTier) =>
+    request<MembershipOrder>("/api/v1/membership/order", { method: "POST", body: JSON.stringify({ tier }) }),
+  verify: (razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string) =>
+    request<MembershipTierInfo>("/api/v1/membership/verify", {
+      method: "POST",
+      body: JSON.stringify({ razorpay_order_id, razorpay_payment_id, razorpay_signature }),
+    }),
 };
