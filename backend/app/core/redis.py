@@ -28,16 +28,22 @@ async def sliding_window_allow(key: str, limit: int, window_seconds: int) -> boo
 
     Uses a sorted set of timestamps; trims the window and counts. Cheap and
     accurate enough for OTP/login throttling.
+    Fails open (returns True) when Redis is unavailable so local dev works
+    without a running Redis instance.
     """
-    now = time.time()
-    member = f"{now}:{os.urandom(4).hex()}"
-    pipe = _redis.pipeline()
-    pipe.zremrangebyscore(key, 0, now - window_seconds)
-    pipe.zadd(key, {member: now})
-    pipe.zcard(key)
-    pipe.expire(key, window_seconds)
-    _, _, count, _ = await pipe.execute()
-    return int(count) <= limit
+    try:
+        now = time.time()
+        member = f"{now}:{os.urandom(4).hex()}"
+        pipe = _redis.pipeline()
+        pipe.zremrangebyscore(key, 0, now - window_seconds)
+        pipe.zadd(key, {member: now})
+        pipe.zcard(key)
+        pipe.expire(key, window_seconds)
+        _, _, count, _ = await pipe.execute()
+        return int(count) <= limit
+    except Exception:
+        # Redis unavailable — allow the request (dev/test mode)
+        return True
 
 
 @contextlib.asynccontextmanager
