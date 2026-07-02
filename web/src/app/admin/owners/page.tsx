@@ -83,7 +83,7 @@ export default function AdminOwnersPage() {
 
       {error && <div style={{ padding: "12px 16px", borderRadius: 10, background: `${C.red}10`, border: `1px solid ${C.red}30`, color: C.red, marginBottom: 16, fontSize: 13 }}>{error}</div>}
 
-      <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+      <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>{["Name & Phone", "Email", "Status", "Joined", ""].map(h => <th key={h} style={tH}>{h}</th>)}</tr>
@@ -128,7 +128,7 @@ export default function AdminOwnersPage() {
 
       {detail && (
         <div onClick={() => setDetail(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 18, width: 560, maxHeight: "85vh", display: "flex", flexDirection: "column", boxShadow: "0 28px 80px rgba(0,0,0,0.25)", animation: "modal-in 0.15s ease", overflow: "hidden" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 18, width: "min(560px, calc(100vw - 32px))", maxHeight: "85vh", display: "flex", flexDirection: "column", boxShadow: "0 28px 80px rgba(0,0,0,0.25)", animation: "modal-in 0.15s ease", overflow: "hidden" }}>
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${th.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>

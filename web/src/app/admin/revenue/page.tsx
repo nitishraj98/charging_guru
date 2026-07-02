@@ -134,7 +134,7 @@ export default function AdminRevenuePage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "80px", color: th.sub, fontSize: 13 }}>Loading…</div>
       ) : (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 24 }}>
+          <div className="admin-3col" style={{ marginBottom: 24 }}>
             <RevCard label="Revenue Today" value={overview ? fmtRupee(overview.revenue_today_paise) : "—"} sub={`${overview?.confirmed_bookings_today ?? 0} confirmed bookings`} color={C.green} />
             <RevCard label="Total Revenue (All Time)" value={overview ? fmtRupee(overview.revenue_total_paise) : "—"} sub={`${overview?.bookings_today ?? 0} bookings today`} color={C.blue} />
             <RevCard label="Avg per Booking Today" value={overview && overview.bookings_today > 0 ? fmtRupee(Math.round(overview.revenue_today_paise / overview.bookings_today)) : "—"} sub={`${payments?.total ?? 0} total transactions`} color={C.purple} />
@@ -144,7 +144,7 @@ export default function AdminRevenuePage() {
             <div style={{ marginBottom: 24 }}><TrendChart data={overview.trend_7d} /></div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+          <div className="admin-chart-row" style={{ gap: 16, marginBottom: 24 }}>
             <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
               <div style={{ padding: "14px 20px", borderBottom: `1px solid ${th.border}`, fontSize: 13, fontWeight: 600, color: th.text, display: "flex", alignItems: "center", gap: 8 }}>
                 <TrendingUp size={13} color={th.sub} /> Top Stations by Revenue
@@ -190,7 +190,7 @@ export default function AdminRevenuePage() {
             </div>
           </div>
 
-          <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+          <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
             <div style={{ padding: "14px 20px", borderBottom: `1px solid ${th.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: th.text }}>Payment Transactions</span>
               <div style={{ display: "flex", gap: 5 }}>

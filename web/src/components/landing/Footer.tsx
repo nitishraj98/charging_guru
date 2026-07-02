@@ -441,7 +441,7 @@ function FooterLink({ label, href, isLight, accent }: {
       style={{
         fontSize: 13.5, textDecoration: "none", display: "inline-block",
         lineHeight: 1.4, transition: "color .15s, transform .15s",
-        color: isLight ? "#4A5869" : "#7A8898",
+        color: isLight ? "#1E3A4A" : "#C0CDD8",
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLAnchorElement;
@@ -449,7 +449,7 @@ function FooterLink({ label, href, isLight, accent }: {
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLAnchorElement;
-        el.style.color = isLight ? "#4A5869" : "#7A8898"; el.style.transform = "none";
+        el.style.color = isLight ? "#1E3A4A" : "#C0CDD8"; el.style.transform = "none";
       }}
     >{label}</Link>
   );
@@ -490,8 +490,8 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
 
   /* Text tokens */
   const txt      = isLight ? "#0D1624" : "#E8ECEF";
-  const txtSub   = isLight ? "#374151" : "#9EAAB5";
-  const txtMuted = isLight ? "#5C6B7A" : "#566070";
+  const txtSub   = isLight ? "#374151" : "#B8C4CE";
+  const txtMuted = isLight ? "#4A5869" : "#8A97A5";
 
   const STATS = [
     { v: "1,240+", l: "Stations", c: accent    },
@@ -500,7 +500,7 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
     { v: "₹340",   l: "Avg saved",c: "#C4B5FD" },
   ];
 
-  const colHead = isLight ? "#5C7080" : "#4A5870";
+  const colHead = isLight ? "#1E3A4A" : "#A0B0C0";
 
   return (
     <footer style={{
@@ -520,16 +520,16 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
       }}/>
 
       {/* ── Newsletter / CTA band ── */}
-      <div style={{ position: "relative", zIndex: 2, padding: "52px 56px 0" }}>
-        <div style={{
+      <div className="footer-newsletter-outer" style={{ position: "relative", zIndex: 2, padding: "52px clamp(16px,4vw,56px) 0" }}>
+        <div className="footer-newsletter footer-newsletter-grid" style={{
           background: glassBg,
           border: `1px solid ${glassBdr}`,
           borderRadius: 24,
           backdropFilter: "blur(28px)",
           WebkitBackdropFilter: "blur(28px)",
           boxShadow: glassSdw,
-          padding: "48px 52px",
-          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 72, alignItems: "center",
+          padding: "clamp(28px,4vw,48px) clamp(20px,4vw,52px)",
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(28px,5vw,72px)", alignItems: "center",
         }}>
           {/* Left — tagline + stats */}
           <div>
@@ -650,11 +650,20 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
       </div>
 
       {/* ── Main footer grid ── */}
-      <div style={{ position: "relative", zIndex: 2, padding: "52px 64px 0" }}>
+      <div style={{ position: "relative", zIndex: 2, padding: `52px clamp(16px,5vw,64px) 0` }}>
+        {/* Single frosted strip behind the whole grid — scene shows above & below */}
         <div style={{
+          background: isLight ? "rgba(255,255,255,0.30)" : "rgba(5,10,28,0.58)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          borderRadius: 20,
+          padding: "36px 36px 36px",
+          marginBottom: 48,
+        }}>
+        <div className="footer-grid" style={{
           display: "grid",
-          gridTemplateColumns: "280px repeat(5, 1fr)",
-          gap: 40, marginBottom: 48,
+          gridTemplateColumns: "minmax(220px, 1.6fr) repeat(auto-fit, minmax(140px, 1fr))",
+          gap: "clamp(20px,3vw,40px)",
         }}>
 
           {/* ── Brand column ── */}
@@ -665,103 +674,10 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
             }}>
               <Logo size="lg" href="/" theme={isLight ? "light" : "dark"} />
             </div>
-            <p style={{ color: txtSub, fontSize: 13.5, lineHeight: 1.82, marginBottom: 26 }}>
+            <p style={{ color: txtSub, fontSize: 13.5, lineHeight: 1.82 }}>
               India&apos;s most reliable EV charging platform. Plan every stop,
               reserve guaranteed slots, and charge with confidence.
             </p>
-
-            {/* App download buttons — horizontal, premium */}
-            <div style={{ display: "flex", gap: 10, marginBottom: 26, flexWrap: "wrap" }}>
-              {[
-                {
-                  store: "App Store", sub: "Download on the",
-                  icon: (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.3.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                    </svg>
-                  ),
-                },
-                {
-                  store: "Google Play", sub: "Get it on",
-                  icon: (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M3.18 23.76c.38.21.82.22 1.22.04l12.34-7.13-2.65-2.64-10.91 9.73zM20.59 10.17l-2.76-1.6-3.01 3.01 3.01 3.01 2.77-1.61c.79-.46.79-1.35-.01-1.81zM1.55.43C1.21.65 1 1.01 1 1.47v20.99c0 .47.21.84.56 1.05l.1.06L12.97 12.5 1.65.37l-.1.06zM4.4.24L15.31 6.3 12.97 8.63 2.6.51 4.4.24z"/>
-                    </svg>
-                  ),
-                },
-              ].map(app => (
-                <button
-                  key={app.store}
-                  style={{
-                    flex: 1, minWidth: 0,
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "11px 14px", borderRadius: 13, cursor: "pointer",
-                    background: isLight ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.06)",
-                    border: `1.5px solid ${isLight ? "rgba(0,0,0,0.11)" : "rgba(255,255,255,0.12)"}`,
-                    boxShadow: isLight
-                      ? "0 2px 14px rgba(0,0,0,0.08), inset 0 1px 0 #fff"
-                      : "0 2px 14px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.07)",
-                    color: txt, backdropFilter: "blur(12px)",
-                    transition: "all .22s cubic-bezier(.2,0,0,1)",
-                    fontFamily: "inherit",
-                  }}
-                  onMouseEnter={e => {
-                    const el = e.currentTarget;
-                    el.style.borderColor = accent;
-                    el.style.background = isLight ? "rgba(255,255,255,0.96)" : "rgba(255,255,255,0.11)";
-                    el.style.transform = "translateY(-3px)";
-                    el.style.boxShadow = `0 8px 28px ${accent}28, inset 0 1px 0 rgba(255,255,255,0.12)`;
-                  }}
-                  onMouseLeave={e => {
-                    const el = e.currentTarget;
-                    el.style.borderColor = isLight ? "rgba(0,0,0,0.11)" : "rgba(255,255,255,0.12)";
-                    el.style.background = isLight ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.06)";
-                    el.style.transform = "none";
-                    el.style.boxShadow = isLight
-                      ? "0 2px 14px rgba(0,0,0,0.08), inset 0 1px 0 #fff"
-                      : "0 2px 14px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.07)";
-                  }}
-                >
-                  <span style={{ color: accent, flexShrink: 0, display: "flex" }}>{app.icon}</span>
-                  <div style={{ textAlign: "left", minWidth: 0 }}>
-                    <div style={{ fontSize: 9, color: txtMuted, lineHeight: 1.2, letterSpacing: ".06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
-                      {app.sub}
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, color: txt, whiteSpace: "nowrap" }}>
-                      {app.store}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Social icons */}
-            <div style={{ display: "flex", gap: 8 }}>
-              {SOCIALS.map(s => (
-                <a key={s.name} href={s.href} title={s.name} style={{
-                  width: 36, height: 36, borderRadius: 10,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  background: isLight ? "rgba(255,255,255,0.68)" : "rgba(255,255,255,0.06)",
-                  border: `1px solid ${isLight ? "rgba(0,0,0,0.09)" : "rgba(255,255,255,0.09)"}`,
-                  color: isLight ? "#5C6B7A" : "#7A8898",
-                  textDecoration: "none", transition: "all .2s", backdropFilter: "blur(8px)",
-                }}
-                  onMouseEnter={e => {
-                    const el = e.currentTarget as HTMLAnchorElement;
-                    el.style.background = accentDim; el.style.borderColor = accent;
-                    el.style.color = accent; el.style.transform = "translateY(-3px)";
-                    el.style.boxShadow = `0 4px 16px ${accent}22`;
-                  }}
-                  onMouseLeave={e => {
-                    const el = e.currentTarget as HTMLAnchorElement;
-                    el.style.background = isLight ? "rgba(255,255,255,0.68)" : "rgba(255,255,255,0.06)";
-                    el.style.borderColor = isLight ? "rgba(0,0,0,0.09)" : "rgba(255,255,255,0.09)";
-                    el.style.color = isLight ? "#5C6B7A" : "#7A8898";
-                    el.style.transform = "none"; el.style.boxShadow = "none";
-                  }}
-                >{s.icon}</a>
-              ))}
-            </div>
           </div>
 
           {/* 5 link columns */}
@@ -781,7 +697,106 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
               </div>
             </div>
           ))}
+
+          {/* ── Right column: app buttons + socials ── */}
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10,
+          }}>
+            <div style={{
+              fontSize: 10, fontWeight: 800, letterSpacing: ".14em",
+              color: colHead, marginBottom: 10, textTransform: "uppercase", alignSelf: "flex-end",
+            }}>
+              Get the App
+            </div>
+
+            {/* App store buttons — compact */}
+            {[
+              {
+                store: "App Store",
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.3.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                ),
+              },
+              {
+                store: "Google Play",
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3.18 23.76c.38.21.82.22 1.22.04l12.34-7.13-2.65-2.64-10.91 9.73zM20.59 10.17l-2.76-1.6-3.01 3.01 3.01 3.01 2.77-1.61c.79-.46.79-1.35-.01-1.81zM1.55.43C1.21.65 1 1.01 1 1.47v20.99c0 .47.21.84.56 1.05l.1.06L12.97 12.5 1.65.37l-.1.06zM4.4.24L15.31 6.3 12.97 8.63 2.6.51 4.4.24z"/>
+                  </svg>
+                ),
+              },
+            ].map(app => (
+              <button
+                key={app.store}
+                style={{
+                  width: "100%",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                  padding: "8px 12px", borderRadius: 10, cursor: "pointer",
+                  background: isLight ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.06)",
+                  border: `1.5px solid ${isLight ? "rgba(0,0,0,0.11)" : "rgba(255,255,255,0.12)"}`,
+                  boxShadow: isLight
+                    ? "0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 #fff"
+                    : "0 2px 10px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07)",
+                  color: txt, backdropFilter: "blur(12px)",
+                  transition: "all .22s cubic-bezier(.2,0,0,1)",
+                  fontFamily: "inherit",
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget;
+                  el.style.borderColor = accent;
+                  el.style.background = isLight ? "rgba(255,255,255,0.96)" : "rgba(255,255,255,0.11)";
+                  el.style.transform = "translateY(-2px)";
+                  el.style.boxShadow = `0 6px 20px ${accent}28, inset 0 1px 0 rgba(255,255,255,0.12)`;
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget;
+                  el.style.borderColor = isLight ? "rgba(0,0,0,0.11)" : "rgba(255,255,255,0.12)";
+                  el.style.background = isLight ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.06)";
+                  el.style.transform = "none";
+                  el.style.boxShadow = isLight
+                    ? "0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 #fff"
+                    : "0 2px 10px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07)";
+                }}
+              >
+                <span style={{ color: accent, flexShrink: 0, display: "flex" }}>{app.icon}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: txt, whiteSpace: "nowrap" }}>
+                  {app.store}
+                </span>
+              </button>
+            ))}
+
+            {/* Social icons */}
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap", justifyContent: "flex-end", marginTop: 6 }}>
+              {SOCIALS.map(s => (
+                <a key={s.name} href={s.href} title={s.name} style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: isLight ? "rgba(255,255,255,0.68)" : "rgba(255,255,255,0.06)",
+                  border: `1px solid ${isLight ? "rgba(0,0,0,0.09)" : "rgba(255,255,255,0.09)"}`,
+                  color: isLight ? "#1E3A4A" : "#C0CDD8",
+                  textDecoration: "none", transition: "all .2s", backdropFilter: "blur(8px)",
+                }}
+                  onMouseEnter={e => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.background = accentDim; el.style.borderColor = accent;
+                    el.style.color = accent; el.style.transform = "translateY(-2px)";
+                    el.style.boxShadow = `0 4px 14px ${accent}22`;
+                  }}
+                  onMouseLeave={e => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.background = isLight ? "rgba(255,255,255,0.68)" : "rgba(255,255,255,0.06)";
+                    el.style.borderColor = isLight ? "rgba(0,0,0,0.09)" : "rgba(255,255,255,0.09)";
+                    el.style.color = isLight ? "#1E3A4A" : "#C0CDD8";
+                    el.style.transform = "none"; el.style.boxShadow = "none";
+                  }}
+                >{s.icon}</a>
+              ))}
+            </div>
+          </div>
         </div>
+        </div>{/* end frosted strip */}
 
         {/* ── Bottom bar ── */}
         <div style={{

@@ -67,10 +67,54 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
   const mapLoadingBg = isLight ? "#f5f5f0" : "#1d2535";
 
   return (
-    <section ref={sectionRef} className="section-fade" style={{ padding: "0 60px 100px" }}>
+    <section ref={sectionRef} className="section-fade" style={{
+      padding: `0 clamp(16px,5vw,60px) clamp(48px,8vw,100px)`,
+      background: isLight
+        ? "linear-gradient(180deg,#EBF2F7 0%,#EFF4F9 60%,#EBF2F7 100%)"
+        : "linear-gradient(160deg,#060C12 0%,#09101A 35%,#070D15 65%,#050A10 100%)",
+      position: "relative", overflow: "hidden",
+    }}>
+
+      {/* ── Dark mode decorative background ── */}
+      {!isLight && (<>
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", opacity:.16 }} aria-hidden="true">
+          <defs>
+            <pattern id="map-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(34,211,238,0.30)" strokeWidth=".6"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#map-grid)"/>
+        </svg>
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", opacity:.10 }} aria-hidden="true">
+          <defs>
+            <pattern id="map-dots" width="28" height="28" patternUnits="userSpaceOnUse">
+              <circle cx="1.5" cy="1.5" r="1.5" fill="rgba(34,211,238,0.55)"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#map-dots)"/>
+        </svg>
+        {/* Cyan glow — top left */}
+        <div style={{ position:"absolute", top:"-8%", left:"-4%", width:680, height:680, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(34,211,238,.11) 0%,transparent 60%)" }}/>
+        {/* Green glow — bottom right */}
+        <div style={{ position:"absolute", bottom:"-6%", right:"-3%", width:560, height:560, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(0,230,118,.09) 0%,transparent 62%)" }}/>
+        {/* Purple glow — centre */}
+        <div style={{ position:"absolute", top:"45%", right:"22%", width:400, height:400, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(139,92,246,.07) 0%,transparent 62%)" }}/>
+        {/* Amber glow — top right */}
+        <div style={{ position:"absolute", top:"5%", right:"5%", width:340, height:340, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(255,192,67,.07) 0%,transparent 62%)" }}/>
+        {/* Top accent line */}
+        <div style={{ position:"absolute", top:0, left:0, right:0, height:1, pointerEvents:"none", background:"linear-gradient(90deg,transparent 0%,rgba(34,211,238,.38) 35%,rgba(0,230,118,.25) 70%,transparent 100%)" }}/>
+        {/* Bottom accent line */}
+        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, pointerEvents:"none", background:"linear-gradient(90deg,transparent 0%,rgba(34,211,238,.20) 50%,transparent 100%)" }}/>
+      </>)}
+
+      {/* ── Light mode ambient glows ── */}
+      {isLight && (<>
+        <div style={{ position:"absolute", top:"10%", left:"6%", width:560, height:560, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(14,165,233,.06) 0%,transparent 65%)" }}/>
+        <div style={{ position:"absolute", bottom:"8%", right:"5%", width:460, height:460, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(0,200,90,.05) 0%,transparent 65%)" }}/>
+      </>)}
 
       {/* ── Section header ── */}
-      <div style={{ textAlign: "center", marginBottom: 48 }}>
+      <div style={{ textAlign: "center", marginBottom: "clamp(24px,4vw,48px)", position: "relative", paddingTop: "clamp(40px,7vw,80px)" }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18,
           background: isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.07)",
@@ -101,18 +145,19 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
       </div>
 
       {/* ── Main card ── */}
-      <div style={{
+      <div className="live-map-layout" style={{
         borderRadius: 24, overflow: "hidden",
         background: isLight ? "#FFFFFF" : "#0B0F10",
-        border: `1.5px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.06)"}`,
+        border: `1.5px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.08)"}`,
         boxShadow: isLight
           ? "0 8px 60px rgba(0,0,0,.1), 0 2px 8px rgba(0,0,0,.05)"
-          : "0 0 0 1px rgba(255,255,255,.04), 0 0 100px rgba(0,230,118,.05)",
-        display: "grid", gridTemplateColumns: "320px 1fr",
+          : "0 0 0 1px rgba(255,255,255,.06), 0 0 80px rgba(34,211,238,.06), 0 0 40px rgba(0,0,0,.5)",
+        display: "grid", gridTemplateColumns: "clamp(260px,30%,320px) 1fr",
+        position: "relative",
       }}>
 
         {/* ── Left sidebar ── */}
-        <div style={{
+        <div className="live-map-sidebar" style={{
           display: "flex", flexDirection: "column",
           borderRight: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.05)"}`,
           background: isLight ? "#FAFBFC" : "#0D1213",
@@ -377,10 +422,10 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
   const accent = isLight ? "#00D26A" : "#00E676";
 
   return (
-    <div ref={sectionRef} className="section-fade" style={{
+    <div ref={sectionRef} className="section-fade final-cta-grid" style={{
       background: isLight ? "linear-gradient(135deg,#F2F8F5 0%,#EDF4FF 50%,#F2F8F5 100%)" : t.bg,
       overflow: "hidden", position: "relative",
-      minHeight: "90vh", display: "grid", gridTemplateColumns: "1fr 1fr",
+      minHeight: "clamp(560px,70vw,90vh)", display: "grid", gridTemplateColumns: "1fr 1fr",
     }}>
       {/* Ambient particles — left half only */}
       {particles.map(p => (
@@ -403,7 +448,7 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
       }} />
 
       {/* ── Left column ── */}
-      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", zIndex: 1, padding: "80px 52px 80px 80px" }}>
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", zIndex: 1, padding: "clamp(48px,7vw,80px) clamp(20px,4vw,52px) clamp(48px,7vw,80px) clamp(24px,6vw,80px)" }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 24,
               background: isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.08)",
@@ -500,7 +545,7 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
       </div>
 
       {/* ── Right column — India charging network (full bleed) ── */}
-      <div style={{ position: "relative", overflow: "hidden" }}>
+      <div className="final-cta-right" style={{ position: "relative", overflow: "hidden" }}>
         {/* Right aurora */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
@@ -713,41 +758,66 @@ export default function LandingPage() {
         position: "relative",
         background: isLight
           ? "linear-gradient(180deg, #EDF5F0 0%, #F4FAF7 50%, #EDF5F0 100%)"
-          : "#050708",
-        borderTop:    `1px solid ${isLight ? "rgba(0,184,94,.15)" : "rgba(0,230,118,.10)"}`,
-        borderBottom: `1px solid ${isLight ? "rgba(0,184,94,.15)" : "rgba(0,230,118,.10)"}`,
+          : "linear-gradient(160deg,#06100A 0%,#091408 35%,#070E06 65%,#050A04 100%)",
         overflow: "hidden",
       }}>
-        {/* Aurora glows */}
-        <div style={{ position: "absolute", top: "20%", left: "20%", transform: "translate(-50%,-50%)", width: 800, height: 500, borderRadius: "50%", background: isLight ? "radial-gradient(ellipse,rgba(0,184,94,.08) 0%,rgba(14,165,233,.04) 50%,transparent 70%)" : "radial-gradient(ellipse,rgba(0,230,118,.07) 0%,transparent 68%)", pointerEvents: "none", animation: "aurora-shift 18s ease-in-out infinite" }} />
-        <div style={{ position: "absolute", bottom: "10%", right: "10%", width: 500, height: 300, borderRadius: "50%", background: isLight ? "radial-gradient(ellipse,rgba(14,165,233,.06) 0%,transparent 70%)" : "radial-gradient(ellipse,rgba(34,211,238,.05) 0%,transparent 70%)", pointerEvents: "none", animation: "aurora-shift 24s ease-in-out 8s infinite reverse" }} />
+        {/* ── Dark mode decorative background ── */}
+        {!isLight && (<>
+          <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", opacity:.16 }} aria-hidden="true">
+            <defs>
+              <pattern id="jrny-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(0,230,118,0.32)" strokeWidth=".6"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#jrny-grid)"/>
+          </svg>
+          <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", opacity:.10 }} aria-hidden="true">
+            <defs>
+              <pattern id="jrny-dots" width="28" height="28" patternUnits="userSpaceOnUse">
+                <circle cx="1.5" cy="1.5" r="1.5" fill="rgba(0,230,118,0.55)"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#jrny-dots)"/>
+          </svg>
+          {/* Green glow — top left */}
+          <div style={{ position:"absolute", top:"-8%", left:"-5%", width:700, height:700, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(0,230,118,.12) 0%,transparent 60%)" }}/>
+          {/* Cyan glow — bottom right */}
+          <div style={{ position:"absolute", bottom:"-6%", right:"-4%", width:560, height:560, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(34,211,238,.09) 0%,transparent 62%)" }}/>
+          {/* Amber glow — centre right */}
+          <div style={{ position:"absolute", top:"40%", right:"15%", width:380, height:380, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(255,192,67,.07) 0%,transparent 62%)" }}/>
+          {/* Purple glow — bottom left */}
+          <div style={{ position:"absolute", bottom:"10%", left:"12%", width:320, height:320, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(139,92,246,.07) 0%,transparent 62%)" }}/>
+          {/* Top accent line */}
+          <div style={{ position:"absolute", top:0, left:0, right:0, height:1, pointerEvents:"none", background:"linear-gradient(90deg,transparent 0%,rgba(0,230,118,.38) 35%,rgba(34,211,238,.25) 70%,transparent 100%)" }}/>
+          {/* Bottom accent line */}
+          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, pointerEvents:"none", background:"linear-gradient(90deg,transparent 0%,rgba(0,230,118,.22) 50%,transparent 100%)" }}/>
+        </>)}
 
-        {/* Background grid */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage: isLight
-            ? "linear-gradient(rgba(0,184,94,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,184,94,.06) 1px, transparent 1px)"
-            : "linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-          maskImage: "radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%)",
-        }} />
+        {/* ── Light mode ambient glows ── */}
+        {isLight && (<>
+          <div style={{ position:"absolute", top:"20%", left:"20%", transform:"translate(-50%,-50%)", width:800, height:500, borderRadius:"50%", background:"radial-gradient(ellipse,rgba(0,184,94,.08) 0%,rgba(14,165,233,.04) 50%,transparent 70%)", pointerEvents:"none", animation:"aurora-shift 18s ease-in-out infinite" }}/>
+          <div style={{ position:"absolute", bottom:"10%", right:"10%", width:500, height:300, borderRadius:"50%", background:"radial-gradient(ellipse,rgba(14,165,233,.06) 0%,transparent 70%)", pointerEvents:"none", animation:"aurora-shift 24s ease-in-out 8s infinite reverse" }}/>
+          {/* Background grid */}
+          <div style={{ position:"absolute", inset:0, pointerEvents:"none", backgroundImage:"linear-gradient(rgba(0,184,94,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,184,94,.06) 1px, transparent 1px)", backgroundSize:"48px 48px", maskImage:"radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%)" }}/>
+        </>)}
 
-        <div style={{ textAlign: "center", padding: "80px 60px 40px", position: "relative" }}>
+        <div style={{ textAlign: "center", padding: "clamp(40px,8vw,80px) clamp(16px,5vw,60px) 40px", position: "relative" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.08)", border: `1px solid ${isLight ? "rgba(0,210,106,.2)" : "rgba(0,230,118,.2)"}`, borderRadius: 999, padding: "5px 16px", marginBottom: 20 }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: isLight ? "#00D26A" : "#00E676", display: "inline-block", boxShadow: `0 0 8px ${isLight ? "#00D26A" : "#00E676"}` }} />
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", color: isLight ? "#00D26A" : "#00E676" }}>LIVE JOURNEY TRACKER</span>
           </div>
-          <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(30px,4vw,52px)", fontWeight: 700, letterSpacing: "-.03em", marginBottom: 16, color: t.text, lineHeight: 1.06 }}>
+          <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(22px,4vw,52px)", fontWeight: 700, letterSpacing: "-.03em", marginBottom: 16, color: t.text, lineHeight: 1.06 }}>
             Your route, live —<br />from plan to plug
           </h2>
-          <p style={{ color: t.textSub, fontSize: 16, maxWidth: 500, margin: "0 auto", lineHeight: 1.7 }}>
+          <p style={{ color: t.textSub, fontSize: "clamp(13px,1.6vw,16px)", maxWidth: 500, margin: "0 auto", lineHeight: 1.7 }}>
             Watch a real trip unfold in real time. Noida → Patna · 1,010 km · 3 pre-booked charging stops, reserved in a single checkout.
           </p>
         </div>
 
-        <div style={{ position: "relative", width: "100%", height: 480 }}>
+        <div style={{ position: "relative", width: "100%", height: "clamp(340px,50vw,520px)" }}>
           <HeroAnimation isLight={isLight} />
         </div>
-        <div style={{ height: 72 }} />
+        <div style={{ height: "clamp(32px,5vw,72px)" }} />
       </div>
 
       <HowItWorks isLight={isLight} t={t} />

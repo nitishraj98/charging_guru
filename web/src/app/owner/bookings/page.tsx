@@ -59,7 +59,7 @@ export default function OwnerBookingsPage() {
   const filtered = filter === "ALL" ? bookings : bookings.filter(b => b.status === filter);
 
   return (
-    <div style={{ padding: "28px 32px" }}>
+    <div className="owner-pad" style={{ padding: "28px 32px" }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: textPrimary, marginBottom: 6 }}>Station Bookings</h1>
         <p style={{ fontSize: 13, color: textSub, marginBottom: 24 }}>All bookings across your charging stations.</p>
 

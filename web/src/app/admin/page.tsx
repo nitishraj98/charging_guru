@@ -339,7 +339,7 @@ export default function AdminDashboard() {
       `}</style>
 
       {/* ─── Header ─── */}
-      <div style={{
+      <div className="admin-header" style={{
         padding: "13px 24px", borderBottom: `1px solid ${th.border}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         background: isLight ? "rgba(255,255,255,0.92)" : "rgba(10,13,18,0.92)",
@@ -355,7 +355,7 @@ export default function AdminDashboard() {
             <span style={{ fontFamily: C.mono, marginLeft: 8, opacity: 0.55 }}>{clock}</span>
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="admin-header-right" style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {/* Live */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 999, background: "rgba(0,192,96,0.08)", border: "1px solid rgba(0,192,96,0.2)" }}>
             <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.green, animation: "pdot 1.4s ease-in-out infinite", boxShadow: "0 0 5px rgba(0,192,96,.6)" }} />
@@ -374,7 +374,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div style={{ padding: "16px 24px 36px" }}>
+      <div className="admin-pad" style={{ padding: "16px 24px 36px" }}>
 
         {/* Pending banner */}
         {pending > 0 && (
@@ -390,7 +390,7 @@ export default function AdminDashboard() {
         )}
 
         {/* ═══ ROW 1 — 6 KPI cards ═══ */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 12, marginBottom: 14, alignItems: "stretch" }}>
+        <div className="admin-kpi-grid" style={{ marginBottom: 14, alignItems: "stretch" }}>
           <KPI label="Charging Now"       value={String(data?.confirmed_bookings_today ?? 0)} sub="active sessions"              Icon={Zap}         color={C.green}  href="/admin/sessions"  th={th} />
           <KPI label="Energy Today"       value="—"                                            sub="kWh delivered"               Icon={Battery}     color={C.blue}                           th={th} />
           <KPI label="Revenue Today"      value={data ? fmtRupee(data.revenue_today_paise) : "—"} sub="via Razorpay"            Icon={IndianRupee} color={C.green}                          th={th} />
@@ -400,7 +400,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ═══ ROW 2 — Charts ═══ */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+        <div className="admin-chart-row" style={{ gap: 12, marginBottom: 14 }}>
 
           {/* Revenue area */}
           <Card title="Revenue — Last 7 Days" Icon={IndianRupee} th={th}
@@ -440,7 +440,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ═══ ROW 3 — Top stations | Peak hours | Revenue by city ═══ */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+        <div className="admin-mid-row" style={{ gap: 12, marginBottom: 14 }}>
 
           {/* Top stations */}
           <Card title="Top Stations by Bookings" Icon={MapPin} th={th}
@@ -539,7 +539,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ═══ ROW 4 — Fleet overview | Live feed | Actions ═══ */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.1fr 220px", gap: 12 }}>
+        <div className="admin-bot-row" style={{ gap: 12 }}>
 
           {/* Fleet overview — 2 donuts, equal height via invisible spacer rows */}
           <Card title="Fleet Overview" Icon={PlugZap} th={th}>

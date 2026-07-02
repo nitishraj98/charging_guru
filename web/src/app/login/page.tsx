@@ -128,7 +128,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", background: pageBg, fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
+    <div className="lg-grid" style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", background: pageBg, fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
@@ -147,7 +147,7 @@ export default function LoginPage() {
         position: "relative", overflow: "hidden",
         background: leftBg,
         display: "flex", flexDirection: "column",
-        padding: "52px 56px",
+        padding: "clamp(36px,5vw,52px) clamp(24px,4vw,56px)",
       }}>
         {/* Subtle grid */}
         <div style={{
@@ -213,7 +213,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── RIGHT — form panel ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 56px", background: pageBg }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "clamp(32px,5vw,48px) clamp(16px,4vw,56px)", background: pageBg }}>
         <div style={{ width: "100%", maxWidth: 400, animation: "fadein 0.35s ease both" }}>
 
           {/* Top badge */}

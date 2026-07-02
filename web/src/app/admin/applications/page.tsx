@@ -218,7 +218,7 @@ export default function AdminApplicationsPage() {
               <div style={{ fontSize: 13, color: th.sub }}>No pending partner applications.</div>
             </div>
           ) : (
-            <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+            <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>{["Business", "Location", "Planned Stations", "Message", "Submitted", "Actions"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>
@@ -290,7 +290,7 @@ export default function AdminApplicationsPage() {
               <div style={{ fontSize: 13, color: th.sub }}>No pending station approvals.</div>
             </div>
           ) : (
-            <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+            <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>{["Station", "Location", "Owner", "Submitted", "Actions"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>
@@ -348,7 +348,7 @@ export default function AdminApplicationsPage() {
       {/* Reject modal */}
       {rejectId && (
         <div onClick={() => setRejectId(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 16, padding: "26px", width: 400, animation: "modal-in 0.15s ease", boxShadow: "0 24px 60px rgba(0,0,0,0.25)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 16, padding: "26px", width: "min(400px, calc(100vw - 32px))", animation: "modal-in 0.15s ease", boxShadow: "0 24px 60px rgba(0,0,0,0.25)" }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: th.text, marginBottom: 6 }}>
               {rejectType === "owner" ? "Reject Partner Application" : "Reject Station"}
             </h3>

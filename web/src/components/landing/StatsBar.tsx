@@ -150,6 +150,7 @@ export default function StatsBar({ isLight, t }: { isLight: boolean; t: Tok }) {
   return (
     <div
       ref={ref}
+      className="stats-bar-grid"
       style={{
         background: isLight
           ? "linear-gradient(90deg, #FFFFFF, #F6F8FA 50%, #FFFFFF)"
@@ -176,7 +177,7 @@ export default function StatsBar({ isLight, t }: { isLight: boolean; t: Tok }) {
       ))}
 
       {/* India network mini-map */}
-      <div style={{
+      <div className="stats-network" style={{
         borderLeft: `1px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.05)"}`,
         padding: "8px 12px",
         display: "flex", alignItems: "center", justifyContent: "center",

@@ -107,7 +107,7 @@ export default function NewStationPage() {
   }
 
   return (
-    <div style={{ padding: "28px 32px", maxWidth: 720 }}>
+    <div className="owner-pad" style={{ padding: "28px 32px", maxWidth: 720 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: textPrimary, marginBottom: 4 }}>Add New Station</h1>
         <p style={{ fontSize: 13, color: textSub, marginBottom: 28 }}>Your station will be reviewed by admin before going live.</p>
 
@@ -125,7 +125,7 @@ export default function NewStationPage() {
                 <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: textSub, marginBottom: 6 }}>Full Address *</label>
                 <input required value={address} onChange={e => setAddress(e.target.value)} placeholder="Plot 12, Sector 18, Noida" style={inputStyle} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div className="new-station-addr-grid">
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: textSub, marginBottom: 6 }}>City</label>
                   <input value={city} onChange={e => setCity(e.target.value)} placeholder="Noida" style={inputStyle} />
@@ -139,7 +139,7 @@ export default function NewStationPage() {
                   <input value={pincode} onChange={e => setPincode(e.target.value)} placeholder="201301" style={inputStyle} />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="new-station-latlng-grid">
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: textSub, marginBottom: 6 }}>Latitude *</label>
                   <input required type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} placeholder="28.5706" style={inputStyle} />
@@ -194,7 +194,7 @@ export default function NewStationPage() {
                       </button>
                     )}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div className="new-station-charger-grid">
                     <div>
                       <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: textSub, marginBottom: 5 }}>Label</label>
                       <input value={c.label} onChange={e => updateCharger(i, "label", e.target.value)} style={inputStyle} placeholder="Bay 1" />

@@ -55,10 +55,10 @@ type Status = "checking" | "login" | "ready";
 type LoginStep = "phone" | "otp";
 
 async function checkAdminRole(): Promise<"admin" | "not-admin" | "unauthenticated"> {
-  const ok = await checkAuth();
-  if (!ok) return "unauthenticated";
   try {
-    const me = await auth.me();
+    // Run auth check and profile fetch in parallel — auth.me() auto-retries on 401
+    const [ok, me] = await Promise.all([checkAuth(), auth.me().catch(() => null)]);
+    if (!ok || !me) return "unauthenticated";
     return (me.roles ?? []).includes("ROLE_ADMIN") ? "admin" : "not-admin";
   } catch {
     return "unauthenticated";

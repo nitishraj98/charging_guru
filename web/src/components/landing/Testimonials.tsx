@@ -17,14 +17,14 @@ function SmallCard({ r, isLight, t }: { r: typeof TESTIMONIALS[0]; isLight: bool
   return (
     <div style={{
       flexShrink: 0, width: 320,
-      background: isLight ? "rgba(255,255,255,.9)" : "#1C2430",
-      border: `1px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.11)"}`,
+      background: isLight ? "rgba(255,255,255,.92)" : "rgba(255,255,255,.045)",
+      border: `1px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.10)"}`,
       borderRadius: 18, padding: "20px",
       margin: "0 7px",
-      backdropFilter: "blur(8px)",
+      backdropFilter: "blur(12px)",
       boxShadow: isLight
         ? "0 2px 20px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.04)"
-        : "0 0 0 1px rgba(255,255,255,.08), 0 4px 24px rgba(0,0,0,.3)",
+        : "0 0 0 1px rgba(255,255,255,.06), 0 8px 32px rgba(0,0,0,.4)",
     }}>
       <div style={{ color: "#FFC043", fontSize: 12, marginBottom: 12, letterSpacing: 2 }}>★★★★★</div>
       <p style={{ color: t.textSub, fontSize: 13.5, lineHeight: 1.75, marginBottom: 16 }}>
@@ -72,6 +72,10 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
 
   const accent = isLight ? "#00D26A" : "#00E676";
 
+  /* Marquee fade edge colours must match section bg exactly */
+  const edgeColor1 = isLight ? "#F0F5F9" : "#07090F";
+  const edgeColor2 = isLight ? "#EDF1F6" : "#060810";
+
   return (
     <section
       ref={sectionRef}
@@ -79,43 +83,90 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
       style={{
         padding: "0 0 120px",
         background: isLight
-          ? "linear-gradient(180deg, #F8FAFD 0%, #F0F5F9 50%, #F6F8FA 100%)"
-          : "#0D1117",
+          ? "linear-gradient(180deg, #F0F5F9 0%, #EDF1F6 60%, #F0F5F9 100%)"
+          : "linear-gradient(160deg,#07090F 0%,#0A0E18 35%,#080C14 65%,#060810 100%)",
         overflow: "hidden", position: "relative",
       }}
     >
-      {/* Gold aurora (distinct from green in other sections) */}
-      <div style={{
-        position: "absolute", top: "-5%", right: "15%",
-        width: 700, height: 500, borderRadius: "50%", pointerEvents: "none",
-        background: isLight
-          ? "radial-gradient(ellipse, rgba(255,192,67,.06) 0%, rgba(0,184,94,.03) 50%, transparent 70%)"
-          : "radial-gradient(ellipse, rgba(255,192,67,.07) 0%, rgba(0,230,118,.03) 50%, transparent 70%)",
-        animation: "aurora-shift 22s ease-in-out infinite",
-      }} />
-      <div style={{
-        position: "absolute", bottom: "10%", left: "5%",
-        width: 500, height: 400, borderRadius: "50%", pointerEvents: "none",
-        background: isLight
-          ? "radial-gradient(ellipse, rgba(14,165,233,.05) 0%, transparent 65%)"
-          : "radial-gradient(ellipse, rgba(34,211,238,.05) 0%, transparent 65%)",
-      }} />
-      {/* Grid */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: isLight
-          ? "linear-gradient(rgba(0,0,0,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.03) 1px, transparent 1px)"
-          : "linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px)",
-        backgroundSize: "56px 56px",
-        maskImage: "linear-gradient(180deg, transparent 0%, black 10%, black 90%, transparent 100%)",
-      }} />
+      {/* ── Dark mode decorative background ── */}
+      {!isLight && (<>
+        {/* Grid lines */}
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", opacity:.16 }} aria-hidden="true">
+          <defs>
+            <pattern id="testi-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(255,192,67,0.30)" strokeWidth=".6"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#testi-grid)"/>
+        </svg>
+
+        {/* Dot pattern */}
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", opacity:.10 }} aria-hidden="true">
+          <defs>
+            <pattern id="testi-dots" width="28" height="28" patternUnits="userSpaceOnUse">
+              <circle cx="1.5" cy="1.5" r="1.5" fill="rgba(255,192,67,0.55)"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#testi-dots)"/>
+        </svg>
+
+        {/* Gold glow — top right */}
+        <div style={{
+          position:"absolute", top:"-8%", right:"-4%",
+          width:700, height:700, borderRadius:"50%", pointerEvents:"none",
+          background:"radial-gradient(ellipse,rgba(255,192,67,.12) 0%,transparent 60%)",
+        }}/>
+        {/* Cyan glow — bottom left */}
+        <div style={{
+          position:"absolute", bottom:"-6%", left:"-3%",
+          width:580, height:580, borderRadius:"50%", pointerEvents:"none",
+          background:"radial-gradient(ellipse,rgba(34,211,238,.09) 0%,transparent 62%)",
+        }}/>
+        {/* Green glow — centre */}
+        <div style={{
+          position:"absolute", top:"40%", left:"30%",
+          width:500, height:500, borderRadius:"50%", pointerEvents:"none",
+          background:"radial-gradient(ellipse,rgba(0,230,118,.07) 0%,transparent 62%)",
+        }}/>
+        {/* Purple glow — top left */}
+        <div style={{
+          position:"absolute", top:"8%", left:"10%",
+          width:380, height:380, borderRadius:"50%", pointerEvents:"none",
+          background:"radial-gradient(ellipse,rgba(139,92,246,.07) 0%,transparent 62%)",
+        }}/>
+
+        {/* Top accent line */}
+        <div style={{
+          position:"absolute", top:0, left:0, right:0, height:1, pointerEvents:"none",
+          background:"linear-gradient(90deg,transparent 0%,rgba(255,192,67,.40) 35%,rgba(34,211,238,.25) 70%,transparent 100%)",
+        }}/>
+        {/* Bottom accent line */}
+        <div style={{
+          position:"absolute", bottom:0, left:0, right:0, height:1, pointerEvents:"none",
+          background:"linear-gradient(90deg,transparent 0%,rgba(255,192,67,.22) 50%,transparent 100%)",
+        }}/>
+      </>)}
+
+      {/* ── Light mode ambient glows ── */}
+      {isLight && (<>
+        <div style={{
+          position:"absolute", top:"5%", right:"8%",
+          width:620, height:620, borderRadius:"50%", pointerEvents:"none",
+          background:"radial-gradient(ellipse,rgba(255,192,67,.07) 0%,transparent 65%)",
+        }}/>
+        <div style={{
+          position:"absolute", bottom:"8%", left:"5%",
+          width:480, height:480, borderRadius:"50%", pointerEvents:"none",
+          background:"radial-gradient(ellipse,rgba(14,165,233,.05) 0%,transparent 65%)",
+        }}/>
+      </>)}
 
       {/* Header */}
-      <div style={{ textAlign: "center", padding: "0 60px", marginBottom: 64, position: "relative" }}>
+      <div style={{ textAlign: "center", padding: "clamp(40px,7vw,80px) clamp(16px,5vw,60px) 0", marginBottom: "clamp(28px,4vw,56px)", position: "relative" }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18,
           background: "rgba(255,192,67,.08)",
-          border: "1px solid rgba(255,192,67,.25)",
+          border: "1px solid rgba(255,192,67,.28)",
           borderRadius: 999, padding: "5px 16px",
         }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FFC043", display: "inline-block", boxShadow: "0 0 8px #FFC043" }} />
@@ -134,8 +185,8 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
 
       {/* ── Marquee rows ── */}
       <div style={{ position: "relative", marginBottom: 14, overflow: "hidden" }}>
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(90deg, ${isLight ? "#F8FAFD" : "#0D1117"}, transparent)` }} />
-        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(-90deg, ${isLight ? "#F8FAFD" : "#0D1117"}, transparent)` }} />
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(90deg, ${edgeColor1}, transparent)` }} />
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(-90deg, ${edgeColor1}, transparent)` }} />
         <div
           style={{ display: "flex", width: "max-content", animation: "slide-left 44s linear infinite" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.animationPlayState = "paused"; }}
@@ -148,8 +199,8 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
       </div>
 
       <div style={{ position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(90deg, ${isLight ? "#F0F5F9" : "#0D1117"}, transparent)` }} />
-        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(-90deg, ${isLight ? "#F0F5F9" : "#0D1117"}, transparent)` }} />
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(90deg, ${edgeColor2}, transparent)` }} />
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, zIndex: 2, pointerEvents: "none", background: `linear-gradient(-90deg, ${edgeColor2}, transparent)` }} />
         <div
           style={{ display: "flex", width: "max-content", animation: "slide-left 60s linear infinite reverse" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.animationPlayState = "paused"; }}
@@ -162,7 +213,7 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
       </div>
 
       {/* Platform trust row */}
-      <div style={{ marginTop: 56, textAlign: "center", padding: "0 60px" }}>
+      <div style={{ marginTop: "clamp(28px,4vw,56px)", textAlign: "center", padding: `0 clamp(16px,5vw,60px)`, position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 32, flexWrap: "wrap" }}>
           {[
             { label: "4.8/5 App Store", color: accent },

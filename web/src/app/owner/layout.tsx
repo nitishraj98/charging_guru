@@ -50,22 +50,20 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
   const th = getTheme(isLight);
 
   useEffect(() => {
-    checkAuth().then(async ok => {
+    const match = typeof document !== "undefined"
+      ? document.cookie.match(/(?:^|; )cg_access=([^;]*)/)
+      : null;
+    const token = match ? decodeURIComponent(match[1]) : "";
+
+    // Fire auth check and role probe in parallel
+    Promise.all([
+      checkAuth(),
+      fetch("/api/v1/owner/stations", { headers: { Authorization: `Bearer ${token}` } }),
+    ]).then(([ok, res]) => {
       if (!ok) { router.push("/login"); return; }
-      // Check role via /users/me
-      const match = typeof document !== "undefined"
-        ? document.cookie.match(/(?:^|; )cg_access=([^;]*)/)
-        : null;
-      const token = match ? decodeURIComponent(match[1]) : "";
-      const res = await fetch("/api/v1/owner/stations", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 403) {
-        router.push("/become-owner");
-        return;
-      }
+      if (res.status === 403) { router.push("/become-owner"); return; }
       setReady(true);
-    });
+    }).catch(() => { router.push("/login"); });
   }, [router]);
 
   if (!ready) return (

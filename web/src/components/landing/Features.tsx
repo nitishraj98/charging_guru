@@ -285,39 +285,50 @@ export default function Features({ isLight, t }: { isLight: boolean; t: Tok }) {
       ref={sectionRef}
       className="section-fade"
       style={{
-        padding: "0 60px 120px",
+        padding: "clamp(40px,7vw,80px) clamp(16px,5vw,60px) clamp(60px,10vw,120px)",
         background: isLight
           ? "linear-gradient(180deg, #F0F5F8 0%, #F6F8FA 60%, #EEF3F7 100%)"
-          : t.bg,
+          : "linear-gradient(160deg,#0A080E 0%,#100C18 35%,#0C0A14 65%,#08060F 100%)",
         position: "relative", overflow: "hidden",
       }}
     >
-      {/* Aurora gradient orbs */}
-      <div style={{
-        position: "absolute", top: "-5%", left: "-10%",
-        width: 700, height: 600, borderRadius: "50%", pointerEvents: "none",
-        background: isLight
-          ? "radial-gradient(ellipse, rgba(0,184,94,.06) 0%, transparent 60%)"
-          : "radial-gradient(ellipse, rgba(0,230,118,.06) 0%, transparent 60%)",
-        animation: "aurora-shift 18s ease-in-out infinite",
-      }} />
-      <div style={{
-        position: "absolute", bottom: "5%", right: "-5%",
-        width: 600, height: 500, borderRadius: "50%", pointerEvents: "none",
-        background: isLight
-          ? "radial-gradient(ellipse, rgba(14,165,233,.05) 0%, transparent 60%)"
-          : "radial-gradient(ellipse, rgba(34,211,238,.05) 0%, transparent 60%)",
-        animation: "aurora-shift 24s ease-in-out 8s infinite reverse",
-      }} />
-      {/* Grid */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: isLight
-          ? "linear-gradient(rgba(0,184,94,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,184,94,.05) 1px, transparent 1px)"
-          : "linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px)",
-        backgroundSize: "52px 52px",
-        maskImage: "radial-gradient(ellipse at 50% 50%, black 50%, transparent 80%)",
-      }} />
+      {/* ── Dark mode decorative background ── */}
+      {!isLight && (<>
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", opacity:.16 }} aria-hidden="true">
+          <defs>
+            <pattern id="feat-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(139,92,246,0.32)" strokeWidth=".6"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#feat-grid)"/>
+        </svg>
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", opacity:.10 }} aria-hidden="true">
+          <defs>
+            <pattern id="feat-dots" width="28" height="28" patternUnits="userSpaceOnUse">
+              <circle cx="1.5" cy="1.5" r="1.5" fill="rgba(139,92,246,0.55)"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#feat-dots)"/>
+        </svg>
+        {/* Purple glow — top left */}
+        <div style={{ position:"absolute", top:"-8%", left:"-5%", width:680, height:680, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(139,92,246,.12) 0%,transparent 60%)" }}/>
+        {/* Cyan glow — bottom right */}
+        <div style={{ position:"absolute", bottom:"-5%", right:"-4%", width:560, height:560, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(34,211,238,.09) 0%,transparent 62%)" }}/>
+        {/* Green glow — centre left */}
+        <div style={{ position:"absolute", top:"45%", left:"18%", width:420, height:420, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(0,230,118,.07) 0%,transparent 62%)" }}/>
+        {/* Amber glow — top right */}
+        <div style={{ position:"absolute", top:"6%", right:"12%", width:340, height:340, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(255,192,67,.07) 0%,transparent 62%)" }}/>
+        {/* Top accent line */}
+        <div style={{ position:"absolute", top:0, left:0, right:0, height:1, pointerEvents:"none", background:"linear-gradient(90deg,transparent 0%,rgba(139,92,246,.40) 35%,rgba(34,211,238,.25) 70%,transparent 100%)" }}/>
+        {/* Bottom accent line */}
+        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, pointerEvents:"none", background:"linear-gradient(90deg,transparent 0%,rgba(139,92,246,.22) 50%,transparent 100%)" }}/>
+      </>)}
+
+      {/* ── Light mode ambient glows ── */}
+      {isLight && (<>
+        <div style={{ position:"absolute", top:"8%", left:"-6%", width:600, height:600, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(124,58,237,.05) 0%,transparent 65%)" }}/>
+        <div style={{ position:"absolute", bottom:"5%", right:"-4%", width:480, height:480, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(14,165,233,.04) 0%,transparent 65%)" }}/>
+      </>)}
 
       <div style={{ position: "relative" }}>
         {/* Header */}
@@ -342,7 +353,7 @@ export default function Features({ isLight, t }: { isLight: boolean; t: Tok }) {
         </div>
 
         {/* Feature grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 18 }}>
+        <div className="features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 18 }}>
           {FEATURES.map((f, i) => {
             const Preview = f.preview;
             const hovered = hoveredIdx === i;

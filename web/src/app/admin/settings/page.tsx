@@ -25,12 +25,12 @@ export default function AdminSettingsPage() {
 
   function Row({ label, desc, children }: { label: string; desc: string; children: React.ReactNode }) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: `1px solid ${th.border}` }}>
-        <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, padding: "14px 0", borderBottom: `1px solid ${th.border}` }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: th.text }}>{label}</div>
           <div style={{ fontSize: 11, color: th.sub, marginTop: 3 }}>{desc}</div>
         </div>
-        <div style={{ flexShrink: 0, marginLeft: 20 }}>{children}</div>
+        <div style={{ flexShrink: 0 }}>{children}</div>
       </div>
     );
   }
@@ -68,7 +68,7 @@ export default function AdminSettingsPage() {
   }, []);
 
   return (
-    <div style={{ padding: "24px 28px", background: th.bg, minHeight: "100%", fontFamily: C.sans }}>
+    <div className="admin-pad" style={{ padding: "24px 28px", background: th.bg, minHeight: "100%", fontFamily: C.sans }}>
       <div style={{ paddingBottom: 20, borderBottom: `1px solid ${th.border}`, marginBottom: 28 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
           <Settings size={18} color={th.sub} strokeWidth={1.75} />

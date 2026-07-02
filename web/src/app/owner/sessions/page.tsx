@@ -123,7 +123,7 @@ function SessionManagerInner() {
   };
 
   return (
-    <div style={{ padding: "28px 32px", maxWidth: 640 }}>
+    <div className="owner-pad" style={{ padding: "28px 32px", maxWidth: 640 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: textPrimary, marginBottom: 6 }}>Session Manager</h1>
         <p style={{ fontSize: 13, color: textSub, marginBottom: 24 }}>Verify QR codes, start and complete charging sessions.</p>
 

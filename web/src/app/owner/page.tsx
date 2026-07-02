@@ -257,10 +257,10 @@ export default function OwnerDashboard() {
   );
 
   return (
-    <div style={{ padding: "28px 32px 48px", fontFamily: SANS, background: th.bg, minHeight: "100%" }}>
+    <div className="owner-pad" style={{ fontFamily: SANS, background: th.bg, minHeight: "100%" }}>
 
       {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32 }}>
+      <div className="owner-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32 }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: GREEN, letterSpacing: ".08em", marginBottom: 4, opacity: 0.85 }}>
             {greeting}
@@ -302,7 +302,7 @@ export default function OwnerDashboard() {
       </div>
 
       {/* ── Stat cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 32 }}>
+      <div className="owner-stat-grid" style={{ marginBottom: 32 }}>
         <StatCard
           label="Total Stations" value={stations.length}
           sub={`${activeStations} active${pendingStations ? `, ${pendingStations} pending` : ""}`}
@@ -385,7 +385,7 @@ export default function OwnerDashboard() {
                     ? "linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(240,255,244,0.3) 100%)"
                     : "linear-gradient(180deg,rgba(0,210,106,0.02) 0%,transparent 100%)",
                 }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                  <div className="owner-station-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
 
                     {/* Left: name + meta */}
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
@@ -420,7 +420,7 @@ export default function OwnerDashboard() {
                     </div>
 
                     {/* Right: charger availability pill + actions */}
-                    <div style={{ display: "flex", flexDirection: "column" as const, alignItems: "flex-end", gap: 10 }}>
+                    <div className="owner-station-right" style={{ display: "flex", flexDirection: "column" as const, alignItems: "flex-end", gap: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <div style={{
                           display: "flex", alignItems: "center", gap: 6,

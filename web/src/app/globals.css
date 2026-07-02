@@ -1,3 +1,4 @@
+@import 'leaflet/dist/leaflet.css';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @tailwind base;
 @tailwind components;
@@ -54,12 +55,28 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body {
-  background: var(--bg, #0A0D0E);
+  background-color: #060A07;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 10% 0%,   rgba(0,210,106,0.13) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%,  rgba(34,211,238,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 85% 10%,   rgba(0,210,106,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, rgba(6,14,8,1) 40%, transparent 100%);
+  background-attachment: fixed;
   color: var(--text, #E6EBED);
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background .3s, color .3s;
+  transition: background-color .3s, color .3s;
+  padding-top: 68px;
+}
+
+[data-theme="light"] body {
+  background-color: #F0F4F1;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 10% 0%,   rgba(0,210,106,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%,  rgba(34,211,238,0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 85% 10%,   rgba(0,210,106,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, rgba(240,244,241,1) 40%, transparent 100%);
 }
 
 html:not([data-theme]) body { opacity: 0; }
@@ -325,6 +342,20 @@ a { color: inherit; }
 .hero-w5 { animation-delay: .62s; }
 .hero-w6 { animation-delay: .76s; }
 
+/* Gradient hero words — light mode only, clip pre-declared to prevent flash */
+[data-theme="light"] .hero-grad-smarter {
+  background: linear-gradient(90deg, #00D26A, #22D3EE);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+[data-theme="light"] .hero-grad-faster {
+  background: linear-gradient(90deg, #0EA5E9, #22D3EE);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 @keyframes badge-in {
   0%   { opacity: 0; transform: translateY(-14px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -376,6 +407,22 @@ a { color: inherit; }
   filter: none;
 }
 
+/* FAQ "to know." gradient heading */
+.faq-heading-gradient {
+  background: linear-gradient(90deg, #00E676, #22D3EE);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme="light"] .faq-heading-gradient {
+  background: linear-gradient(90deg, #00C85A, #06B6D4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
 /* Footer "Covered." gradient word */
 .footer-covered-gradient {
   background: linear-gradient(90deg, #00E676, #22D3EE);
@@ -383,7 +430,6 @@ a { color: inherit; }
   -webkit-text-fill-color: transparent;
   background-clip: text;
   color: transparent;
-  display: inline-block;
 }
 [data-theme="light"] .footer-covered-gradient {
   background: linear-gradient(90deg, #00C15A, #0891B2);
@@ -391,7 +437,6 @@ a { color: inherit; }
   -webkit-text-fill-color: transparent;
   background-clip: text;
   color: transparent;
-  display: inline-block;
 }
 
 /* Badge shimmer */
@@ -522,7 +567,13 @@ a { color: inherit; }
 .map-scan-line { animation: map-scan 4s linear infinite; }
 
 /* ── Leaflet overrides ── */
-.leaflet-container { font-family: 'Inter',sans-serif; }
+.leaflet-container {
+  font-family: 'Inter',sans-serif;
+  background: #1a2226 !important; /* dark placeholder — matches dark_all tile bg so no flash */
+}
+[data-theme="light"] .leaflet-container {
+  background: #f5f3f0 !important; /* voyager tile bg colour */
+}
 /* Hide default tooltip chrome — we render our own styled div inside */
 .leaflet-tooltip {
   background: transparent !important;
@@ -542,3 +593,298 @@ a { color: inherit; }
   border-radius: 4px !important;
 }
 .leaflet-control-attribution a { color: rgba(255,255,255,.5) !important; }
+
+/* ── Global responsive utilities ── */
+
+/* ≤1536px: large desktop scale-down */
+@media (max-width: 1536px) {
+  .section-pad { padding-left: clamp(24px, 4vw, 56px) !important; padding-right: clamp(24px, 4vw, 56px) !important; }
+}
+
+/* ── Admin tables: make all admin data tables horizontally scrollable ── */
+.admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.admin-table-wrap table { min-width: 600px; }
+
+/* Admin page padding on narrow screens */
+@media (max-width: 768px) {
+  .admin-inner-pad { padding: 16px 12px 32px !important; }
+}
+
+/* ── App pages ── */
+
+/* Discover: left panel fixed 380px */
+.discover-layout { display: grid; grid-template-columns: 380px 1fr; }
+@media (max-width: 768px) {
+  .discover-layout { grid-template-columns: 1fr !important; }
+  .discover-map    { display: none !important; }
+}
+
+/* Station detail: 2-col body, fixed hero height */
+.station-body-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; }
+@media (max-width: 768px) {
+  .station-body-grid { grid-template-columns: 1fr !important; }
+  .station-hero { height: auto !important; min-height: 200px !important; }
+}
+/* 3-col trust strip on station page */
+.station-trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+@media (max-width: 480px) {
+  .station-trust-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Admin dashboard */
+.admin-kpi-grid  { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.admin-3col      { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.admin-chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.admin-mid-row   { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 12px; }
+.admin-bot-row   { display: grid; grid-template-columns: 1fr 1.1fr 220px; gap: 12px; }
+@media (max-width: 1280px) {
+  .admin-kpi-grid  { grid-template-columns: repeat(3, 1fr) !important; }
+  .admin-3col      { grid-template-columns: repeat(2, 1fr) !important; }
+  .admin-mid-row   { grid-template-columns: 1fr 1fr !important; }
+  .admin-bot-row   { grid-template-columns: 1fr 1fr !important; }
+}
+@media (max-width: 1024px) {
+  .admin-kpi-grid  { grid-template-columns: repeat(3, 1fr) !important; }
+  .admin-3col      { grid-template-columns: 1fr !important; }
+  .admin-chart-row { grid-template-columns: 1fr !important; }
+  .admin-mid-row   { grid-template-columns: 1fr !important; }
+  .admin-bot-row   { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 768px) {
+  .admin-kpi-grid  { grid-template-columns: repeat(2, 1fr) !important; }
+  .admin-pad       { padding: 12px 16px 32px !important; }
+  .admin-header    { padding: 10px 16px !important; flex-wrap: wrap !important; gap: 8px !important; }
+  .admin-header-right { flex-wrap: wrap !important; gap: 6px !important; }
+}
+@media (max-width: 480px) {
+  .admin-kpi-grid  { grid-template-columns: 1fr 1fr !important; }
+}
+@media (max-width: 390px) {
+  .admin-kpi-grid  { grid-template-columns: 1fr !important; }
+}
+
+/* Owner dashboard */
+.owner-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.owner-pad       { padding: 28px 32px 48px; }
+@media (max-width: 1024px) {
+  .owner-stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 768px) {
+  .owner-stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .owner-pad       { padding: 20px 16px 36px !important; }
+  .owner-header    { flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
+  .owner-station-header { flex-direction: column !important; gap: 12px !important; }
+  .owner-station-right  { align-items: flex-start !important; }
+}
+@media (max-width: 480px) {
+  .owner-stat-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* Become-owner: benefits 3-col, form 2-col */
+.become-benefits-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.become-form-row      { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) {
+  .become-benefits-grid { grid-template-columns: 1fr !important; }
+  .become-form-row      { grid-template-columns: 1fr !important; }
+}
+
+/* Plan results: main 2-col layout with fixed 340px sidebar */
+.plan-results-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+/* Stop stats 4-col inside each stop */
+.stop-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 16px; }
+@media (max-width: 900px) {
+  .plan-results-layout { grid-template-columns: 1fr !important; }
+  .plan-results-sidebar { position: static !important; }
+}
+@media (max-width: 640px) {
+  .stop-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* Membership: tier cards 3-col, comparison table */
+.membership-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.membership-compare-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; }
+@media (max-width: 640px) {
+  .membership-tiers { grid-template-columns: 1fr !important; }
+  .membership-compare-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+  .membership-compare-row  { min-width: 480px !important; }
+}
+@media (max-width: 768px) {
+  .membership-tiers { grid-template-columns: 1fr !important; }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Owner stations/new: 3-col address row */
+.new-station-addr-grid    { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.new-station-latlng-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.new-station-charger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 640px) {
+  .new-station-addr-grid { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 480px) {
+  .new-station-latlng-grid  { grid-template-columns: 1fr !important; }
+  .new-station-charger-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Journey detail: 2-col layout with 280px sidebar */
+.journey-layout  { display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
+.journey-sidebar { position: sticky; top: 24px; }
+@media (max-width: 768px) {
+  .journey-layout { grid-template-columns: 1fr !important; }
+  .journey-sidebar { position: static !important; }
+}
+
+/* Trips: 3-col stat cards */
+.trips-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 640px) {
+  .trips-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 360px) {
+  .trips-stats-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Vehicles: 3-col spec input row */
+.vehicle-spec-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 640px) {
+  .vehicle-spec-grid { grid-template-columns: 1fr 1fr !important; }
+}
+@media (max-width: 360px) {
+  .vehicle-spec-grid { grid-template-columns: 1fr !important; }
+}
+
+/* bookings/[id] timeline */
+.booking-timeline { display: flex; align-items: center; gap: 0; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+
+/* pay/[id] security badges */
+.pay-security-row { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
+
+/* ≤1280px: standard desktop */
+@media (max-width: 1280px) {
+  .hiw-main-grid { grid-template-columns: 1fr 260px !important; gap: 40px !important; }
+  .features-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .stats-bar-grid { grid-template-columns: repeat(4, 1fr) !important; }
+  .stats-network  { display: none !important; }
+  .trust-strip    { grid-template-columns: repeat(3, 1fr) !important; }
+}
+
+/* ≤1024px: tablet landscape */
+@media (max-width: 1024px) {
+  .section-pad { padding-left: clamp(20px, 4vw, 48px) !important; padding-right: clamp(20px, 4vw, 48px) !important; }
+  .hero-two-col { grid-template-columns: 55% 45% !important; }
+  .hero-left-col { padding: 60px 24px 60px 40px !important; }
+  .hiw-main-grid { grid-template-columns: 1fr 240px !important; gap: 32px !important; }
+  .hiw-bottom-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .features-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .live-map-layout { grid-template-columns: 1fr clamp(220px, 28%, 280px) !important; }
+  .pricing-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important; }
+  .trust-strip { grid-template-columns: repeat(3, 1fr) !important; }
+  .footer-newsletter { padding: 40px 40px !important; }
+  .footer-newsletter-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+  .stats-bar-grid { grid-template-columns: repeat(4, 1fr) !important; }
+  .stats-network  { display: none !important; }
+}
+
+/* ≤820px: tablet portrait */
+@media (max-width: 820px) {
+  .hero-two-col { grid-template-columns: 1fr !important; height: auto !important; min-height: 70svh !important; }
+  .hero-right-col { display: none !important; }
+  .hero-left-col { padding: 80px 28px 48px !important; justify-content: flex-start !important; }
+  .hiw-main-grid { grid-template-columns: 1fr !important; }
+  .hiw-phone-col { display: none !important; }
+  .hiw-bottom-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .features-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .live-map-layout { grid-template-columns: 1fr !important; }
+  .live-map-sidebar { max-height: 280px !important; overflow-y: auto !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.06) !important; }
+  .footer-newsletter-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
+  .trust-strip { grid-template-columns: repeat(3, 1fr) !important; }
+  .faq-two-col { grid-template-columns: 1fr !important; }
+  .faq-sidebar { display: none !important; }
+  .final-cta-grid { grid-template-columns: 1fr !important; }
+  .final-cta-right { display: none !important; }
+}
+
+/* ≤768px: mobile landscape / small tablet */
+@media (max-width: 768px) {
+  /* Hero: single column */
+  .hero-two-col {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: 100svh;
+  }
+  .hero-right-col { display: none !important; }
+  .hero-left-col  { padding: 80px 20px 48px !important; justify-content: flex-start !important; }
+
+  /* Nav: hide desktop links, show hamburger */
+  .nav-links     { display: none !important; }
+  .nav-hamburger { display: flex !important; }
+
+  /* Section padding */
+  .section-pad { padding-left: 16px !important; padding-right: 16px !important; }
+
+  /* Stats bar: wrap to 2-col */
+  .stats-bar-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .stats-network  { display: none !important; }
+  .stats-divider  { display: none !important; }
+
+  /* HowItWorks: single column, hide phone */
+  .hiw-main-grid  { grid-template-columns: 1fr !important; }
+  .hiw-phone-col  { display: none !important; }
+  .hiw-bottom-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* Features grid: 1 col */
+  .features-grid { grid-template-columns: 1fr !important; }
+
+  /* Live map: stack vertically */
+  .live-map-layout { grid-template-columns: 1fr !important; }
+  .live-map-sidebar { max-height: 260px !important; overflow-y: auto !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.06) !important; }
+
+  /* Pricing: trust strip 2-col, plan cards 1-col */
+  .trust-strip  { grid-template-columns: repeat(3, 1fr) !important; }
+  .pricing-grid { grid-template-columns: 1fr !important; max-width: 380px !important; margin-left: auto !important; margin-right: auto !important; }
+
+  /* FAQ: single col */
+  .faq-two-col { grid-template-columns: 1fr !important; }
+  .faq-sidebar { display: none !important; }
+
+  /* Footer newsletter: single col */
+  .footer-newsletter-outer { padding: 32px 20px 0 !important; }
+  .footer-newsletter { padding: 32px 24px !important; }
+  .footer-newsletter-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
+
+  /* Footer grid: 2 col */
+  .footer-grid { grid-template-columns: 1fr 1fr !important; gap: 24px !important; }
+  .footer-top  { flex-direction: column !important; gap: 24px !important; }
+
+  /* FinalCTA: single col */
+  .final-cta-grid  { grid-template-columns: 1fr !important; }
+  .final-cta-right { display: none !important; }
+}
+
+/* ≤640px: large phone */
+@media (max-width: 640px) {
+  .hiw-bottom-grid { grid-template-columns: 1fr !important; }
+  .trust-strip { grid-template-columns: repeat(2, 1fr) !important; }
+  .footer-grid { grid-template-columns: 1fr !important; }
+  .stats-bar-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* ≤480px: phone */
+@media (max-width: 480px) {
+  .hero-left-col { padding: 72px 16px 40px !important; }
+  .trust-strip { grid-template-columns: repeat(2, 1fr) !important; }
+  .stats-bar-grid { grid-template-columns: 1fr 1fr !important; }
+  .footer-newsletter { padding: 24px 16px !important; }
+}
+
+/* ≤390px: small phone */
+@media (max-width: 390px) {
+  .hero-left-col { padding: 64px 14px 36px !important; }
+  .stats-bar-grid { grid-template-columns: 1fr 1fr !important; }
+  .trust-strip { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ≤320px: very small phone */
+@media (max-width: 320px) {
+  .stats-bar-grid { grid-template-columns: 1fr !important; }
+  .trust-strip { grid-template-columns: 1fr !important; }
+}

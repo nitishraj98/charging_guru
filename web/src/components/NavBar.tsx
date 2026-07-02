@@ -50,22 +50,18 @@ export default function NavBar() {
   const router = useRouter();
   const path = usePathname();
   const { isLight, toggle: toggleTheme } = useTheme();
-  const { loggedIn, initial: userInitial, clear, reload } = useUser();
-  const [scrolled, setScrolled] = useState(false);
+  const { loggedIn, initial: userInitial, clear } = useUser();
   const [loggingOut, setLoggingOut] = useState(false);
   const [themeAnimating, setThemeAnimating] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const linksRef = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  // Close mobile menu on route change
+  useEffect(() => { setMobileMenuOpen(false); }, [path]);
 
-  useEffect(() => { reload(); }, [path, reload]);
+  // No reload on path change — UserContext caches auth state from initial mount.
+  // loggedIn reflects the current cookie via context; no extra network call needed.
 
   // Animate indicator to active link
   useEffect(() => {
@@ -102,61 +98,43 @@ export default function NavBar() {
     }
   }
 
-  const shrink = scrolled;
+  const blur = "blur(24px) saturate(200%)";
 
-  // Glass effect intensifies on scroll
-  const blur = shrink ? "blur(24px) saturate(200%)" : "blur(16px) saturate(180%)";
-
-  const navBg = isLight
-    ? shrink
-      ? "rgba(255,255,255,0.88)"
-      : "rgba(255,255,255,0.72)"
-    : shrink
-      ? "rgba(8,10,11,0.92)"
-      : "rgba(8,10,11,0.75)";
+  const navBg = isLight ? "rgba(255,255,255,0.88)" : "rgba(8,10,11,0.92)";
 
   const glowBorder = isLight
-    ? shrink
-      ? "1px solid rgba(0,210,106,0.18)"
-      : "1px solid rgba(15,23,42,0.08)"
-    : shrink
-      ? "1px solid rgba(0,230,118,0.12)"
-      : "1px solid rgba(255,255,255,0.06)";
+    ? "1px solid rgba(0,210,106,0.18)"
+    : "1px solid rgba(0,230,118,0.12)";
 
   const navShadow = isLight
-    ? shrink
-      ? "0 4px 32px rgba(0,0,0,0.09), 0 1px 0 rgba(255,255,255,0.9) inset, 0 0 0 1px rgba(0,210,106,0.08)"
-      : "0 1px 0 rgba(0,0,0,0.04)"
-    : shrink
-      ? "0 4px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,230,118,0.06)"
-      : "none";
+    ? "0 4px 32px rgba(0,0,0,0.09), 0 1px 0 rgba(255,255,255,0.9) inset, 0 0 0 1px rgba(0,210,106,0.08)"
+    : "0 4px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,230,118,0.06)";
 
   const linkColor = isLight ? "#374151" : "#94A3B8";
   const linkActiveColor = isLight ? "#059669" : "#00E676";
 
   return (
     <>
-      {/* Floating nav wrapper */}
+      {/* Fixed nav wrapper */}
       <div style={{
-        position: "sticky",
+        position: "fixed",
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 100,
-        padding: shrink ? "6px 16px" : "0",
-        transition: "padding .25s ease",
         pointerEvents: "none",
       }}>
         <nav style={{
           display: "flex",
           alignItems: "center",
           width: "100%",
-          height: shrink ? 58 : 68,
+          height: 68,
           background: navBg,
           border: glowBorder,
-          borderRadius: shrink ? 16 : 0,
+          borderRadius: 0,
           boxShadow: navShadow,
           backdropFilter: blur,
           WebkitBackdropFilter: blur,
-          transition: "background .25s ease, border-color .25s ease, box-shadow .25s ease, border-radius .25s ease, height .25s ease",
           pointerEvents: "all",
           overflow: "hidden",
           position: "relative",
@@ -166,8 +144,6 @@ export default function NavBar() {
             <div style={{
               position: "absolute", top: 0, left: 0, right: 0, height: 1,
               background: "linear-gradient(90deg, transparent, rgba(0,230,118,0.2) 40%, rgba(34,211,238,0.15) 60%, transparent)",
-              opacity: shrink ? 1 : 0,
-              transition: "opacity .35s",
               pointerEvents: "none",
             }} />
           )}
@@ -175,8 +151,7 @@ export default function NavBar() {
             <div style={{
               position: "absolute", top: 0, left: 0, right: 0, height: 1,
               background: "linear-gradient(90deg, transparent, rgba(0,210,106,0.3) 40%, rgba(14,165,233,0.2) 60%, transparent)",
-              opacity: shrink ? 1 : 0.4,
-              transition: "opacity .35s",
+              opacity: 0.4,
               pointerEvents: "none",
             }} />
           )}
@@ -191,7 +166,7 @@ export default function NavBar() {
           </div>
 
           {/* Nav links */}
-          <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 2, marginLeft: 36 }}>
+          <div className="nav-links" style={{ position: "relative", display: "flex", alignItems: "center", gap: 2, marginLeft: 36 }}>
             {/* Animated sliding indicator */}
             <div
               ref={indicatorRef}
@@ -264,6 +239,28 @@ export default function NavBar() {
 
           {/* Right controls */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, paddingRight: 28 }}>
+
+            {/* Hamburger — mobile only, hidden on desktop via CSS */}
+            <button
+              className="nav-hamburger"
+              onClick={() => setMobileMenuOpen(o => !o)}
+              aria-label="Toggle navigation"
+              style={{
+                display: "none",
+                width: 40, height: 40, borderRadius: 11,
+                alignItems: "center", justifyContent: "center",
+                background: isLight ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.06)",
+                border: isLight ? "1px solid rgba(0,0,0,.09)" : "1px solid rgba(255,255,255,.09)",
+                color: isLight ? "#374151" : "#94A3B8",
+                cursor: "pointer", flexShrink: 0, fontFamily: "inherit",
+              }}
+            >
+              {mobileMenuOpen ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+              )}
+            </button>
 
             {/* Theme toggle — premium pill */}
             <button
@@ -434,6 +431,86 @@ export default function NavBar() {
           </div>
         </nav>
       </div>
+
+      {/* Mobile menu drawer */}
+      {mobileMenuOpen && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99,
+          background: isLight ? "rgba(0,0,0,.3)" : "rgba(0,0,0,.55)",
+        }} onClick={() => setMobileMenuOpen(false)}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: "absolute", top: 0, right: 0, bottom: 0,
+              width: "min(300px, 80vw)",
+              background: isLight ? "#FFFFFF" : "#0A0D0E",
+              borderLeft: isLight ? "1px solid rgba(0,0,0,.09)" : "1px solid rgba(255,255,255,.08)",
+              boxShadow: "-8px 0 40px rgba(0,0,0,.3)",
+              display: "flex", flexDirection: "column",
+              padding: "24px 0 32px",
+              overflowY: "auto",
+            }}
+          >
+            {/* Close row */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px 20px", borderBottom: isLight ? "1px solid rgba(0,0,0,.07)" : "1px solid rgba(255,255,255,.07)" }}>
+              <Logo size="md" theme={isLight ? "light" : "dark"} />
+              <button onClick={() => setMobileMenuOpen(false)} style={{ width: 34, height: 34, borderRadius: 9, border: isLight ? "1px solid rgba(0,0,0,.1)" : "1px solid rgba(255,255,255,.1)", background: "transparent", color: isLight ? "#374151" : "#94A3B8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            {/* Links */}
+            <div style={{ display: "flex", flexDirection: "column", padding: "16px 12px", gap: 2 }}>
+              {NAV_LINKS.map(({ href, label }) => {
+                const active = path === href || (href !== "/" && !href.startsWith("#") && path.startsWith(href));
+                return (
+                  <Link key={href} href={href} style={{
+                    padding: "12px 16px", borderRadius: 12, fontSize: 15, fontWeight: active ? 700 : 500,
+                    color: active ? (isLight ? "#059669" : "#00E676") : (isLight ? "#374151" : "#94A3B8"),
+                    background: active ? (isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.08)") : "transparent",
+                    textDecoration: "none", display: "block", transition: "background .15s",
+                  }}>{label}</Link>
+                );
+              })}
+            </div>
+
+            <div style={{ flex: 1 }} />
+
+            {/* Bottom: theme + auth */}
+            <div style={{ padding: "0 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <button onClick={handleThemeToggle} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500,
+                background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)",
+                border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)",
+                color: isLight ? "#4B5563" : "#9CA3AF",
+                cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left",
+              }}>
+                {isLight ? <MoonIcon /> : <SunIcon />}
+                {isLight ? "Switch to Dark" : "Switch to Light"}
+              </button>
+              {loggedIn ? (
+                <>
+                  <Link href="/profile" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: isLight ? "#374151" : "#94A3B8", background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)", border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)", textDecoration: "none" }}>
+                    <div style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#00D26A,#00A855)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#FFF" }}>{userInitial}</div>
+                    My Profile
+                  </Link>
+                  <button onClick={logout} style={{ padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: "#EF4444", background: "rgba(239,68,68,.06)", border: "1px solid rgba(239,68,68,.18)", cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left" }}>
+                    {loggingOut ? "Signing out…" : "Log out"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" style={{ display: "block", padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: isLight ? "#374151" : "#94A3B8", background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)", border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)", textDecoration: "none", textAlign: "center" }}>Log in</Link>
+                  <Link href="/plan" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "13px 16px", borderRadius: 12, fontSize: 14, fontWeight: 700, background: "linear-gradient(135deg,#00D26A,#00A855)", color: "#FFF", textDecoration: "none", boxShadow: "0 4px 16px rgba(0,210,106,.35)" }}>
+                    <BoltIcon /> Get Started
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
