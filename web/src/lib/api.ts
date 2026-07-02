@@ -88,6 +88,16 @@ export const stations = {
     const q = date ? `?date=${date}` : "";
     return request<Slot[]>(`/api/v1/chargers/${chargerId}/slots${q}`, {}, false);
   },
+  stats: (id: string) => request<StationStats>(`/api/v1/stations/${id}/stats`, {}, false),
+  reviews: {
+    list: (stationId: string, page = 1, per_page = 20) =>
+      request<PagedResult<Review>>(`/api/v1/stations/${stationId}/reviews?page=${page}&per_page=${per_page}`, {}, false),
+    create: (stationId: string, bookingId: string, rating: number, comment?: string) =>
+      request<Review>(`/api/v1/stations/${stationId}/reviews?booking_id=${bookingId}`, {
+        method: "POST",
+        body: JSON.stringify({ rating, comment: comment || null }),
+      }),
+  },
 };
 
 // ── Bookings ──────────────────────────────────────────────────────────────────
@@ -163,8 +173,13 @@ export interface Station {
   chargers: Charger[]; distance_km?: number;
 }
 export interface Slot { slot_start: string; slot_end: string; available: boolean; }
+export interface Review {
+  id: string; user_id: string; rating: number; comment?: string | null; created_at: string;
+}
+export interface PagedResult<T> { items: T[]; total: number; page: number; per_page: number; pages: number; }
+export interface StationStats { sessions_today: number; uptime_pct: number; }
 export interface Booking {
-  id: string; charger_id: string; status: string; slot_start: string;
+  id: string; charger_id: string; station_id?: string; status: string; slot_start: string;
   slot_end: string; amount: number; qr_jti?: string;
   hold_expires_at?: string;
   charger?: Charger; station?: Station;

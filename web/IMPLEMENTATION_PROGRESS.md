@@ -19,7 +19,7 @@
 | `/plan` | ✅ Done | Places autocomplete, real vehicle list |
 | `/plan/results` | ✅ Done | Uses `planRoute()`, real data sources labeled |
 | `/discover` | ✅ Done | Real Leaflet map, geolocation, OCM fallback |
-| `/station/[id]` | ✅ Done | Removed hardcoded reviews/stats |
+| `/station/[id]` | ✅ Done | Real reviews (list + submit) and live sessions-today/uptime stats |
 
 ## Components
 
@@ -30,6 +30,4 @@
 
 ## Pending
 
-- [ ] Reviews endpoint from backend (currently shows "coming soon" placeholder)
-- [ ] Station-level stats from backend (sessions today, uptime)
 - [ ] `IMPLEMENTATION_PROGRESS.md` tracking for mobile/admin work

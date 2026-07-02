@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { stations, Station, Charger } from "@/lib/api";
+import { stations, bookings as bookingsApi, Station, Charger, Review, StationStats, Booking } from "@/lib/api";
+import { useUser } from "@/contexts/UserContext";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Zap, Navigation, Share2, Check, MapPin, Star, Wifi, Coffee, ParkingCircle, ShoppingCart, Clock, ChevronRight, Shield } from "lucide-react";
@@ -366,11 +367,21 @@ export default function StationDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { isLight } = useTheme();
+  const { user, loggedIn } = useUser();
   const [station,   setStation]   = useState<Station | null>(null);
   const [loading,   setLoading]   = useState(true);
   const [activeTab, setActiveTab] = useState<"chargers"|"about"|"reviews">("chargers");
   const [copied,    setCopied]    = useState(false);
   const [selCharger, setSelCharger] = useState<Charger | null>(null);
+
+  const [stats,   setStats]   = useState<StationStats | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [reviewableBooking, setReviewableBooking] = useState<Booking | null>(null);
+  const [reviewRating,  setReviewRating]  = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState("");
 
   const bg          = isLight ? "#F4F6F9"              : "#07090A";
   const cardBg      = isLight ? "#FFFFFF"              : "#0E1214";
@@ -386,7 +397,40 @@ export default function StationDetailPage() {
   useEffect(() => {
     stations.get(id).then(s => { setStation(s); setSelCharger(s.chargers?.find(c => c.status === "AVAILABLE") ?? s.chargers?.[0] ?? null); })
       .catch(console.error).finally(() => setLoading(false));
+    stations.stats(id).then(setStats).catch(() => setStats(null));
   }, [id]);
+
+  function loadReviews() {
+    stations.reviews.list(id).then(r => { setReviews(r.items); setReviewsTotal(r.total); }).catch(() => {});
+  }
+  useEffect(() => { loadReviews(); }, [id]);
+
+  // Find a COMPLETED booking of this user's at this station that they haven't reviewed yet.
+  useEffect(() => {
+    if (!loggedIn || !user) { setReviewableBooking(null); return; }
+    bookingsApi.list().then(list => {
+      const hasReviewed = reviews.some(r => r.user_id === user.id);
+      if (hasReviewed) { setReviewableBooking(null); return; }
+      const candidate = list.find(b => b.status === "COMPLETED" && (b.station?.id === id || b.station_id === id));
+      setReviewableBooking(candidate ?? null);
+    }).catch(() => setReviewableBooking(null));
+  }, [id, loggedIn, user, reviews]);
+
+  async function submitReview() {
+    if (!reviewableBooking) return;
+    setReviewSubmitting(true); setReviewError("");
+    try {
+      await stations.reviews.create(id, reviewableBooking.id, reviewRating, reviewComment.trim() || undefined);
+      setReviewComment("");
+      setReviewableBooking(null);
+      loadReviews();
+      stations.get(id).then(setStation).catch(() => {});
+    } catch (e: unknown) {
+      setReviewError(e instanceof Error ? e.message : "Failed to submit review");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  }
 
   if (loading) return (
     <div style={{ background: bg, minHeight: "100vh" }}>
@@ -543,6 +587,8 @@ export default function StationDetailPage() {
               { label: "AVAILABLE", val: `${available.length}`, green: available.length > 0 },
               { label: "MAX POWER", val: maxPower > 0 ? `${maxPower} kW` : "—", mono: true },
               { label: "STATUS",    val: station.status === "AVAILABLE" ? "Open" : station.status === "OFFLINE" ? "Offline" : "Partial", green: station.status === "AVAILABLE" },
+              { label: "SESSIONS TODAY", val: stats ? `${stats.sessions_today}` : "—", mono: true },
+              { label: "UPTIME", val: stats ? `${stats.uptime_pct}%` : "—", mono: true, green: (stats?.uptime_pct ?? 0) >= 95 },
             ].map((item, i, arr) => (
               <div key={item.label} style={{ flex: 1, padding: "12px 14px", textAlign: "center", borderRight: i < arr.length-1 ? "1px solid rgba(255,255,255,.06)" : "none" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: ".1em", color: "#495154", marginBottom: 5, textTransform: "uppercase" }}>{item.label}</div>
@@ -732,31 +778,58 @@ export default function StationDetailPage() {
             {/* ── REVIEWS TAB ── */}
             {activeTab === "reviews" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {avg > 0 ? (
-                  <>
-                    {/* Rating overview */}
-                    <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "24px 22px", boxShadow: isLight?"0 1px 6px rgba(0,0,0,.05)":"none" }}>
-                      <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-                        <div style={{ textAlign: "center", flexShrink: 0 }}>
-                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 56, fontWeight: 800, color: textPrimary, lineHeight: 1, marginBottom: 6 }}>{avg.toFixed(1)}</div>
-                          <div style={{ color: "#FFC043", fontSize: 18, letterSpacing: 2, marginBottom: 4 }}>{"★".repeat(Math.round(avg))}{"☆".repeat(5-Math.round(avg))}</div>
-                          <div style={{ color: textMuted, fontSize: 12 }}>{total} reviews</div>
-                        </div>
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-                          {[5,4,3,2,1].map((s,i) => <StarBar key={s} stars={s} count={reviewDist[i]} total={total}/>)}
-                        </div>
+                {avg > 0 && (
+                  <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "24px 22px", boxShadow: isLight?"0 1px 6px rgba(0,0,0,.05)":"none" }}>
+                    <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+                      <div style={{ textAlign: "center", flexShrink: 0 }}>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 56, fontWeight: 800, color: textPrimary, lineHeight: 1, marginBottom: 6 }}>{avg.toFixed(1)}</div>
+                        <div style={{ color: "#FFC043", fontSize: 18, letterSpacing: 2, marginBottom: 4 }}>{"★".repeat(Math.round(avg))}{"☆".repeat(5-Math.round(avg))}</div>
+                        <div style={{ color: textMuted, fontSize: 12 }}>{total} reviews</div>
+                      </div>
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                        {[5,4,3,2,1].map((s,i) => <StarBar key={s} stars={s} count={reviewDist[i]} total={total}/>)}
                       </div>
                     </div>
+                  </div>
+                )}
 
-                    {/* Empty reviews state */}
-                    <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "32px 24px", textAlign: "center" }}>
-                      <div style={{ width: 52, height: 52, borderRadius: 16, background: raisedBg, border: `1px solid ${cardBorder}`, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={textSub} strokeWidth="1.5" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                      </div>
-                      <p style={{ fontWeight: 700, color: textPrimary, marginBottom: 6 }}>Written reviews coming soon</p>
-                      <p style={{ color: textSub, fontSize: 13 }}>Complete a session to leave the first review.</p>
+                {/* Leave a review — only shown when the user has an unreviewed completed booking here */}
+                {reviewableBooking && (
+                  <div style={{ background: cardBg, border: `1px solid ${accentBrd}`, borderRadius: 20, padding: "20px 22px" }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: textPrimary, marginBottom: 12 }}>Leave a review</div>
+                    <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
+                      {[1,2,3,4,5].map(n => (
+                        <button key={n} onClick={() => setReviewRating(n)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }} aria-label={`${n} star${n>1?"s":""}`}>
+                          <Star size={22} fill={n <= reviewRating ? "#FFC043" : "none"} color={n <= reviewRating ? "#FFC043" : textMuted} />
+                        </button>
+                      ))}
                     </div>
-                  </>
+                    <textarea
+                      value={reviewComment}
+                      onChange={e => setReviewComment(e.target.value)}
+                      placeholder="How was your charging experience? (optional)"
+                      maxLength={1000}
+                      rows={3}
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 12, border: `1px solid ${cardBorder}`, background: raisedBg, color: textPrimary, fontSize: 13, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box", marginBottom: 12 }}
+                    />
+                    {reviewError && <div style={{ color: "#FF5A5F", fontSize: 12, marginBottom: 10 }}>{reviewError}</div>}
+                    <button onClick={submitReview} disabled={reviewSubmitting} style={{ padding: "10px 20px", borderRadius: 12, background: accent, color: "#050708", fontWeight: 700, fontSize: 13, border: "none", cursor: reviewSubmitting ? "not-allowed" : "pointer", opacity: reviewSubmitting ? 0.6 : 1 }}>
+                      {reviewSubmitting ? "Submitting…" : "Submit review"}
+                    </button>
+                  </div>
+                )}
+
+                {/* Review list */}
+                {reviews.length > 0 ? (
+                  reviews.map(r => (
+                    <div key={r.id} style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 18, padding: "16px 20px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                        <div style={{ color: "#FFC043", fontSize: 14, letterSpacing: 1.5 }}>{"★".repeat(r.rating)}{"☆".repeat(5-r.rating)}</div>
+                        <span style={{ fontSize: 11, color: textMuted }}>{new Date(r.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      </div>
+                      {r.comment && <p style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{r.comment}</p>}
+                    </div>
+                  ))
                 ) : (
                   <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "48px 24px", textAlign: "center" }}>
                     <div style={{ fontSize: 40, marginBottom: 14 }}>⭐</div>
