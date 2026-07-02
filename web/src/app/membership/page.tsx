@@ -1,47 +1,28 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Star, Shield, Zap, CreditCard, ChevronDown, ChevronRight } from "lucide-react";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
+import { isLoggedIn } from "@/lib/auth";
+import { membership, MembershipTier as TierId } from "@/lib/api";
 
-const TIERS = [
-  {
-    id: "FREE",
-    name: "Free",
-    price: null,
-    color: "#6B7479",
-    icon: null,
-    current: true,
-    gradient: null,
+const TIER_STATIC = {
+  FREE: {
+    name: "Free", color: "#6B7479", gradient: null as string | null, badge: null as string | null,
     features: ["Earn 1× reward points", "Standard pricing", "All connector types", "Email support"],
-    cta: "Current Plan",
   },
-  {
-    id: "SILVER",
-    name: "Silver",
-    price: 199,
-    color: "#94A3B8",
-    icon: null,
-    current: false,
-    badge: null as string | null,
-    gradient: "linear-gradient(135deg,#0E1B2A,#101D2A)",
+  SILVER: {
+    name: "Silver", color: "#94A3B8", gradient: "linear-gradient(135deg,#0E1B2A,#101D2A)", badge: null as string | null,
     features: ["Earn 1.5× reward points", "5% discount on all bookings", "Priority support", "Access peak-hour slots", "Monthly usage report"],
-    cta: "Upgrade to Silver",
   },
-  {
-    id: "GOLD",
-    name: "Gold",
-    price: 499,
-    color: "#FFC043",
-    icon: null,
-    current: false,
-    badge: "MOST POPULAR" as string | null,
-    gradient: "linear-gradient(135deg,#1A1200,#2D1F00)",
+  GOLD: {
+    name: "Gold", color: "#FFC043", gradient: "linear-gradient(135deg,#1A1200,#2D1F00)", badge: "MOST POPULAR" as string | null,
     features: ["Earn 2× reward points", "10% discount on all bookings", "Dedicated support line", "Guaranteed slot booking", "Free cancellation anytime", "Invoice auto-email"],
-    cta: "Upgrade to Gold",
   },
-] as const;
+} as const;
+
+const TIER_ORDER: TierId[] = ["FREE", "SILVER", "GOLD"];
 
 const COMPARE_ROWS = [
   { feature: "Points multiplier", free: "1×",       silver: "1.5×",     gold: "2×"        },
@@ -64,11 +45,16 @@ const TRUST = [
   { Icon: CreditCard, label: "Secure payment",      sub: "Powered by Razorpay"            },
 ];
 
+interface ApiTier { tier: TierId; price_paise: number; points_multiplier: number; discount_pct: number; }
+
 export default function MembershipPage() {
   const router = useRouter();
   const { isLight } = useTheme();
   const [toast, setToast]     = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [apiTiers, setApiTiers] = useState<ApiTier[] | null>(null);
+  const [currentTier, setCurrentTier] = useState<TierId | null>(null);
+  const [upgrading, setUpgrading] = useState<TierId | null>(null);
 
   const cardBg     = isLight ? "#FFFFFF" : "#101415";
   const cardBorder = isLight ? "#E2E8F0" : "#222829";
@@ -80,10 +66,43 @@ export default function MembershipPage() {
   const accentDim  = isLight ? "#DCFCE7" : "rgba(0,230,118,.08)";
   const accentBrd  = isLight ? "#86EFAC" : "rgba(0,230,118,.25)";
 
-  function handleUpgrade(tier: typeof TIERS[number]) {
+  useEffect(() => {
+    membership.tiers().then(setApiTiers).catch(() => setApiTiers(null));
+    if (isLoggedIn()) {
+      membership.me().then(m => setCurrentTier(m.tier)).catch(() => {});
+    }
+  }, []);
+
+  const tiers = TIER_ORDER.map(id => {
+    const api = apiTiers?.find(t => t.tier === id);
+    const meta = TIER_STATIC[id];
+    return {
+      id,
+      name: meta.name,
+      color: meta.color,
+      gradient: meta.gradient,
+      badge: meta.badge,
+      features: meta.features,
+      price: api ? Math.round(api.price_paise / 100) : id === "SILVER" ? 199 : id === "GOLD" ? 499 : null,
+      current: currentTier === id,
+      cta: currentTier === id ? "Current Plan" : `Upgrade to ${meta.name}`,
+    };
+  });
+
+  async function handleUpgrade(tier: (typeof tiers)[number]) {
     if (tier.current) return;
-    setToast(`${tier.name} membership payments coming soon!`);
-    setTimeout(() => setToast(""), 4000);
+    if (!isLoggedIn()) { router.push("/login"); return; }
+    setUpgrading(tier.id);
+    try {
+      await membership.upgrade(tier.id);
+      setCurrentTier(tier.id);
+      setToast(`You're now on the ${tier.name} plan!`);
+    } catch (e: unknown) {
+      setToast(e instanceof Error ? e.message : "Failed to upgrade");
+    } finally {
+      setUpgrading(null);
+      setTimeout(() => setToast(""), 4000);
+    }
   }
 
   return (
@@ -111,7 +130,9 @@ export default function MembershipPage() {
 
         {/* Tier cards */}
         <div className="membership-tiers" style={{ marginBottom: 52 }}>
-          {TIERS.map(tier => (
+          {tiers.map(tier => {
+            const isUpgrading = upgrading === tier.id;
+            return (
             <div key={tier.id} style={{
               borderRadius: 24, padding: "24px 20px",
               background: tier.gradient ?? (isLight ? "#FFFFFF" : "#101415"),
@@ -124,9 +145,9 @@ export default function MembershipPage() {
               onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "none"; (e.currentTarget as HTMLDivElement).style.boxShadow = tier.id === "GOLD" ? `0 0 0 1px ${tier.color}30,0 4px 40px ${tier.color}14` : isLight ? "0 2px 8px rgba(0,0,0,.06)" : "none"; }}
               onClick={() => handleUpgrade(tier)}
             >
-              {"badge" in tier && tier.badge && (
+              {tier.badge && (
                 <div style={{ position: "absolute", top: -13, left: "50%", transform: "translateX(-50%)", padding: "4px 14px", borderRadius: 999, fontSize: 9, fontWeight: 800, letterSpacing: ".12em", background: tier.color, color: "#050708", whiteSpace: "nowrap" }}>
-                  {"badge" in tier ? tier.badge : ""}
+                  {tier.badge}
                 </div>
               )}
 
@@ -157,19 +178,21 @@ export default function MembershipPage() {
                 ))}
               </div>
 
-              <button onClick={e => { e.stopPropagation(); handleUpgrade(tier); }} disabled={tier.current} style={{
+              <button onClick={e => { e.stopPropagation(); handleUpgrade(tier); }} disabled={tier.current || isUpgrading} style={{
                 width: "100%", padding: "13px", borderRadius: 13, fontSize: 13, fontWeight: 700,
-                cursor: tier.current ? "not-allowed" : "pointer",
+                cursor: tier.current || isUpgrading ? "not-allowed" : "pointer",
                 border: tier.current ? `1px solid ${cardBorder}` : "none",
                 background: tier.current ? raisedBg : tier.id === "GOLD" ? `linear-gradient(135deg,${tier.color},#E6A000)` : tier.id === "SILVER" ? "linear-gradient(135deg,#94A3B8,#64748B)" : raisedBg,
                 color: tier.current ? textMuted : "#050708",
-                opacity: tier.current ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                opacity: tier.current ? 0.7 : isUpgrading ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}>
-                {!tier.current && <ChevronRight size={14} strokeWidth={2.5} />}
-                {tier.cta}
+                {isUpgrading
+                  ? <><span className="spinner" style={{ borderColor: "rgba(5,7,8,.3)", borderTopColor: "#050708" }} />Upgrading…</>
+                  : <>{!tier.current && <ChevronRight size={14} strokeWidth={2.5} />}{tier.cta}</>}
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Comparison table */}

@@ -119,7 +119,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const initial = (user.full_name ?? user.phone ?? "U").charAt(0).toUpperCase();
-  const rewardPoints = (user as User & { reward_points?: number }).reward_points;
+  const rewardPoints = user.reward_points;
 
   return (
     <div style={{ background: "transparent", minHeight: "100vh" }}>

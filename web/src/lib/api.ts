@@ -162,7 +162,10 @@ export const routes = {
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-export interface User { id: string; phone: string; full_name?: string; email?: string; roles?: string[]; }
+export interface User {
+  id: string; phone: string; full_name?: string; email?: string; roles?: string[];
+  reward_points: number; membership_tier: "FREE" | "SILVER" | "GOLD"; referral_code: string;
+}
 export interface Charger {
   id: string; label: string; charger_type: string; connector_type: string;
   power_kw: number; price_per_kwh: number; status: string;
@@ -295,14 +298,29 @@ export interface Journey {
 }
 
 // ── Rewards ───────────────────────────────────────────────────────────────────
+export type MembershipTier = "FREE" | "SILVER" | "GOLD";
 export interface RewardSummary {
-  points: number; tier: string; next_tier: string; points_to_next: number;
+  points: number; tier: MembershipTier; next_tier: MembershipTier | null;
+  points_to_next: number; referral_code: string;
 }
 export interface RewardTransaction {
-  id: string; type: "earned" | "redeemed" | "expired";
-  points: number; description: string; created_at: string; booking_id?: string;
+  id: string; type: "EARNED" | "REDEEMED" | "EXPIRED";
+  points: number; description: string; created_at: string;
 }
 export const rewards = {
   summary: () => request<RewardSummary>("/api/v1/rewards/summary"),
   history: () => request<RewardTransaction[]>("/api/v1/rewards/history"),
+  redeem: (points: number) =>
+    request<RewardTransaction>("/api/v1/rewards/redeem", { method: "POST", body: JSON.stringify({ points }) }),
+};
+
+// ── Membership ───────────────────────────────────────────────────────────────
+export interface MembershipTierInfo {
+  tier: MembershipTier; price_paise: number; points_multiplier: number; discount_pct: number;
+}
+export const membership = {
+  tiers: () => request<MembershipTierInfo[]>("/api/v1/membership/tiers", {}, false),
+  me: () => request<MembershipTierInfo>("/api/v1/membership/me"),
+  upgrade: (tier: MembershipTier) =>
+    request<MembershipTierInfo>("/api/v1/membership/upgrade", { method: "POST", body: JSON.stringify({ tier }) }),
 };
