@@ -6,6 +6,7 @@ import uuid
 
 from pydantic import Field, field_validator
 
+from app.models.enums import MembershipTier
 from app.schemas.common import ORMModel, StrictModel
 
 _E164 = re.compile(r"^\+[1-9]\d{7,14}$")
@@ -47,6 +48,8 @@ class UserPublic(ORMModel):
     full_name: str | None
     email: str | None
     reward_points: int
+    membership_tier: MembershipTier
+    referral_code: str
     roles: list[str]
 
 

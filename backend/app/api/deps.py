@@ -19,6 +19,7 @@ from app.repositories.booking_repo import BookingRepo, SlotRepo
 from app.repositories.otp_repo import OtpRepo
 from app.repositories.payment_repo import PaymentRepo
 from app.repositories.session_repo import SessionRepo
+from app.repositories.reward_repo import RewardRepo
 from app.repositories.station_repo import ChargerRepo, ReviewRepo, StationRepo
 from app.repositories.user_repo import UserRepo
 from app.services.admin_service import AdminService
@@ -26,6 +27,7 @@ from app.services.auth_service import AuthService
 from app.services.availability_service import AvailabilityService
 from app.services.booking_service import BookingService
 from app.services.payment_service import PaymentService
+from app.services.reward_service import MembershipService, RewardService
 from app.services.session_service import SessionService
 from app.services.station_service import StationService
 
@@ -41,6 +43,8 @@ __all__ = [
     "get_payment_service",
     "get_session_service",
     "get_admin_service",
+    "get_reward_service",
+    "get_membership_service",
     "get_razorpay_gateway",
     "get_current_user",
     "require_roles",
@@ -72,11 +76,20 @@ def get_payment_service(
 
 def get_session_service(db: AsyncSession = Depends(get_db)) -> SessionService:
     avail = AvailabilityService(ChargerRepo(db), db)
-    return SessionService(BookingRepo(db), StationRepo(db), avail, db)
+    rewards = RewardService(RewardRepo(db), UserRepo(db), db)
+    return SessionService(BookingRepo(db), StationRepo(db), avail, db, rewards)
 
 
 def get_admin_service(db: AsyncSession = Depends(get_db)) -> AdminService:
     return AdminService(AdminRepo(db), StationRepo(db), UserRepo(db))
+
+
+def get_reward_service(db: AsyncSession = Depends(get_db)) -> RewardService:
+    return RewardService(RewardRepo(db), UserRepo(db), db)
+
+
+def get_membership_service(db: AsyncSession = Depends(get_db)) -> MembershipService:
+    return MembershipService(UserRepo(db), db)
 
 
 async def get_current_user(

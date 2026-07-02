@@ -20,6 +20,7 @@ from app.models.enums import BookingStatus, ChargerStatus
 from app.repositories.booking_repo import BookingRepo
 from app.repositories.station_repo import StationRepo
 from app.services.availability_service import AvailabilityService
+from app.services.reward_service import RewardService
 
 
 class SessionService:
@@ -29,11 +30,13 @@ class SessionService:
         stations: StationRepo,
         avail: AvailabilityService,
         session,
+        rewards: RewardService | None = None,
     ):
         self.bookings = bookings
         self.stations = stations
         self.avail = avail
         self.session = session
+        self.rewards = rewards
 
     async def _check_ownership(
         self, booking: Booking, operator_id: uuid.UUID, skip: bool
@@ -129,4 +132,6 @@ class SessionService:
             changed_by=operator_id,
             reason="session_completed",
         )
+        if self.rewards is not None:
+            await self.rewards.award_session_points(booking.user_id, booking.id)
         return booking
