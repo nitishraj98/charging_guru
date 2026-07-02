@@ -15,6 +15,7 @@ from app.schemas.admin import (
     AdminBookingOut,
     AdminOverviewOut,
     ChargerAdminOut,
+    MembershipPaymentAdminOut,
     PagedResult,
     PaymentAdminOut,
     StationAdminOut,
@@ -214,6 +215,30 @@ async def list_payments(
     svc: AdminService = Depends(get_admin_service),
 ):
     return await svc.list_payments(status, page, per_page)
+
+
+class MembershipRevenueOut(BaseModel):
+    total_paise: int
+
+
+@router.get("/membership-payments", response_model=PagedResult[MembershipPaymentAdminOut])
+async def list_membership_payments(
+    status: str | None = Query(None, description="Filter by PaymentStatus value"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    _: object = Depends(_ADMIN_ONLY),
+    svc: AdminService = Depends(get_admin_service),
+):
+    return await svc.list_membership_payments(status, page, per_page)
+
+
+@router.get("/membership-payments/revenue", response_model=MembershipRevenueOut)
+async def get_membership_revenue(
+    _: object = Depends(_ADMIN_ONLY),
+    svc: AdminService = Depends(get_admin_service),
+):
+    total = await svc.get_membership_revenue_total()
+    return MembershipRevenueOut(total_paise=total)
 
 
 # ── Maintenance ───────────────────────────────────────────────────────────────

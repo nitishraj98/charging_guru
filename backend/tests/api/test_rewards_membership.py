@@ -308,3 +308,41 @@ async def test_membership_webhook_confirms_tier_as_fallback(client, seed_station
 
     r2 = await client.get("/api/v1/membership/me", headers=_auth(user))
     assert r2.json()["tier"] == "GOLD"
+
+
+# ── Admin visibility ─────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_admin_can_list_membership_payments(client, admin_tokens, seed_station):
+    user = await _login(client)
+    r = await _upgrade_membership(client, user, "GOLD")
+    assert r.status_code == 200, r.text
+
+    r = await client.get("/api/v1/admin/membership-payments", headers=_auth(admin_tokens))
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["total"] >= 1
+    row = next(p for p in body["items"] if p["tier"] == "GOLD" and p["status"] == "CAPTURED")
+    assert row["amount"] == 49900
+    assert row["razorpay_payment_id"]
+
+
+@pytest.mark.asyncio
+async def test_admin_membership_revenue_totals_captured_payments_only(client, admin_tokens, seed_station):
+    user = await _login(client)
+    await _upgrade_membership(client, user, "SILVER")  # captured, 19900 paise
+
+    # A second, uncaptured order for a different user shouldn't count.
+    other = await _login(client, "+919877777777")
+    await client.post("/api/v1/membership/order", json={"tier": "GOLD"}, headers=_auth(other))
+
+    r = await client.get("/api/v1/admin/membership-payments/revenue", headers=_auth(admin_tokens))
+    assert r.status_code == 200, r.text
+    assert r.json()["total_paise"] >= 19900
+
+
+@pytest.mark.asyncio
+async def test_normal_user_cannot_list_membership_payments(client, seed_station):
+    user = await _login(client)
+    r = await client.get("/api/v1/admin/membership-payments", headers=_auth(user))
+    assert r.status_code == 403
