@@ -55,7 +55,7 @@ function Timeline({ status }: { status: string }) {
   const isCancelled = status === "CANCELLED" || status === "EXPIRED";
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 0, width: "100%" }}>
+    <div className="booking-timeline" style={{ gap: 0 }}>
       {STEPS.map((step, i) => {
         const done = currentIdx >= i && !isCancelled;
         const active = currentIdx === i && !isCancelled;
@@ -174,7 +174,7 @@ export default function BookingDetailPage() {
   }
 
   if (loading) return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: 16 }}>
         <span className="spinner" style={{ width: 32, height: 32, borderWidth: 3, borderColor: "#222829", borderTopColor: accent }} />
@@ -184,7 +184,7 @@ export default function BookingDetailPage() {
   );
 
   if (error || !booking) return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
       <div style={{ maxWidth: 560, margin: "60px auto", padding: "0 24px", textAlign: "center" }}>
         <div style={{ fontSize: 40, marginBottom: 16 }}>⚠</div>
@@ -200,7 +200,7 @@ export default function BookingDetailPage() {
   const isCompleted = booking.status === "COMPLETED";
 
   return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
 
       <div className="fade-up" style={{ maxWidth: 640, margin: "0 auto", padding: "36px 24px 80px" }}>
