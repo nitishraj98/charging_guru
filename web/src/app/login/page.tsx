@@ -129,7 +129,7 @@ export default function LoginPage() {
 
   return (
     <div className="lg-grid" style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", background: pageBg, fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
-      <style>{`
+      <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
         @keyframes spin-r    { to { transform: rotate(360deg) } }

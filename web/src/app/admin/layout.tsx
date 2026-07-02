@@ -402,7 +402,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // ── Admin panel ───────────────────────────────────────────────────────────────
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: th.bg, fontFamily: C.sans }}>
-      <style>{`
+      <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar       { width: 4px; height: 4px }

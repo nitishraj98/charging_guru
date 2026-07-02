@@ -461,7 +461,7 @@ export default function DiscoverPage() {
       <NavBar />
 
       {/* Popup chrome removal + user dot pulse animation */}
-      <style>{`
+      <style suppressHydrationWarning>{`
         .cg-popup .leaflet-popup-content-wrapper {
           background: transparent !important; border: none !important;
           box-shadow: none !important; padding: 0 !important; border-radius: 0 !important;
