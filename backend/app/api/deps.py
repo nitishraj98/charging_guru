@@ -19,7 +19,7 @@ from app.repositories.booking_repo import BookingRepo, SlotRepo
 from app.repositories.otp_repo import OtpRepo
 from app.repositories.payment_repo import PaymentRepo
 from app.repositories.session_repo import SessionRepo
-from app.repositories.station_repo import ChargerRepo, StationRepo
+from app.repositories.station_repo import ChargerRepo, ReviewRepo, StationRepo
 from app.repositories.user_repo import UserRepo
 from app.services.admin_service import AdminService
 from app.services.auth_service import AuthService
@@ -52,7 +52,7 @@ def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
 
 
 def get_station_service(db: AsyncSession = Depends(get_db)) -> StationService:
-    return StationService(StationRepo(db))
+    return StationService(StationRepo(db), ReviewRepo(db), BookingRepo(db))
 
 
 def get_availability_service(db: AsyncSession = Depends(get_db)) -> AvailabilityService:

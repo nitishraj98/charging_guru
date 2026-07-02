@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from pydantic import Field
 
@@ -71,3 +72,21 @@ class SlotOut(ORMModel):
     slot_start: str  # ISO
     slot_end: str
     available: bool
+
+
+class ReviewCreateIn(StrictModel):
+    rating: int = Field(..., ge=1, le=5)
+    comment: str | None = Field(None, max_length=1000)
+
+
+class ReviewOut(ORMModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    rating: int
+    comment: str | None
+    created_at: datetime
+
+
+class StationStatsOut(ORMModel):
+    sessions_today: int
+    uptime_pct: float
