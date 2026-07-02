@@ -1,22 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Star, Shield, Zap, CreditCard, ChevronDown, ChevronRight } from "lucide-react";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
 import { isLoggedIn, checkAuth } from "@/lib/auth";
 import { membership, MembershipTier as TierId } from "@/lib/api";
-
-declare global {
-  interface Window {
-    Razorpay: new (options: Record<string, unknown>) => {
-      open: () => void;
-      on: (event: string, cb: (resp: unknown) => void) => void;
-    };
-  }
-}
-
-const RZP_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
 
 const TIER_STATIC = {
   FREE: {
@@ -58,14 +47,15 @@ const TRUST = [
 
 interface ApiTier { tier: TierId; price_paise: number; points_multiplier: number; discount_pct: number; }
 
-export default function MembershipPage() {
+function MembershipPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isLight } = useTheme();
   const [toast, setToast]     = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [apiTiers, setApiTiers] = useState<ApiTier[] | null>(null);
   const [currentTier, setCurrentTier] = useState<TierId | null>(null);
-  const [upgrading, setUpgrading] = useState<TierId | null>(null);
+  const [navigating, setNavigating] = useState<TierId | null>(null);
 
   const cardBg     = isLight ? "#FFFFFF" : "#101415";
   const cardBorder = isLight ? "#E2E8F0" : "#222829";
@@ -84,12 +74,15 @@ export default function MembershipPage() {
     }
   }, []);
 
+  // Landed back here after a successful checkout (?upgraded=GOLD).
   useEffect(() => {
-    if (typeof window === "undefined" || window.Razorpay) return;
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    document.body.appendChild(script);
+    const upgraded = searchParams.get("upgraded");
+    if (upgraded) {
+      setCurrentTier(upgraded as TierId);
+      setToast(`You're now on the ${TIER_STATIC[upgraded as TierId]?.name ?? upgraded} plan!`);
+      setTimeout(() => setToast(""), 4000);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const tiers = TIER_ORDER.map(id => {
@@ -108,65 +101,12 @@ export default function MembershipPage() {
     };
   });
 
-  async function finishUpgrade(orderId: string, paymentId: string, signature: string, tier: (typeof tiers)[number]) {
-    try {
-      const result = await membership.verify(orderId, paymentId, signature);
-      setCurrentTier(result.tier);
-      setToast(`You're now on the ${tier.name} plan!`);
-    } catch (e: unknown) {
-      setToast(e instanceof Error ? e.message : "Payment verification failed. Please contact support.");
-    } finally {
-      setUpgrading(null);
-      setTimeout(() => setToast(""), 4000);
-    }
-  }
-
   async function handleUpgrade(tier: (typeof tiers)[number]) {
-    if (tier.current) return;
+    if (tier.current || tier.id === "FREE") return;
+    setNavigating(tier.id);
     const ok = await checkAuth();
     if (!ok) { router.push("/login"); return; }
-    setUpgrading(tier.id);
-    setToast("");
-
-    let order;
-    try {
-      order = await membership.createOrder(tier.id);
-    } catch (e: unknown) {
-      setToast(e instanceof Error ? e.message : "Failed to start upgrade");
-      setUpgrading(null);
-      setTimeout(() => setToast(""), 4000);
-      return;
-    }
-
-    // No Razorpay key configured client-side — fall back to the same
-    // test-mode bypass the booking payment flow uses.
-    if (!window.Razorpay || !RZP_KEY) {
-      await finishUpgrade(order.razorpay_order_id, `pay_test_${Date.now()}`, "valid_sig", tier);
-      return;
-    }
-
-    const options: Record<string, unknown> = {
-      key: RZP_KEY,
-      amount: order.amount,
-      currency: "INR",
-      name: "Charging Guru",
-      description: `${tier.name} Membership`,
-      order_id: order.razorpay_order_id,
-      theme: { color: "#00E676" },
-      modal: { ondismiss: () => setUpgrading(null) },
-      handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
-        await finishUpgrade(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature, tier);
-      },
-    };
-
-    const rzp = new window.Razorpay(options);
-    rzp.on("payment.failed", (resp: unknown) => {
-      const r = resp as { error?: { description?: string } };
-      setToast(`Payment failed: ${r?.error?.description ?? "Unknown error"}`);
-      setUpgrading(null);
-      setTimeout(() => setToast(""), 4000);
-    });
-    rzp.open();
+    router.push(`/membership/checkout/${tier.id.toLowerCase()}`);
   }
 
   return (
@@ -195,7 +135,7 @@ export default function MembershipPage() {
         {/* Tier cards */}
         <div className="membership-tiers" style={{ marginBottom: 52 }}>
           {tiers.map(tier => {
-            const isUpgrading = upgrading === tier.id;
+            const isNavigating = navigating === tier.id;
             return (
             <div key={tier.id} style={{
               borderRadius: 24, padding: "24px 20px",
@@ -242,16 +182,16 @@ export default function MembershipPage() {
                 ))}
               </div>
 
-              <button onClick={e => { e.stopPropagation(); handleUpgrade(tier); }} disabled={tier.current || isUpgrading} style={{
+              <button onClick={e => { e.stopPropagation(); handleUpgrade(tier); }} disabled={tier.current || isNavigating} style={{
                 width: "100%", padding: "13px", borderRadius: 13, fontSize: 13, fontWeight: 700,
-                cursor: tier.current || isUpgrading ? "not-allowed" : "pointer",
+                cursor: tier.current || isNavigating ? "not-allowed" : "pointer",
                 border: tier.current ? `1px solid ${cardBorder}` : "none",
                 background: tier.current ? raisedBg : tier.id === "GOLD" ? `linear-gradient(135deg,${tier.color},#E6A000)` : tier.id === "SILVER" ? "linear-gradient(135deg,#94A3B8,#64748B)" : raisedBg,
                 color: tier.current ? textMuted : "#050708",
-                opacity: tier.current ? 0.7 : isUpgrading ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                opacity: tier.current ? 0.7 : isNavigating ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}>
-                {isUpgrading
-                  ? <><span className="spinner" style={{ borderColor: "rgba(5,7,8,.3)", borderTopColor: "#050708" }} />Upgrading…</>
+                {isNavigating
+                  ? <><span className="spinner" style={{ borderColor: "rgba(5,7,8,.3)", borderTopColor: "#050708" }} />Continuing…</>
                   : <>{!tier.current && <ChevronRight size={14} strokeWidth={2.5} />}{tier.cta}</>}
               </button>
             </div>
@@ -313,5 +253,13 @@ export default function MembershipPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MembershipPage() {
+  return (
+    <Suspense fallback={<div style={{ background: "transparent", minHeight: "100vh" }}><NavBar /></div>}>
+      <MembershipPageInner />
+    </Suspense>
   );
 }
