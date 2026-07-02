@@ -26,14 +26,19 @@ async function updateProfile(full_name: string | null, email: string | null): Pr
   return data as User;
 }
 
-const QUICK_LINKS = [
-  { label: "My Vehicles",       sub: "Manage your EVs",             Icon: Car,       href: "/vehicles",    color: "#00E676" },
-  { label: "My Trips",          sub: "View charging sessions",       Icon: Zap,       href: "/trips",       color: "#22D3EE" },
-  { label: "Plan Journey",      sub: "Find charge stops on route",   Icon: Map,       href: "/plan",        color: "#A78BFA" },
-  { label: "Rewards",           sub: "Points & referrals",           Icon: Star,      href: "/rewards",     color: "#FFC043" },
-  { label: "Station Portal",    sub: "Manage your stations",         Icon: Building2, href: "/owner",       color: "#FB923C" },
-  { label: "Become a Partner",  sub: "List your charging station",   Icon: ShieldCheck, href: "/become-owner", color: "#F472B6" },
+const BASE_QUICK_LINKS = [
+  { label: "My Vehicles",  sub: "Manage your EVs",           Icon: Car,  href: "/vehicles", color: "#00E676" },
+  { label: "My Trips",     sub: "View charging sessions",    Icon: Zap,  href: "/trips",     color: "#22D3EE" },
+  { label: "Plan Journey", sub: "Find charge stops on route", Icon: Map, href: "/plan",      color: "#A78BFA" },
+  { label: "Rewards",      sub: "Points & referrals",        Icon: Star, href: "/rewards",   color: "#FFC043" },
 ];
+const OWNER_LINK  = { label: "Station Portal",   sub: "Manage your stations",       Icon: Building2,   href: "/owner",         color: "#FB923C" };
+const PARTNER_LINK = { label: "Become a Partner", sub: "List your charging station", Icon: ShieldCheck, href: "/become-owner", color: "#F472B6" };
+
+function quickLinksFor(roles: string[] | undefined) {
+  const isOwner = (roles ?? []).includes("ROLE_STATION_OWNER");
+  return [...BASE_QUICK_LINKS, isOwner ? OWNER_LINK : PARTNER_LINK];
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -256,11 +261,11 @@ export default function ProfilePage() {
 
         {/* ── Quick links ── */}
         <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, overflow: "hidden", marginBottom: 16, boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
-          {QUICK_LINKS.map((item, i) => (
+          {quickLinksFor(user?.roles).map((item, i, arr) => (
             <button key={item.label} onClick={() => router.push(item.href)} style={{
               width: "100%", display: "flex", alignItems: "center", gap: 14,
               padding: "14px 20px", background: "transparent", border: "none",
-              borderBottom: i < QUICK_LINKS.length - 1 ? `1px solid ${cardBorder}` : "none",
+              borderBottom: i < arr.length - 1 ? `1px solid ${cardBorder}` : "none",
               cursor: "pointer", textAlign: "left", transition: "background .12s",
             }}
               onMouseEnter={e => { e.currentTarget.style.background = raisedBg; }}
