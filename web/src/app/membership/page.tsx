@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Check, Star, Shield, Zap, CreditCard, ChevronDown, ChevronRight } from "lucide-react";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
-import { isLoggedIn } from "@/lib/auth";
+import { isLoggedIn, checkAuth } from "@/lib/auth";
 import { membership, MembershipTier as TierId } from "@/lib/api";
 
 declare global {
@@ -123,7 +123,8 @@ export default function MembershipPage() {
 
   async function handleUpgrade(tier: (typeof tiers)[number]) {
     if (tier.current) return;
-    if (!isLoggedIn()) { router.push("/login"); return; }
+    const ok = await checkAuth();
+    if (!ok) { router.push("/login"); return; }
     setUpgrading(tier.id);
     setToast("");
 
