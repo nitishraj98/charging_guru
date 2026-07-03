@@ -389,7 +389,7 @@ export default function StationDetailPage() {
   const raisedBg    = isLight ? "#F0F3F8"              : "#161B1D";
   const textPrimary = isLight ? "#0A0F1A"              : "#E8ECEE";
   const textSub     = isLight ? "#5A6A7A"              : "#6B7479";
-  const textMuted   = isLight ? "#94A3B8"              : "#495154";
+  const textMuted   = isLight ? "#64748B"              : "#495154";
   const accent      = isLight ? "#00C862"              : "#00E676";
   const accentDim   = isLight ? "rgba(0,200,98,.07)"  : "rgba(0,230,118,.06)";
   const accentBrd   = isLight ? "rgba(0,200,98,.28)"  : "rgba(0,230,118,.20)";
@@ -899,7 +899,7 @@ export default function StationDetailPage() {
                     onClick={() => bookTarget.status === "AVAILABLE" && router.push(`/bookings/new?charger=${bookTarget.id}&station=${id}`)}
                     disabled={bookTarget.status !== "AVAILABLE"}
                     className="book-cta"
-                    style={{ width: "100%", padding: "16px", borderRadius: 15, background: bookTarget.status==="AVAILABLE"?`linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C258"})`:(isLight?"#E2E8F0":"#161B1D"), color: bookTarget.status==="AVAILABLE"?"#050708":textMuted, fontSize: 15, fontWeight: 800, border: "none", cursor: bookTarget.status==="AVAILABLE"?"pointer":"not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, boxShadow: bookTarget.status==="AVAILABLE"?isLight?"0 6px 28px rgba(0,200,98,.42)":"0 0 36px rgba(0,230,118,.24)":"none" }}>
+                    style={{ width: "100%", padding: "16px", borderRadius: 15, background: bookTarget.status==="AVAILABLE"?`linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C258"})`:(isLight?"#CBD5E1":"#161B1D"), color: bookTarget.status==="AVAILABLE"?"#050708":textMuted, fontSize: 15, fontWeight: 800, border: "none", cursor: bookTarget.status==="AVAILABLE"?"pointer":"not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, boxShadow: bookTarget.status==="AVAILABLE"?isLight?"0 6px 28px rgba(0,200,98,.42)":"0 0 36px rgba(0,230,118,.24)":"none" }}>
                     {bookTarget.status === "AVAILABLE"
                       ? <><Zap size={16} fill="#050708"/> Book Slot Now</>
                       : `${STATUS_STYLE[bookTarget.status]?.label ?? "Unavailable"}`

@@ -82,7 +82,7 @@ const PLANS = [
     cta: "Start free",
   },
   {
-    name: "SILVER", price: 199, period: "/ month", highlight: false, color: "#94A3B8",
+    name: "SILVER", price: 199, period: "/ month", highlight: false, color: "#64748B",
     tierIcon: (c: string) => Ic.diamond(c),
     desc: "For regular EV commuters",
     features: [
@@ -145,7 +145,7 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
       style={{
         padding: "clamp(48px,8vw,100px) clamp(16px,5vw,60px) clamp(40px,7vw,80px)",
         background: isLight
-          ? "linear-gradient(180deg,#F6F8FA 0%,#EFF4F8 50%,#F6F8FA 100%)"
+          ? "linear-gradient(180deg,#F3F7FB 0%,#EFF4F8 50%,#F3F7FB 100%)"
           : "linear-gradient(160deg,#080E0A 0%,#091208 35%,#080E0A 65%,#060A07 100%)",
         position: "relative", overflow: "hidden",
       }}
@@ -347,7 +347,7 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
                         border: `1px solid ${f.included ? plan.color + "38" : (isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.06)")}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}>
-                        {f.included ? Ic.check(plan.color) : Ic.cross(isLight ? "#CBD5E1" : "#374151")}
+                        {f.included ? Ic.check(plan.color) : Ic.cross(isLight ? "#94A3B8" : "#374151")}
                       </div>
                       <span style={{ fontSize: 13.5, color: f.included ? t.textSub : t.textMuted, lineHeight: 1.4 }}>{f.text}</span>
                     </div>

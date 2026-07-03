@@ -17,7 +17,7 @@ export const DARK = {
 
 // Light theme tokens
 export const LIGHT = {
-  bg:       "#F4F6FA",
+  bg:       "#F3F7FB",
   panel:    "#FFFFFF",
   card:     "#FFFFFF",
   raised:   "#F0F2F7",
@@ -25,8 +25,8 @@ export const LIGHT = {
   borderHi: "rgba(15,23,42,0.18)",
   text:     "#0F172A",
   sub:      "#64748B",
-  muted:    "#E2E8F0",
-  inputBg:  "#F8FAFC",
+  muted:    "#CBD5E1",
+  inputBg:  "#F3F7FB",
 } as const;
 
 // Brand / semantic colours — same in both themes

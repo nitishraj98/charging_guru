@@ -129,12 +129,12 @@ function ResultsInner() {
   const [payError,  setPayError]  = useState("");
 
   const cardBg       = isLight ? "#FFFFFF"  : "#101415";
-  const cardBorder   = isLight ? "#E2E8F0"  : "#222829";
-  const cardBorderHover = isLight ? "#CBD5E1" : "#2E3638";
+  const cardBorder   = isLight ? "#CBD5E1"  : "#222829";
+  const cardBorderHover = isLight ? "#94A3B8" : "#2E3638";
   const raisedBg     = isLight ? "#F1F5F9"  : "#181D1F";
   const textPrimary  = isLight ? "#0F172A"  : "#E6EBED";
   const textSub      = isLight ? "#64748B"  : "#6B7479";
-  const textMuted    = isLight ? "#94A3B8"  : "#495154";
+  const textMuted    = isLight ? "#64748B"  : "#495154";
   const accent       = isLight ? "#00D26A"  : "#00E676";
   const accentDim    = isLight ? "#DCFCE7"  : "rgba(0,230,118,.08)";
   const accentBorder = isLight ? "#86EFAC"  : "rgba(0,230,118,.25)";
@@ -426,7 +426,7 @@ function ResultsInner() {
 
               <button onClick={handleReserve} disabled={paying} style={{
                 width: "100%", padding: "16px", borderRadius: 14,
-                background: paying ? (isLight ? "#E2E8F0" : "#222829") : `linear-gradient(135deg,${accent},${isLight ? "#00A855" : "#00C862"})`,
+                background: paying ? (isLight ? "#CBD5E1" : "#222829") : `linear-gradient(135deg,${accent},${isLight ? "#00A855" : "#00C862"})`,
                 color: paying ? textMuted : "#050708", fontSize: 15, fontWeight: 800, border: "none",
                 cursor: paying ? "not-allowed" : "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,

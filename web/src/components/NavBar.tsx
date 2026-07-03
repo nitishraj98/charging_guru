@@ -110,7 +110,7 @@ export default function NavBar() {
     ? "0 4px 32px rgba(0,0,0,0.09), 0 1px 0 rgba(255,255,255,0.9) inset, 0 0 0 1px rgba(0,210,106,0.08)"
     : "0 4px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,230,118,0.06)";
 
-  const linkColor = isLight ? "#374151" : "#94A3B8";
+  const linkColor = isLight ? "#374151" : "#64748B";
   const linkActiveColor = isLight ? "#059669" : "#00E676";
 
   return (
@@ -251,7 +251,7 @@ export default function NavBar() {
                 alignItems: "center", justifyContent: "center",
                 background: isLight ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.06)",
                 border: isLight ? "1px solid rgba(0,0,0,.09)" : "1px solid rgba(255,255,255,.09)",
-                color: isLight ? "#374151" : "#94A3B8",
+                color: isLight ? "#374151" : "#64748B",
                 cursor: "pointer", flexShrink: 0, fontFamily: "inherit",
               }}
             >
@@ -370,7 +370,7 @@ export default function NavBar() {
                   style={{
                     padding: "9px 18px", borderRadius: 11,
                     border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
-                    color: isLight ? "#374151" : "#94A3B8",
+                    color: isLight ? "#374151" : "#64748B",
                     fontSize: 13.5, fontWeight: 500,
                     textDecoration: "none",
                     transition: "all .2s",
@@ -380,13 +380,13 @@ export default function NavBar() {
                     const el = e.currentTarget as HTMLAnchorElement;
                     el.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.07)";
                     el.style.borderColor = isLight ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.15)";
-                    el.style.color = isLight ? "#111827" : "#E2E8F0";
+                    el.style.color = isLight ? "#111827" : "#CBD5E1";
                   }}
                   onMouseLeave={e => {
                     const el = e.currentTarget as HTMLAnchorElement;
                     el.style.background = "transparent";
                     el.style.borderColor = isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)";
-                    el.style.color = isLight ? "#374151" : "#94A3B8";
+                    el.style.color = isLight ? "#374151" : "#64748B";
                   }}
                 >Log in</Link>
 
@@ -454,7 +454,7 @@ export default function NavBar() {
             {/* Close row */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px 20px", borderBottom: isLight ? "1px solid rgba(0,0,0,.07)" : "1px solid rgba(255,255,255,.07)" }}>
               <Logo size="md" theme={isLight ? "light" : "dark"} />
-              <button onClick={() => setMobileMenuOpen(false)} style={{ width: 34, height: 34, borderRadius: 9, border: isLight ? "1px solid rgba(0,0,0,.1)" : "1px solid rgba(255,255,255,.1)", background: "transparent", color: isLight ? "#374151" : "#94A3B8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <button onClick={() => setMobileMenuOpen(false)} style={{ width: 34, height: 34, borderRadius: 9, border: isLight ? "1px solid rgba(0,0,0,.1)" : "1px solid rgba(255,255,255,.1)", background: "transparent", color: isLight ? "#374151" : "#64748B", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -466,7 +466,7 @@ export default function NavBar() {
                 return (
                   <Link key={href} href={href} style={{
                     padding: "12px 16px", borderRadius: 12, fontSize: 15, fontWeight: active ? 700 : 500,
-                    color: active ? (isLight ? "#059669" : "#00E676") : (isLight ? "#374151" : "#94A3B8"),
+                    color: active ? (isLight ? "#059669" : "#00E676") : (isLight ? "#374151" : "#64748B"),
                     background: active ? (isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.08)") : "transparent",
                     textDecoration: "none", display: "block", transition: "background .15s",
                   }}>{label}</Link>
@@ -491,7 +491,7 @@ export default function NavBar() {
               </button>
               {loggedIn ? (
                 <>
-                  <Link href="/profile" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: isLight ? "#374151" : "#94A3B8", background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)", border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)", textDecoration: "none" }}>
+                  <Link href="/profile" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: isLight ? "#374151" : "#64748B", background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)", border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)", textDecoration: "none" }}>
                     <div style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#00D26A,#00A855)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#FFF" }}>{userInitial}</div>
                     My Profile
                   </Link>
@@ -501,7 +501,7 @@ export default function NavBar() {
                 </>
               ) : (
                 <>
-                  <Link href="/login" style={{ display: "block", padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: isLight ? "#374151" : "#94A3B8", background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)", border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)", textDecoration: "none", textAlign: "center" }}>Log in</Link>
+                  <Link href="/login" style={{ display: "block", padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: isLight ? "#374151" : "#64748B", background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)", border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)", textDecoration: "none", textAlign: "center" }}>Log in</Link>
                   <Link href="/plan" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "13px 16px", borderRadius: 12, fontSize: 14, fontWeight: 700, background: "linear-gradient(135deg,#00D26A,#00A855)", color: "#FFF", textDecoration: "none", boxShadow: "0 4px 16px rgba(0,210,106,.35)" }}>
                     <BoltIcon /> Get Started
                   </Link>

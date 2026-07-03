@@ -13,7 +13,7 @@ const TIER_STATIC = {
     features: ["Earn 1× reward points", "Standard pricing", "All connector types", "Email support"],
   },
   SILVER: {
-    name: "Silver", color: "#94A3B8", gradient: "linear-gradient(135deg,#0E1B2A,#101D2A)", badge: null as string | null,
+    name: "Silver", color: "#64748B", gradient: "linear-gradient(135deg,#0E1B2A,#101D2A)", badge: null as string | null,
     features: ["Earn 1.5× reward points", "5% discount on all bookings", "Priority support", "Access peak-hour slots", "Monthly usage report"],
   },
   GOLD: {
@@ -58,10 +58,10 @@ function MembershipPageInner() {
   const [navigating, setNavigating] = useState<TierId | null>(null);
 
   const cardBg     = isLight ? "#FFFFFF" : "#101415";
-  const cardBorder = isLight ? "#E2E8F0" : "#222829";
+  const cardBorder = isLight ? "#CBD5E1" : "#222829";
   const textPrimary= isLight ? "#0F172A" : "#E6EBED";
   const textSub    = isLight ? "#64748B" : "#6B7479";
-  const textMuted  = isLight ? "#94A3B8" : "#495154";
+  const textMuted  = isLight ? "#64748B" : "#495154";
   const raisedBg   = isLight ? "#F1F5F9" : "#181D1F";
   const accent     = isLight ? "#00D26A" : "#00E676";
   const accentDim  = isLight ? "#DCFCE7" : "rgba(0,230,118,.08)";
@@ -140,7 +140,7 @@ function MembershipPageInner() {
             <div key={tier.id} style={{
               borderRadius: 24, padding: "24px 20px",
               background: tier.gradient ?? (isLight ? "#FFFFFF" : "#101415"),
-              border: tier.current ? `1.5px solid ${isLight ? "#E2E8F0" : "#2E3638"}` : `1.5px solid ${tier.color}40`,
+              border: tier.current ? `1.5px solid ${isLight ? "#CBD5E1" : "#2E3638"}` : `1.5px solid ${tier.color}40`,
               boxShadow: tier.id === "GOLD" ? `0 0 0 1px ${tier.color}30,0 4px 40px ${tier.color}14` : isLight ? "0 2px 8px rgba(0,0,0,.06)" : "none",
               position: "relative", display: "flex", flexDirection: "column",
               cursor: tier.current ? "default" : "pointer", transition: "transform .15s,box-shadow .15s",
@@ -186,7 +186,7 @@ function MembershipPageInner() {
                 width: "100%", padding: "13px", borderRadius: 13, fontSize: 13, fontWeight: 700,
                 cursor: tier.current || isNavigating ? "not-allowed" : "pointer",
                 border: tier.current ? `1px solid ${cardBorder}` : "none",
-                background: tier.current ? raisedBg : tier.id === "GOLD" ? `linear-gradient(135deg,${tier.color},#E6A000)` : tier.id === "SILVER" ? "linear-gradient(135deg,#94A3B8,#64748B)" : raisedBg,
+                background: tier.current ? raisedBg : tier.id === "GOLD" ? `linear-gradient(135deg,${tier.color},#E6A000)` : tier.id === "SILVER" ? "linear-gradient(135deg,#64748B,#64748B)" : raisedBg,
                 color: tier.current ? textMuted : "#050708",
                 opacity: tier.current ? 0.7 : isNavigating ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}>
@@ -204,14 +204,14 @@ function MembershipPageInner() {
           <div className="membership-compare-row" style={{ padding: "16px 22px", borderBottom: `1px solid ${cardBorder}`, background: raisedBg }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: textSub }}>Feature</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#6B7479", textAlign: "center" }}>Free</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#94A3B8", textAlign: "center" }}>Silver</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#64748B", textAlign: "center" }}>Silver</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#FFC043", textAlign: "center" }}>Gold</span>
           </div>
           {COMPARE_ROWS.map((row, i) => (
             <div key={row.feature} className="membership-compare-row" style={{ padding: "13px 22px", fontSize: 13, background: i % 2 === 1 ? raisedBg : "transparent", borderBottom: i < COMPARE_ROWS.length - 1 ? `1px solid ${cardBorder}` : "none" }}>
               <span style={{ color: textSub }}>{row.feature}</span>
               <span style={{ color: textMuted, textAlign: "center" }}>{row.free}</span>
-              <span style={{ color: "#94A3B8", textAlign: "center", fontWeight: row.silver !== "—" ? 600 : 400 }}>{row.silver}</span>
+              <span style={{ color: "#64748B", textAlign: "center", fontWeight: row.silver !== "—" ? 600 : 400 }}>{row.silver}</span>
               <span style={{ color: "#FFC043", textAlign: "center", fontWeight: row.gold !== "—" ? 600 : 400 }}>{row.gold}</span>
             </div>
           ))}

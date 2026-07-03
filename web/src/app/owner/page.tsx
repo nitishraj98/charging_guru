@@ -32,9 +32,9 @@ const STATION_BADGE: Record<string, { color: string; bg: string; label: string }
 
 function getTheme(isLight: boolean) {
   return isLight ? {
-    bg: "#F1F5F9", card: "#FFFFFF", raised: "#F8FAFC", raised2: "#EEF2F7",
+    bg: "#F1F5F9", card: "#FFFFFF", raised: "#F3F7FB", raised2: "#EEF2F7",
     border: "rgba(15,23,42,0.08)", borderHi: "rgba(15,23,42,0.14)",
-    text: "#0F172A", sub: "#64748B", muted: "#94A3B8",
+    text: "#0F172A", sub: "#64748B", muted: "#64748B",
     statGrad1: "linear-gradient(135deg,#FFFFFF,#F0FDF4)",
     statGrad2: "linear-gradient(135deg,#FFFFFF,#F0F9FF)",
     statGrad3: "linear-gradient(135deg,#FFFFFF,#FFFBEB)",

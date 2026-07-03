@@ -98,8 +98,8 @@ function CopyContent({ isLight }: { isLight: boolean }) {
 
 export default function HeroSection({ isLight }: { isLight: boolean; t: Tok }) {
 
-  const bg   = isLight ? "#F8FAFC" : "#060809";
-  const fade = isLight ? "#F8FAFC" : "#060809";
+  const bg   = isLight ? "#F3F7FB" : "#060809";
+  const fade = isLight ? "#F3F7FB" : "#060809";
 
   return (
     <div className="hero-two-col" style={{

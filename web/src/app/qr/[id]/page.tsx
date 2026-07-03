@@ -37,7 +37,7 @@ function QrInner() {
   const accent      = isLight ? "#00D26A" : "#00E676";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
   const textSub     = isLight ? "#64748B" : "#6B7479";
-  const textMuted   = isLight ? "#94A3B8" : "#495154";
+  const textMuted   = isLight ? "#64748B" : "#495154";
   const accentDim   = isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.07)";
   const accentBrd   = isLight ? "rgba(0,210,106,.30)" : "rgba(0,230,118,.20)";
 
@@ -54,7 +54,7 @@ function QrInner() {
   const amountRs = booking?.amount ? (booking.amount / 100).toLocaleString("en-IN") : "—";
 
   return (
-    <div style={{ background: isLight?"#F8FAFC":"#080B0C", minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
+    <div style={{ background: isLight?"#F3F7FB":"#080B0C", minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
       <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         @keyframes fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -83,7 +83,7 @@ function QrInner() {
         </p>
 
         {/* Ticket card */}
-        <div style={{ background: isLight?"#FFFFFF":"#101415", border: `1px solid ${isLight?"#E2E8F0":"#1E2426"}`, borderRadius: 24, overflow: "hidden", maxWidth: 340, margin: "0 auto 28px", boxShadow: isLight?"0 12px 40px rgba(0,0,0,.10)":"0 20px 60px rgba(0,0,0,.5)" }}>
+        <div style={{ background: isLight?"#FFFFFF":"#101415", border: `1px solid ${isLight?"#CBD5E1":"#1E2426"}`, borderRadius: 24, overflow: "hidden", maxWidth: 340, margin: "0 auto 28px", boxShadow: isLight?"0 12px 40px rgba(0,0,0,.10)":"0 20px 60px rgba(0,0,0,.5)" }}>
 
           {/* Ticket header */}
           <div style={{ background: isLight?"linear-gradient(135deg,#F0FDF4,#ECFDF5)":"linear-gradient(135deg,#0E2A1C,#0d1e13)", padding: "18px 20px", borderBottom: `1px solid ${accentBrd}` }}>
@@ -112,9 +112,9 @@ function QrInner() {
           </div>
 
           {/* Perforation */}
-          <div style={{ position: "relative", height: 0, borderTop: `2px dashed ${isLight?"#E2E8F0":"#222829"}` }}>
-            <div style={{ position: "absolute", left: -14, top: "50%", transform: "translateY(-50%)", width: 26, height: 26, borderRadius: "50%", background: isLight?"#F8FAFC":"#080B0C", border: `1px solid ${isLight?"#E2E8F0":"#222829"}` }}/>
-            <div style={{ position: "absolute", right: -14, top: "50%", transform: "translateY(-50%)", width: 26, height: 26, borderRadius: "50%", background: isLight?"#F8FAFC":"#080B0C", border: `1px solid ${isLight?"#E2E8F0":"#222829"}` }}/>
+          <div style={{ position: "relative", height: 0, borderTop: `2px dashed ${isLight?"#CBD5E1":"#222829"}` }}>
+            <div style={{ position: "absolute", left: -14, top: "50%", transform: "translateY(-50%)", width: 26, height: 26, borderRadius: "50%", background: isLight?"#F3F7FB":"#080B0C", border: `1px solid ${isLight?"#CBD5E1":"#222829"}` }}/>
+            <div style={{ position: "absolute", right: -14, top: "50%", transform: "translateY(-50%)", width: 26, height: 26, borderRadius: "50%", background: isLight?"#F3F7FB":"#080B0C", border: `1px solid ${isLight?"#CBD5E1":"#222829"}` }}/>
           </div>
 
           {/* Booking info grid */}
@@ -142,7 +142,7 @@ function QrInner() {
 
         {/* Action buttons */}
         <div style={{ display: "flex", gap: 10, maxWidth: 340, margin: "0 auto 16px" }}>
-          <button className="action-btn" onClick={() => router.push("/discover")} style={{ flex: 1, padding: "13px 16px", borderRadius: 14, background: isLight?"#FFFFFF":"#101415", border: `1px solid ${isLight?"#E2E8F0":"#1E2426"}`, color: textPrimary, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+          <button className="action-btn" onClick={() => router.push("/discover")} style={{ flex: 1, padding: "13px 16px", borderRadius: 14, background: isLight?"#FFFFFF":"#101415", border: `1px solid ${isLight?"#CBD5E1":"#1E2426"}`, color: textPrimary, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
             📍 Get directions
           </button>
           <button className="action-btn" onClick={() => router.push(`/bookings/${bookingId}`)} style={{ flex: 1, padding: "13px 16px", borderRadius: 14, background: accentDim, border: `1px solid ${accentBrd}`, color: accent, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>

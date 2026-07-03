@@ -44,11 +44,11 @@ function BookingNewInner() {
   const [error,    setError]    = useState("");
 
   const cardBg     = isLight ? "#FFFFFF"              : "#101415";
-  const cardBorder = isLight ? "#E2E8F0"              : "#1E2426";
+  const cardBorder = isLight ? "#CBD5E1"              : "#1E2426";
   const raisedBg   = isLight ? "#F1F5F9"              : "#181D1F";
   const textPrimary= isLight ? "#0F172A"              : "#E6EBED";
   const textSub    = isLight ? "#64748B"              : "#6B7479";
-  const textMuted  = isLight ? "#94A3B8"              : "#495154";
+  const textMuted  = isLight ? "#64748B"              : "#495154";
   const accent     = isLight ? "#00D26A"              : "#00E676";
   const accentDim  = isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.07)";
   const accentBrd  = isLight ? "rgba(0,210,106,.30)" : "rgba(0,230,118,.22)";
@@ -92,7 +92,7 @@ function BookingNewInner() {
   const estCost = charger ? ((charger.price_per_kwh/100) * charger.power_kw * (duration/60)) : 0;
 
   if (loading) return (
-    <div style={{ background: isLight?"#F8FAFC":"#080B0C", minHeight: "100vh" }}>
+    <div style={{ background: isLight?"#F3F7FB":"#080B0C", minHeight: "100vh" }}>
       <NavBar />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "70vh", flexDirection: "column", gap: 16 }}>
         <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${cardBorder}`, borderTopColor: accent, animation: "spin .8s linear infinite" }}/>
@@ -103,7 +103,7 @@ function BookingNewInner() {
   );
 
   return (
-    <div style={{ background: isLight?"#F8FAFC":"#080B0C", minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
+    <div style={{ background: isLight?"#F3F7FB":"#080B0C", minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
       <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -205,7 +205,7 @@ function BookingNewInner() {
             )}
 
             {slots.length > 0 && (
-              <button onClick={() => setStep(2)} className="bk-cta" style={{ width: "100%", padding: "17px", borderRadius: 16, background: selected?`linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C862"})`:(isLight?"#E2E8F0":"#1A2218"), color: selected?"#050708":textSub, fontSize: 15, fontWeight: 800, border: "none", cursor: selected?"pointer":"not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: selected?isLight?"0 6px 24px rgba(0,210,106,.40)":"0 0 32px rgba(0,230,118,.22)":"none" }} disabled={!selected}>
+              <button onClick={() => setStep(2)} className="bk-cta" style={{ width: "100%", padding: "17px", borderRadius: 16, background: selected?`linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C862"})`:(isLight?"#CBD5E1":"#1A2218"), color: selected?"#050708":textSub, fontSize: 15, fontWeight: 800, border: "none", cursor: selected?"pointer":"not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: selected?isLight?"0 6px 24px rgba(0,210,106,.40)":"0 0 32px rgba(0,230,118,.22)":"none" }} disabled={!selected}>
                 Continue → Review booking
               </button>
             )}
@@ -252,7 +252,7 @@ function BookingNewInner() {
 
             <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 10 }}>
               <button onClick={() => setStep(1)} style={{ padding: "16px 20px", borderRadius: 16, background: raisedBg, border: `1px solid ${cardBorder}`, color: textSub, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>← Back</button>
-              <button onClick={handleBook} disabled={booking} className="bk-cta" style={{ padding: "16px", borderRadius: 16, background: booking?(isLight?"#E2E8F0":"#1A2218"):`linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C862"})`, color: booking?textSub:"#050708", fontSize: 15, fontWeight: 800, border: "none", cursor: booking?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: booking?"none":isLight?"0 6px 24px rgba(0,210,106,.40)":"0 0 32px rgba(0,230,118,.22)" }}>
+              <button onClick={handleBook} disabled={booking} className="bk-cta" style={{ padding: "16px", borderRadius: 16, background: booking?(isLight?"#CBD5E1":"#1A2218"):`linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C862"})`, color: booking?textSub:"#050708", fontSize: 15, fontWeight: 800, border: "none", cursor: booking?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: booking?"none":isLight?"0 6px 24px rgba(0,210,106,.40)":"0 0 32px rgba(0,230,118,.22)" }}>
                 {booking ? (
                   <><span style={{ width: 18, height: 18, borderRadius: "50%", border: `2.5px solid ${textSub}`, borderTopColor: "transparent", display: "inline-block", animation: "spin .7s linear infinite" }}/> Reserving slot…</>
                 ) : (

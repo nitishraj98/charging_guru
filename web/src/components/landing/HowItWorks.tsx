@@ -392,7 +392,7 @@ export default function HowItWorks({ isLight, t }: { isLight: boolean; t: Tok })
       style={{
         padding: "clamp(48px,8vw,100px) clamp(16px,5vw,60px) clamp(60px,10vw,120px)",
         background: isLight
-          ? "linear-gradient(180deg, #F0F5F8 0%, #F6F8FA 50%, #EDF4F9 100%)"
+          ? "linear-gradient(180deg, #F0F5F8 0%, #F3F7FB 50%, #EDF4F9 100%)"
           : "linear-gradient(160deg,#080C10 0%,#0A1016 35%,#080D14 65%,#060A10 100%)",
         position: "relative", overflow: "hidden",
       }}
@@ -588,7 +588,7 @@ export default function HowItWorks({ isLight, t }: { isLight: boolean; t: Tok })
               </div>
 
               {/* Screen */}
-              <div style={{ position: "absolute", inset: 0, background: isLight ? "#F6F8FA" : "#0C1115", borderRadius: 29, paddingTop: 32, overflow: "hidden" }}>
+              <div style={{ position: "absolute", inset: 0, background: isLight ? "#F3F7FB" : "#0C1115", borderRadius: 29, paddingTop: 32, overflow: "hidden" }}>
                 {/* Status bar */}
                 <div style={{ padding: "4px 14px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 8.5, fontWeight: 700, color: isLight ? "#374151" : "#6B7479" }}>9:41</span>

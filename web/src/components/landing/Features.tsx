@@ -28,7 +28,7 @@ function RoutePreview({ isLight }: { isLight: boolean }) {
           return (
             <g key={i} transform={`translate(${pt.x},${pt.y})`}>
               {lit && <circle r="12" fill="rgba(0,230,118,.12)" style={{ animation: "ping-green 1.8s ease-in-out infinite" }} />}
-              <circle r="6" fill={lit ? "#00E676" : (isLight ? "#CBD5E1" : "#2E3638")}
+              <circle r="6" fill={lit ? "#00E676" : (isLight ? "#94A3B8" : "#2E3638")}
                 style={{ transition: "fill .3s", filter: lit ? "drop-shadow(0 0 6px #00E676)" : "none" }} />
             </g>
           );
@@ -177,14 +177,14 @@ function RewardsPreview({ isLight }: { isLight: boolean }) {
     const id = setInterval(() => setPoints(p => p + Math.floor(Math.random() * 4) + 1), 900);
     return () => clearInterval(id);
   }, []);
-  const TIERS = [{ label: "Standard", min: 0, max: 1000, color: "#6B7479" }, { label: "Silver", min: 1000, max: 2500, color: "#94A3B8" }, { label: "Gold", min: 2500, max: 5000, color: "#FFC043" }];
+  const TIERS = [{ label: "Standard", min: 0, max: 1000, color: "#6B7479" }, { label: "Silver", min: 1000, max: 2500, color: "#64748B" }, { label: "Gold", min: 2500, max: 5000, color: "#FFC043" }];
   const currentTier = TIERS.find(t => points >= t.min && points < t.max) ?? TIERS[2];
   const pct = Math.min(100, ((points - currentTier.min) / (currentTier.max - currentTier.min)) * 100);
   return (
     <div style={{ height: 80, display: "flex", flexDirection: "column", justifyContent: "center", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
         <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 26, fontWeight: 700, color: currentTier.color, lineHeight: 1, transition: "color .5s" }}>{points.toLocaleString()}</span>
-        <span style={{ fontSize: 11, color: isLight ? "#94A3B8" : "#6B7479" }}>pts · {currentTier.label}</span>
+        <span style={{ fontSize: 11, color: isLight ? "#64748B" : "#6B7479" }}>pts · {currentTier.label}</span>
       </div>
       <div style={{ height: 5, borderRadius: 99, background: isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.07)", overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: `linear-gradient(90deg, ${currentTier.color}80, ${currentTier.color})`, transition: "width .5s ease, background .5s" }} />
@@ -287,7 +287,7 @@ export default function Features({ isLight, t }: { isLight: boolean; t: Tok }) {
       style={{
         padding: "clamp(40px,7vw,80px) clamp(16px,5vw,60px) clamp(60px,10vw,120px)",
         background: isLight
-          ? "linear-gradient(180deg, #F0F5F8 0%, #F6F8FA 60%, #EEF3F7 100%)"
+          ? "linear-gradient(180deg, #F0F5F8 0%, #F3F7FB 60%, #EEF3F7 100%)"
           : "linear-gradient(160deg,#0A080E 0%,#100C18 35%,#0C0A14 65%,#08060F 100%)",
         position: "relative", overflow: "hidden",
       }}

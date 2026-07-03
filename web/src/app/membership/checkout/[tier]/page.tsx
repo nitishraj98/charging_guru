@@ -18,7 +18,7 @@ declare global {
 const RZP_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
 
 const TIER_META: Record<string, { name: string; color: string }> = {
-  SILVER: { name: "Silver", color: "#94A3B8" },
+  SILVER: { name: "Silver", color: "#64748B" },
   GOLD: { name: "Gold", color: "#FFC043" },
 };
 
@@ -72,12 +72,12 @@ export default function MembershipCheckoutPage() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
 
-  const bg          = isLight ? "#F8FAFC"              : "#080B0C";
+  const bg          = isLight ? "#F3F7FB"              : "#080B0C";
   const cardBg      = isLight ? "#FFFFFF"              : "#101415";
-  const cardBorder  = isLight ? "#E2E8F0"              : "#1E2426";
+  const cardBorder  = isLight ? "#CBD5E1"              : "#1E2426";
   const textPrimary = isLight ? "#0F172A"              : "#E6EBED";
   const textSub     = isLight ? "#64748B"              : "#6B7479";
-  const textMuted   = isLight ? "#94A3B8"              : "#495154";
+  const textMuted   = isLight ? "#64748B"              : "#495154";
   const accent      = isLight ? "#00D26A"              : "#00E676";
   const accentDim   = isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.07)";
   const accentBrd   = isLight ? "rgba(0,210,106,.30)" : "rgba(0,230,118,.22)";
@@ -248,7 +248,7 @@ export default function MembershipCheckoutPage() {
           onClick={handlePay}
           disabled={paying || !order}
           className={`pay-btn ${order && !paying ? "pay-btn-active" : ""}`}
-          style={{ width: "100%", padding: "18px 20px", borderRadius: 16, background: paying||!order?(isLight?"#E2E8F0":"#1A2218"):accent, color: paying||!order?textSub:"#050708", fontSize: 16, fontWeight: 800, border: "none", cursor: paying||!order?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: paying||!order?"none":isLight?"0 6px 28px rgba(0,210,106,.45)":"0 0 40px rgba(0,230,118,.28)" }}>
+          style={{ width: "100%", padding: "18px 20px", borderRadius: 16, background: paying||!order?(isLight?"#CBD5E1":"#1A2218"):accent, color: paying||!order?textSub:"#050708", fontSize: 16, fontWeight: 800, border: "none", cursor: paying||!order?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: paying||!order?"none":isLight?"0 6px 28px rgba(0,210,106,.45)":"0 0 40px rgba(0,230,118,.28)" }}>
           {paying ? (
             <><span style={{ width: 18, height: 18, borderRadius: "50%", border: `2.5px solid ${textMuted}`, borderTopColor: "transparent", display: "inline-block", animation: "spin .7s linear infinite" }}/> Opening payment…</>
           ) : (

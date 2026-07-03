@@ -78,7 +78,7 @@ function HoldTimer({ expiresAt, isLight }: { expiresAt?: string; isLight: boolea
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: isLight?"rgba(255,192,67,.07)":"rgba(255,192,67,.04)", border: `1px solid rgba(255,192,67,${expired?".35":".18"})` }}>
       <svg width="32" height="32" viewBox="0 0 36 36" style={{ flexShrink: 0 }}>
-        <circle cx="18" cy="18" r="15" fill="none" stroke={isLight?"#E2E8F0":"#222829"} strokeWidth="3"/>
+        <circle cx="18" cy="18" r="15" fill="none" stroke={isLight?"#CBD5E1":"#222829"} strokeWidth="3"/>
         <circle cx="18" cy="18" r="15" fill="none" stroke={timerColor} strokeWidth="3"
           strokeLinecap="round" strokeDasharray="94.2"
           strokeDashoffset={94.2 * (1 - pct / 100)}
@@ -108,13 +108,13 @@ export default function PayPage() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
 
-  const bg          = isLight ? "#F8FAFC"              : "#080B0C";
+  const bg          = isLight ? "#F3F7FB"              : "#080B0C";
   const cardBg      = isLight ? "#FFFFFF"              : "#101415";
-  const cardBorder  = isLight ? "#E2E8F0"              : "#1E2426";
+  const cardBorder  = isLight ? "#CBD5E1"              : "#1E2426";
   const raisedBg    = isLight ? "#F1F5F9"              : "#181D1F";
   const textPrimary = isLight ? "#0F172A"              : "#E6EBED";
   const textSub     = isLight ? "#64748B"              : "#6B7479";
-  const textMuted   = isLight ? "#94A3B8"              : "#495154";
+  const textMuted   = isLight ? "#64748B"              : "#495154";
   const accent      = isLight ? "#00D26A"              : "#00E676";
   const accentDim   = isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.07)";
   const accentBrd   = isLight ? "rgba(0,210,106,.30)" : "rgba(0,230,118,.22)";
@@ -305,7 +305,7 @@ export default function PayPage() {
           onClick={handlePay}
           disabled={paying || !order}
           className={`pay-btn ${order && !paying ? "pay-btn-active" : ""}`}
-          style={{ width: "100%", padding: "18px 20px", borderRadius: 16, background: paying||!order?(isLight?"#E2E8F0":"#1A2218"):accent, color: paying||!order?textSub:"#050708", fontSize: 16, fontWeight: 800, border: "none", cursor: paying||!order?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: paying||!order?"none":isLight?"0 6px 28px rgba(0,210,106,.45)":"0 0 40px rgba(0,230,118,.28)" }}>
+          style={{ width: "100%", padding: "18px 20px", borderRadius: 16, background: paying||!order?(isLight?"#CBD5E1":"#1A2218"):accent, color: paying||!order?textSub:"#050708", fontSize: 16, fontWeight: 800, border: "none", cursor: paying||!order?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: paying||!order?"none":isLight?"0 6px 28px rgba(0,210,106,.45)":"0 0 40px rgba(0,230,118,.28)" }}>
           {paying ? (
             <><span style={{ width: 18, height: 18, borderRadius: "50%", border: `2.5px solid ${textMuted}`, borderTopColor: "transparent", display: "inline-block", animation: "spin .7s linear infinite" }}/> Opening payment…</>
           ) : (

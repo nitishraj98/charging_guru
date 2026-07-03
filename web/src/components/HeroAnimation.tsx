@@ -425,7 +425,7 @@ export default function HeroAnimation({ isLight = false }: Props) {
                       </>) : (
                         <text x="20" y="20.5" textAnchor="middle" fontSize="3.8" fontFamily="monospace" fill={isLight ? "#8AADA0" : "#2E4040"}>READY</text>
                       )}
-                      <circle cx="28" cy="12" r="2.2" fill={isCurrent ? "#22D3EE" : isPast ? green : (isLight ? "#94A3B8" : "#1E3030")}>
+                      <circle cx="28" cy="12" r="2.2" fill={isCurrent ? "#22D3EE" : isPast ? green : (isLight ? "#64748B" : "#1E3030")}>
                         {isCurrent && <animate attributeName="opacity" values="1;.25;1" dur="1.1s" repeatCount="indefinite"/>}
                       </circle>
                       <rect x="11" y="30" width="18" height="12" rx="4" fill={isCurrent ? "rgba(34,211,238,.08)" : "rgba(0,0,0,.08)"} stroke={sc} strokeWidth="1.1"/>

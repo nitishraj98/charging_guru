@@ -57,7 +57,7 @@ export default function PlacesAutocomplete({
   accentColor = "#00E676",
   dropdownBg = "#13161C",
   dropdownBorder = "rgba(255,255,255,0.08)",
-  textPrimary = "#E2E8F0",
+  textPrimary = "#CBD5E1",
   textSub = "#8896A4",
 }: Props) {
   const [predictions, setPredictions] = useState<Prediction[]>([]);

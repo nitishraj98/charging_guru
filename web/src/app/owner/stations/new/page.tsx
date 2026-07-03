@@ -18,15 +18,15 @@ export default function NewStationPage() {
   const { isLight } = useTheme();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const bg          = isLight ? "#F8FAFC" : "#0A0D0E";
+  const bg          = isLight ? "#F3F7FB" : "#0A0D0E";
   const cardBg      = isLight ? "#FFFFFF" : "#101415";
-  const cardBorder  = isLight ? "#E2E8F0" : "#222829";
+  const cardBorder  = isLight ? "#CBD5E1" : "#222829";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
   const textSub     = isLight ? "#64748B" : "#6B7479";
   const accent      = isLight ? "#00D26A" : "#00E676";
   const raisedBg    = isLight ? "#F1F5F9" : "#181D1F";
-  const inputBg     = isLight ? "#F8FAFC" : "#0A0D0E";
-  const inputBorder = isLight ? "#CBD5E1" : "#2E3638";
+  const inputBg     = isLight ? "#F3F7FB" : "#0A0D0E";
+  const inputBorder = isLight ? "#94A3B8" : "#2E3638";
 
   const [name, setName]         = useState("");
   const [address, setAddress]   = useState("");

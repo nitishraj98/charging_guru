@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -25,16 +25,16 @@ export default function OwnerBookingsPage() {
   const [filter, setFilter] = useState("ALL");
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const bg          = isLight ? "#F8FAFC" : "#0A0D0E";
+  const bg          = isLight ? "#F3F7FB" : "#0A0D0E";
   const cardBg      = isLight ? "#FFFFFF" : "#101415";
-  const cardBorder  = isLight ? "#E2E8F0" : "#222829";
+  const cardBorder  = isLight ? "#CBD5E1" : "#222829";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
   const textSub     = isLight ? "#64748B" : "#6B7479";
-  const textMuted   = isLight ? "#94A3B8" : "#495154";
+  const textMuted   = isLight ? "#64748B" : "#495154";
   const accent      = isLight ? "#00D26A" : "#00E676";
   const _raisedBg   = isLight ? "#F1F5F9" : "#181D1F"; void _raisedBg;
   const inputBg     = isLight ? "#F1F5F9" : "#101415";
-  const inputBorder = isLight ? "#E2E8F0" : "#222829";
+  const inputBorder = isLight ? "#CBD5E1" : "#222829";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,7 +76,7 @@ export default function OwnerBookingsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: textSub }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>??</div>
             <p style={{ fontSize: 15 }}>No bookings found.</p>
           </div>
         ) : (
@@ -86,7 +86,7 @@ export default function OwnerBookingsPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: textPrimary }}>
-                      {b.charger?.label ?? "Charger"} · {b.charger?.connector_type ?? ""} {b.charger?.power_kw ?? ""}kW
+                      {b.charger?.label ?? "Charger"} - {b.charger?.connector_type ?? ""} {b.charger?.power_kw ?? ""}kW
                     </span>
                     <span style={{ padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 600, color: STATUS_COLOR[b.status] ?? textMuted, background: `${STATUS_COLOR[b.status] ?? textMuted}18` }}>
                       {b.status.replace("_", " ")}
@@ -94,11 +94,11 @@ export default function OwnerBookingsPage() {
                   </div>
                   <div style={{ fontSize: 12, color: textSub }}>
                     {b.slot_start ? new Date(b.slot_start).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
-                    {" — "}
+                    {" - "}
                     {b.slot_end ? new Date(b.slot_end).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : ""}
                   </div>
                   <div style={{ fontSize: 11, color: textMuted, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
-                    {b.id.slice(0, 12)}… · ₹{(b.amount / 100).toLocaleString("en-IN")}
+                    {b.id.slice(0, 12)} - Rs {(b.amount / 100).toLocaleString("en-IN")}
                   </div>
                 </div>
                 {(b.status === "CONFIRMED" || b.status === "CHECKED_IN" || b.status === "IN_PROGRESS") && (

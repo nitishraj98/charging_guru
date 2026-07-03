@@ -125,7 +125,7 @@ function NetworkMini({ isLight }: { isLight: boolean }) {
       </svg>
       <div style={{
         position: "absolute", bottom: 6, right: 8,
-        fontSize: 8, fontWeight: 700, color: isLight ? "#94A3B8" : "#4B5563",
+        fontSize: 8, fontWeight: 700, color: isLight ? "#64748B" : "#4B5563",
         letterSpacing: ".06em",
       }}>INDIA NETWORK</div>
     </div>
@@ -153,7 +153,7 @@ export default function StatsBar({ isLight, t }: { isLight: boolean; t: Tok }) {
       className="stats-bar-grid"
       style={{
         background: isLight
-          ? "linear-gradient(90deg, #FFFFFF, #F6F8FA 50%, #FFFFFF)"
+          ? "linear-gradient(90deg, #FFFFFF, #F3F7FB 50%, #FFFFFF)"
           : "rgba(8,10,11,.9)",
         borderTop: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.04)"}`,
         borderBottom: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.04)"}`,

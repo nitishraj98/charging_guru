@@ -57,8 +57,8 @@ export default function LoginPage() {
     boxShadow: `0 0 0 1px rgba(0,210,106,.25),0 8px 32px rgba(0,210,106,.35)`,
   };
   const btnOff: React.CSSProperties = {
-    background: isLight ? "#E2E8F0" : "#0F1A10",
-    color: isLight ? "#94A3B8" : "#3A5040",
+    background: isLight ? "#CBD5E1" : "#0F1A10",
+    color: isLight ? "#64748B" : "#3A5040",
     boxShadow: "none",
   };
 
@@ -277,7 +277,7 @@ export default function LoginPage() {
                     : <>Get OTP <span style={{ opacity: 0.7 }}>→</span></>}
                 </button>
 
-                <p style={{ fontSize: 12, color: isLight ? "#94A3B8" : "#5A7A62", textAlign: "center", marginTop: 20, lineHeight: 1.7 }}>
+                <p style={{ fontSize: 12, color: isLight ? "#64748B" : "#5A7A62", textAlign: "center", marginTop: 20, lineHeight: 1.7 }}>
                   By continuing you agree to our{" "}
                   <a href="#" style={{ color: sub, textDecoration: "underline" }}>Terms</a>
                   {" "}& <a href="#" style={{ color: sub, textDecoration: "underline" }}>Privacy Policy</a>.
@@ -345,7 +345,7 @@ export default function LoginPage() {
                 </button>
 
                 <button onClick={resendOtp} disabled={resendCooldown > 0 || resending}
-                  style={{ width: "100%", marginTop: 14, padding: "11px", background: "none", border: "none", color: resendCooldown > 0 ? (isLight ? "#CBD5E1" : "#3D5A44") : sub, fontSize: 12.5, cursor: resendCooldown > 0 ? "not-allowed" : "pointer", fontFamily: "'Space Grotesk',sans-serif", transition: "color .15s" }}>
+                  style={{ width: "100%", marginTop: 14, padding: "11px", background: "none", border: "none", color: resendCooldown > 0 ? (isLight ? "#94A3B8" : "#3D5A44") : sub, fontSize: 12.5, cursor: resendCooldown > 0 ? "not-allowed" : "pointer", fontFamily: "'Space Grotesk',sans-serif", transition: "color .15s" }}>
                   {resending ? "Sending…" : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Didn't receive it? Resend OTP"}
                 </button>
               </>

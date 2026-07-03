@@ -71,16 +71,16 @@ export default function VehiclesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const cardBg     = isLight ? "#FFFFFF" : "#101415";
-  const cardBorder = isLight ? "#E2E8F0" : "#222829";
+  const cardBorder = isLight ? "#CBD5E1" : "#222829";
   const textPrimary= isLight ? "#0F172A" : "#E6EBED";
   const textSub    = isLight ? "#64748B" : "#6B7479";
-  const textMuted  = isLight ? "#94A3B8" : "#495154";
+  const textMuted  = isLight ? "#64748B" : "#495154";
   const accent     = isLight ? "#00D26A" : "#00E676";
   const accentDim  = isLight ? "#DCFCE7" : "rgba(0,230,118,.08)";
   const accentBrd  = isLight ? "#86EFAC" : "rgba(0,230,118,.25)";
   const raisedBg   = isLight ? "#F1F5F9" : "#181D1F";
-  const inputBg    = isLight ? "#F8FAFC" : "#101415";
-  const inputBorder= isLight ? "#CBD5E1" : "#2E3638";
+  const inputBg    = isLight ? "#F3F7FB" : "#101415";
+  const inputBorder= isLight ? "#94A3B8" : "#2E3638";
 
   function load() {
     setLoading(true); setError("");
@@ -295,7 +295,7 @@ export default function VehiclesPage() {
                       <span>Usable capacity</span>
                       <span style={{ fontFamily: "'JetBrains Mono',monospace" }}>{v.battery_kwh} kWh</span>
                     </div>
-                    <div style={{ height: 5, borderRadius: 999, background: isLight ? "#E2E8F0" : "#1A2022", overflow: "hidden" }}>
+                    <div style={{ height: 5, borderRadius: 999, background: isLight ? "#CBD5E1" : "#1A2022", overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${batteryPct}%`, borderRadius: 999, background: `linear-gradient(90deg,${accent},${isLight ? "#00A855" : "#00C862"})`, transition: "width .6s ease" }} />
                     </div>
                   </div>

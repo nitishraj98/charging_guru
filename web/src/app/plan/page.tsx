@@ -72,11 +72,11 @@ export default function PlanPage() {
   const cardBg      = isLight ? "#FFFFFF"                 : "#111318";
   const cardBorder  = isLight ? "rgba(15,23,42,0.10)"    : "rgba(255,255,255,0.07)";
   const sectionBg   = isLight ? "rgba(15,23,42,0.03)"    : "rgba(255,255,255,0.04)";
-  const inputBg     = isLight ? "#F8FAFC"                 : "#0C0E12";
+  const inputBg     = isLight ? "#F3F7FB"                 : "#0C0E12";
   const inputBorder = isLight ? "rgba(15,23,42,0.12)"    : "rgba(255,255,255,0.09)";
   const textPrimary = isLight ? "#0F172A"                 : "#E2E8F0";
   const textSub     = isLight ? "#64748B"                 : "#8896A4";
-  const textMuted   = isLight ? "#94A3B8"                 : "#4A5568";
+  const textMuted   = isLight ? "#64748B"                 : "#4A5568";
   const accent      = isLight ? "#00D26A"                 : "#00E676";
   const accentDim   = isLight ? "rgba(0,210,106,0.08)"   : "rgba(0,230,118,0.07)";
   const accentBorder= isLight ? "rgba(0,210,106,0.30)"   : "rgba(0,230,118,0.22)";
@@ -479,7 +479,7 @@ export default function PlanPage() {
                 style={{
                   width:"100%", padding:"19px 24px", borderRadius:16,
                   background: planning
-                    ? (isLight?"#E2E8F0":"#1A2218")
+                    ? (isLight?"#CBD5E1":"#1A2218")
                     : `linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C862"})`,
                   color: planning ? textSub : "#050708",
                   fontSize:15.5, fontWeight:800, border:"none",

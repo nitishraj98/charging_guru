@@ -29,7 +29,7 @@ function buildPopupHTML(s: StationSummary, free: number, total: number, status: 
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
 
   const bg     = isLight ? "#FFFFFF" : "#101415";
-  const border = isLight ? "#E2E8F0" : "#222829";
+  const border = isLight ? "#CBD5E1" : "#222829";
   const text   = isLight ? "#0F172A" : "#E6EBED";
   const sub    = isLight ? "#64748B" : "#6B7479";
   const raised = isLight ? "#F1F5F9" : "#181D1F";
@@ -377,13 +377,13 @@ export default function DiscoverPage() {
   const [dataSource, setDataSource]   = useState<"backend" | "ocm" | "">("");
 
   const panelBg   = isLight ? "#FFFFFF"  : "#0A0D0E";
-  const border    = isLight ? "#E2E8F0"  : "#1a1f20";
+  const border    = isLight ? "#CBD5E1"  : "#1a1f20";
   const cardBg    = isLight ? "#FFFFFF"  : "#101415";
-  const cardBgHover = isLight ? "#F8FAFC" : "#181D1F";
-  const cardBorder  = isLight ? "#E2E8F0" : "#222829";
-  const cardBorderHover = isLight ? "#CBD5E1" : "#2E3638";
+  const cardBgHover = isLight ? "#F3F7FB" : "#181D1F";
+  const cardBorder  = isLight ? "#CBD5E1" : "#222829";
+  const cardBorderHover = isLight ? "#94A3B8" : "#2E3638";
   const inputBg   = isLight ? "#F1F5F9"  : "#101415";
-  const inputBorder = isLight ? "#E2E8F0" : "#222829";
+  const inputBorder = isLight ? "#CBD5E1" : "#222829";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
   const textSub   = isLight ? "#64748B"  : "#6B7479";
   const accent    = isLight ? "#00D26A"  : "#00E676";
@@ -510,7 +510,7 @@ export default function DiscoverPage() {
               }}
               accentColor={accent}
               dropdownBg={isLight ? "#FFFFFF" : "#101415"}
-              dropdownBorder={isLight ? "#E2E8F0" : "#222829"}
+              dropdownBorder={isLight ? "#CBD5E1" : "#222829"}
               textPrimary={textPrimary}
               textSub={textSub}
             />

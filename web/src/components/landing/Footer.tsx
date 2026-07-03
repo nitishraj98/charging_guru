@@ -838,7 +838,7 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
               <span style={{ fontWeight: 600, fontFamily: "'JetBrains Mono',monospace", color: "#00E676" }}>
                 {online.toLocaleString()} online
               </span>
-              <span style={{ color: isLight ? "#CBD5E1" : "#2D3748" }}>·</span>
+              <span style={{ color: isLight ? "#94A3B8" : "#2D3748" }}>·</span>
               <span style={{ color: txtMuted, fontFamily: "'JetBrains Mono',monospace" }}>
                 {liveChargers.toLocaleString()} chargers live
               </span>

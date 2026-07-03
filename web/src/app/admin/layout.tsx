@@ -184,7 +184,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const errBdr   = "rgba(239,68,68,.25)";
     const errFg    = isLight ? "#DC2626" : "#FF6B6B";
     const btnOn    = { background: `linear-gradient(135deg,${green},#00A855)`, color: "#050708", boxShadow: `0 0 0 1px rgba(0,210,106,.25),0 8px 32px rgba(0,210,106,.35)` };
-    const btnOff   = { background: isLight ? "#E2E8F0" : "#111A13", color: isLight ? "#94A3B8" : "#4A5E50", boxShadow: "none" };
+    const btnOff   = { background: isLight ? "#CBD5E1" : "#111A13", color: isLight ? "#64748B" : "#4A5E50", boxShadow: "none" };
 
     const STATS = [
       { value: "2.4k", label: "Active Sessions" },
@@ -328,7 +328,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       : <>Get OTP <span style={{ opacity: 0.7 }}>→</span></>}
                   </button>
 
-                  <p style={{ fontSize: 12, color: isLight ? "#94A3B8" : "#3A4D40", textAlign: "center", marginTop: 20, lineHeight: 1.6 }}>
+                  <p style={{ fontSize: 12, color: isLight ? "#64748B" : "#3A4D40", textAlign: "center", marginTop: 20, lineHeight: 1.6 }}>
                     Access is restricted to authorised administrators only.
                   </p>
                 </>
@@ -387,7 +387,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </button>
 
                   <button onClick={() => { setCooldown(0); sendOtp(); }} disabled={cooldown > 0 || verifying}
-                    style={{ width: "100%", marginTop: 14, padding: "11px", background: "none", border: "none", color: cooldown > 0 ? (isLight ? "#CBD5E1" : "#2E4035") : sub, fontSize: 12.5, cursor: cooldown > 0 ? "not-allowed" : "pointer", fontFamily: C.sans, transition: "color .15s" }}>
+                    style={{ width: "100%", marginTop: 14, padding: "11px", background: "none", border: "none", color: cooldown > 0 ? (isLight ? "#94A3B8" : "#2E4035") : sub, fontSize: 12.5, cursor: cooldown > 0 ? "not-allowed" : "pointer", fontFamily: C.sans, transition: "color .15s" }}>
                     {cooldown > 0 ? `Resend OTP in ${cooldown}s` : "Didn't receive it? Resend OTP"}
                   </button>
                 </>

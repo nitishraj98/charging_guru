@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState, useCallback } from "react";
 
 type Theme = "dark" | "light";
 
@@ -10,32 +10,48 @@ interface ThemeCtx {
 }
 
 const ThemeContext = createContext<ThemeCtx | null>(null);
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Always "dark" on first render — matches server render, no hydration error.
+function getStoredTheme(fallback: Theme): Theme {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const stored = window.localStorage.getItem("cg_theme");
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {}
+
+  const attr = document.documentElement.getAttribute("data-theme");
+  return attr === "dark" || attr === "light" ? attr : fallback;
+}
+
+function applyTheme(theme: Theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  document.documentElement.style.colorScheme = theme;
+  document.cookie = `cg_theme=${theme}; path=/; max-age=31536000; samesite=lax`;
+}
+
+export function ThemeProvider({
+  children,
+  initialTheme = "light",
+}: {
+  children: React.ReactNode;
+  initialTheme?: Theme;
+}) {
+  // The first render must match the server. Browser storage is reconciled after hydration.
   // The inline script in layout.tsx already set data-theme correctly before paint,
   // so the CSS variables show the right colors immediately.
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>(initialTheme);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("cg_theme");
-      if (stored === "light" || stored === "dark") {
-        setTheme(stored);
-        document.documentElement.setAttribute("data-theme", stored);
-      }
-    } catch {}
-    // Ensure data-theme is always set (inline script may not have run in SSR envs)
-    if (!document.documentElement.getAttribute("data-theme")) {
-      document.documentElement.setAttribute("data-theme", "dark");
-    }
-  }, []);
+  useIsomorphicLayoutEffect(() => {
+    const next = getStoredTheme(initialTheme);
+    setTheme(next);
+    applyTheme(next);
+  }, [initialTheme]);
 
   const toggle = useCallback(() => {
     setTheme(prev => {
       const next = prev === "dark" ? "light" : "dark";
       localStorage.setItem("cg_theme", next);
-      document.documentElement.setAttribute("data-theme", next);
+      applyTheme(next);
       return next;
     });
   }, []);

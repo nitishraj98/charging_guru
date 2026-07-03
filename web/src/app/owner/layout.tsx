@@ -32,7 +32,7 @@ const NAV = [
 
 function getTheme(isLight: boolean) {
   return isLight ? {
-    bg: "#F1F5F9", panel: "#FFFFFF", card: "#FFFFFF", raised: "#F8FAFC",
+    bg: "#F1F5F9", panel: "#FFFFFF", card: "#FFFFFF", raised: "#F3F7FB",
     border: "rgba(15,23,42,0.08)", text: "#0F172A", sub: "#64748B",
   } : {
     bg: "#0A0D0E", panel: "#101415", card: "#101415", raised: "#181D1F",
