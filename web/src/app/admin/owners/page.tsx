@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Building2, ArrowUpRight, MapPin, X } from "lucide-react";
-import { getTheme, BASE, getToken, fmtDate, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtDate, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface UserRow {
@@ -34,9 +34,7 @@ export default function AdminOwnersPage() {
     let p = 1, pages = 1;
     try {
       while (p <= pages) {
-        const res = await fetch(`${BASE}/api/v1/admin/users?page=${p}&per_page=100`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
+        const res = await authFetch(`/api/v1/admin/users?page=${p}&per_page=100`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: PagedResult<UserRow> = await res.json();
         pages = json.pages;
@@ -53,9 +51,7 @@ export default function AdminOwnersPage() {
   const loadStations = useCallback(async (ownerId: string, p = 1) => {
     setStLoad(true);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/stations?page=${p}&per_page=10`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/stations?page=${p}&per_page=10`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: PagedResult<StationRow> = await res.json();
       data.items = data.items.filter((s: StationRow) => s.owner_id === ownerId);

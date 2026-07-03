@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle, XCircle, MapPin } from "lucide-react";
-import { getTheme, BASE, getToken, fmtDate, STATUS_STATION, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtDate, STATUS_STATION, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface StationRow {
@@ -34,9 +34,7 @@ function StationsContent() {
     setLoading(true); setError("");
     try {
       const q = status !== "ALL" ? `&status=${status}` : "";
-      const res = await fetch(`${BASE}/api/v1/admin/stations?page=${p}&per_page=15${q}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/stations?page=${p}&per_page=15${q}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setData(await res.json());
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }
@@ -49,8 +47,8 @@ function StationsContent() {
   const doApprove = async (id: string) => {
     setActing(id);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/stations/${id}/approve`, {
-        method: "POST", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+      const res = await authFetch(`/api/v1/admin/stations/${id}/approve`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       showToast("Station approved.");
@@ -62,8 +60,8 @@ function StationsContent() {
   const doReject = async (id: string) => {
     setActing(id);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/stations/${id}/reject`, {
-        method: "POST", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+      const res = await authFetch(`/api/v1/admin/stations/${id}/reject`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: "Does not meet platform guidelines." }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -76,8 +74,8 @@ function StationsContent() {
   const doSetStatus = async (id: string, newStatus: string, label: string) => {
     setActing(id);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/stations/${id}/status`, {
-        method: "PATCH", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+      const res = await authFetch(`/api/v1/admin/stations/${id}/status`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

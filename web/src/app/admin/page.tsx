@@ -8,7 +8,7 @@ import {
   CheckCircle, TrendingUp, Download, UserPlus,
   Battery, MapPin, Wifi, Shield, Clock, BarChart2,
 } from "lucide-react";
-import { getTheme, C, BASE, getToken, fmtRupee } from "@/lib/admin-ui";
+import { getTheme, C, authFetch, fmtRupee } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { ThemeTokens } from "@/lib/admin-ui";
 
@@ -262,7 +262,7 @@ export default function AdminDashboard() {
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const r = await fetch(`${BASE}/api/v1/admin/analytics/overview`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const r = await authFetch("/api/v1/admin/analytics/overview");
       if (r.status === 403) { router.push("/"); return; }
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       setData(await r.json());

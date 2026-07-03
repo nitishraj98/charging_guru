@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Search, Users, BookOpen, ShieldOff, ShieldCheck, Trash2, X } from "lucide-react";
-import { getTheme, BASE, getToken, fmtDate, fmtDateTime, ROLE_COLOR, STATUS_BOOKING, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtDate, fmtDateTime, ROLE_COLOR, STATUS_BOOKING, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface UserRow {
@@ -44,9 +44,7 @@ export default function AdminUsersPage() {
   const load = useCallback(async (p = 1) => {
     setLoading(true); setError("");
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/users?page=${p}&per_page=20`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/users?page=${p}&per_page=20`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: PagedResult<UserRow> = await res.json();
       if (search.trim().length > 1) {
@@ -73,9 +71,7 @@ export default function AdminUsersPage() {
   const loadBookings = useCallback(async (userId: string, p = 1) => {
     setBkLoad(true);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/users/${userId}/bookings?page=${p}&per_page=10`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/users/${userId}/bookings?page=${p}&per_page=10`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setBkData(await res.json());
     } catch { setBkData(null); }
@@ -93,9 +89,9 @@ export default function AdminUsersPage() {
     if (!detail) return;
     setActBusy(true); setActErr("");
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/users/${detail.id}/status`, {
+      const res = await authFetch(`/api/v1/admin/users/${detail.id}/status`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) { const j = await res.json(); throw new Error(j.detail ?? `HTTP ${res.status}`); }

@@ -2,12 +2,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
-
-function getToken() {
-  if (typeof document === "undefined") return "";
-  const m = document.cookie.match(/(?:^|; )cg_access=([^;]*)/);
-  return m ? decodeURIComponent(m[1]) : "";
-}
+import { authFetch } from "@/lib/admin-ui";
 
 interface Booking {
   id: string; status: string; slot_start: string; amount: number;
@@ -16,10 +11,7 @@ interface Booking {
 }
 
 async function apiPost(path: string) {
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
+  const res = await authFetch(path, { method: "POST" });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.detail ?? `HTTP ${res.status}`);
   return data;
@@ -54,10 +46,7 @@ function SessionManagerInner() {
     if (!bookingId.trim()) return;
     setLoading(true); setMessage(""); setIsError(false);
     try {
-      const token = getToken();
-      const res = await fetch(`/api/v1/bookings/${bookingId.trim()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(`/api/v1/bookings/${bookingId.trim()}`);
       if (!res.ok) { setIsError(true); setMessage("Booking not found."); setBooking(null); return; }
       setBooking(await res.json());
     } finally {
@@ -74,9 +63,9 @@ function SessionManagerInner() {
     if (!qrToken.trim()) return;
     setActing(true); setMessage(""); setIsError(false);
     try {
-      const res = await fetch(`/api/v1/qr/verify`, {
+      const res = await authFetch("/api/v1/qr/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: qrToken.trim() }),
       });
       const data = await res.json().catch(() => ({}));

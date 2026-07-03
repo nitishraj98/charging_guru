@@ -1,7 +1,7 @@
 "use client";
 import { useState, useCallback } from "react";
 import { Settings, Copy, CheckCircle, AlertTriangle, RefreshCw, Clock, MapPin, Zap } from "lucide-react";
-import { getTheme, BASE, getToken, C } from "@/lib/admin-ui";
+import { getTheme, BASE, getToken, authFetch, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 export default function AdminSettingsPage() {
@@ -44,7 +44,7 @@ export default function AdminSettingsPage() {
   const testAPI = useCallback(async () => {
     setTesting(true); setTestResult(null);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/analytics/overview`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const res = await authFetch("/api/v1/admin/analytics/overview");
       setTestResult(res.ok
         ? { ok: true,  msg: `Backend healthy — HTTP ${res.status}` }
         : { ok: false, msg: `HTTP ${res.status} — check auth or backend status` }
@@ -56,9 +56,7 @@ export default function AdminSettingsPage() {
   const expireHolds = useCallback(async () => {
     setSweeping(true); setSweepResult(null);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/maintenance/expire-holds`, {
-        method: "POST", headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch("/api/v1/admin/maintenance/expire-holds", { method: "POST" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setSweepResult({ ok: true, msg: `Expired ${json.expired_count ?? 0} stale holds.` });

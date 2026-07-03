@@ -2,11 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
-function getToken() {
-  if (typeof document === "undefined") return "";
-  const m = document.cookie.match(/(?:^|; )cg_access=([^;]*)/);
-  return m ? decodeURIComponent(m[1]) : "";
-}
+import { authFetch } from "@/lib/admin-ui";
 
 interface Booking {
   id: string; status: string; slot_start: string; slot_end: string; amount: number;
@@ -43,10 +39,7 @@ export default function OwnerBookingsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const token = getToken();
-      const res = await fetch(`/api/v1/owner/bookings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch("/api/v1/owner/bookings");
       if (res.ok) setBookings(await res.json());
     } finally {
       setLoading(false);

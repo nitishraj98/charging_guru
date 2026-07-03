@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { IndianRupee, TrendingUp, RefreshCw } from "lucide-react";
-import { getTheme, BASE, getToken, fmtRupee, fmtDateTime, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtRupee, fmtDateTime, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface DayTrend { date: string; bookings: number; revenue_paise: number; }
@@ -50,7 +50,7 @@ export default function AdminRevenuePage() {
   const loadOverview = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/analytics/overview`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const res = await authFetch("/api/v1/admin/analytics/overview");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setOverview(await res.json());
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }
@@ -61,7 +61,7 @@ export default function AdminRevenuePage() {
     setPmtLoad(true);
     try {
       const q = s !== "ALL" ? `&status=${s}` : "";
-      const res = await fetch(`${BASE}/api/v1/admin/payments?page=${p}&per_page=15${q}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const res = await authFetch(`/api/v1/admin/payments?page=${p}&per_page=15${q}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setPayments(await res.json());
     } catch { setPayments(null); }
@@ -71,7 +71,7 @@ export default function AdminRevenuePage() {
   const loadMembershipPayments = useCallback(async (p = 1) => {
     setMemLoad(true);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/membership-payments?page=${p}&per_page=15`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const res = await authFetch(`/api/v1/admin/membership-payments?page=${p}&per_page=15`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setMemPayments(await res.json());
     } catch { setMemPayments(null); }
@@ -80,7 +80,7 @@ export default function AdminRevenuePage() {
 
   const loadMembershipRevenue = useCallback(async () => {
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/membership-payments/revenue`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const res = await authFetch("/api/v1/admin/membership-payments/revenue");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.json();
       setMemRevenue(body.total_paise);

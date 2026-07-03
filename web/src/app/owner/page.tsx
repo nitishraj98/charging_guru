@@ -4,12 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
 import { MapPin, Zap, Clock, Plus, RefreshCw, ChevronRight, Activity } from "lucide-react";
-
-function getToken() {
-  if (typeof document === "undefined") return "";
-  const m = document.cookie.match(/(?:^|; )cg_access=([^;]*)/);
-  return m ? decodeURIComponent(m[1]) : "";
-}
+import { authFetch } from "@/lib/admin-ui";
 
 interface Charger {
   id: string; label: string; connector_type: string;
@@ -211,9 +206,7 @@ export default function OwnerDashboard() {
     if (!quiet) setLoading(true); else setRefreshing(true);
     setError("");
     try {
-      const res = await fetch("/api/v1/owner/stations", {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch("/api/v1/owner/stations");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setStations(Array.isArray(data) ? data : []);
@@ -229,9 +222,9 @@ export default function OwnerDashboard() {
   async function setChargerStatus(chargerId: string, newStatus: string) {
     setUpdatingCharger(chargerId);
     try {
-      const res = await fetch(`/api/v1/chargers/${chargerId}/status`, {
+      const res = await authFetch(`/api/v1/chargers/${chargerId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) await load(true);

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { checkAuth, bffLogout } from "@/lib/auth";
+import { authFetch } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
 import Logo from "@/components/Logo";
@@ -50,19 +51,16 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
   const th = getTheme(isLight);
 
   useEffect(() => {
-    const match = typeof document !== "undefined"
-      ? document.cookie.match(/(?:^|; )cg_access=([^;]*)/)
-      : null;
-    const token = match ? decodeURIComponent(match[1]) : "";
-
-    // Fire auth check and role probe in parallel
-    Promise.all([
-      checkAuth(),
-      fetch("/api/v1/owner/stations", { headers: { Authorization: `Bearer ${token}` } }),
-    ]).then(([ok, res]) => {
+    // checkAuth() first (silently refreshes an expired access token if
+    // needed), then probe ownership with whatever token is current after
+    // that — a stale token read before refresh would 403 even for a
+    // genuinely-owned account.
+    checkAuth().then(ok => {
       if (!ok) { router.push("/login"); return; }
-      if (res.status === 403) { router.push("/become-owner"); return; }
-      setReady(true);
+      return authFetch("/api/v1/owner/stations").then(res => {
+        if (res.status === 403) { router.push("/become-owner"); return; }
+        setReady(true);
+      });
     }).catch(() => { router.push("/login"); });
   }, [router]);
 

@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { PlugZap } from "lucide-react";
-import { getTheme, BASE, getToken, fmtDate, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtDate, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface Charger {
@@ -30,9 +30,7 @@ export default function AdminChargersPage() {
     setLoading(true); setError("");
     try {
       const q = status !== "ALL" ? `&status=${status}` : "";
-      const res = await fetch(`${BASE}/api/v1/admin/chargers?page=${p}&per_page=20${q}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/chargers?page=${p}&per_page=20${q}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setData(await res.json());
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }

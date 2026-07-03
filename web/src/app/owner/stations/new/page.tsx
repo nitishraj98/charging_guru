@@ -2,12 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
-
-function getToken() {
-  if (typeof document === "undefined") return "";
-  const m = document.cookie.match(/(?:^|; )cg_access=([^;]*)/);
-  return m ? decodeURIComponent(m[1]) : "";
-}
+import { authFetch } from "@/lib/admin-ui";
 
 interface ChargerForm {
   label: string; charger_type: string; power_kw: string;
@@ -73,7 +68,6 @@ export default function NewStationPage() {
     e.preventDefault();
     setError(""); setSubmitting(true);
     try {
-      const token = getToken();
       const payload = {
         name: name.trim(),
         address: address.trim(),
@@ -91,9 +85,9 @@ export default function NewStationPage() {
           price_per_kwh: parseInt(c.price_per_kwh),
         })),
       };
-      const res = await fetch(`/api/v1/owner/stations`, {
+      const res = await authFetch("/api/v1/owner/stations", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();

@@ -1,4 +1,5 @@
 // Shared design tokens and helpers for the admin dashboard.
+import { bffRefresh } from "@/lib/auth";
 
 // Dark theme tokens
 export const DARK = {
@@ -107,3 +108,25 @@ export function getToken(): string {
 }
 
 export const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+// Authenticated fetch for admin/owner pages — on a 401 (expired access
+// token), attempts a silent refresh via the BFF and retries once with the
+// rotated token before giving up. Without this, every admin/owner page's
+// direct fetch() calls just fail silently once the short-lived access token
+// expires mid-session, since only lib/api.ts's request() had this logic.
+export async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const url = path.startsWith("http") || path.startsWith("/api/") ? path : `${BASE}${path}`;
+  const withAuth = (token: string): RequestInit => ({
+    ...init,
+    headers: { ...(init.headers as Record<string, string> | undefined), Authorization: `Bearer ${token}` },
+  });
+
+  let res = await fetch(url, withAuth(getToken()));
+  if (res.status === 401) {
+    const refreshed = await bffRefresh();
+    if (refreshed) {
+      res = await fetch(url, withAuth(getToken()));
+    }
+  }
+  return res;
+}
