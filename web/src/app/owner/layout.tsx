@@ -30,6 +30,8 @@ const NAV = [
   ]},
 ];
 
+const BODY_NAV_OFFSET = 68;
+
 function getTheme(isLight: boolean) {
   return isLight ? {
     bg: "#F1F5F9", panel: "#FFFFFF", card: "#FFFFFF", raised: "#F3F7FB",
@@ -65,7 +67,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
   }, [router]);
 
   if (!ready) return (
-    <div style={{ background: th.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ background: th.bg, minHeight: "100vh", marginTop: -BODY_NAV_OFFSET, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ width: 28, height: 28, border: `3px solid ${th.border}`, borderTopColor: C.green, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -81,7 +83,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
     : "O";
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: th.bg, fontFamily: C.sans }}>
+    <div style={{ display: "flex", height: "100vh", marginTop: -BODY_NAV_OFFSET, overflow: "hidden", background: th.bg, fontFamily: C.sans }}>
       <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
