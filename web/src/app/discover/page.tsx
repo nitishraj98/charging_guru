@@ -356,7 +356,7 @@ function LeafletMap({
     if (marker) leafletMap.current.panTo(marker.getLatLng(), { animate: true, duration: 0.25 });
   }, [hoveredId]);
 
-  return <div ref={mapRef} style={{ width: "100%", height: "100%" }} />;
+  return <div ref={mapRef} style={{ width: "100%", height: "100%", position: "relative", zIndex: 0 }} />;
 }
 
 export default function DiscoverPage() {
@@ -457,7 +457,7 @@ export default function DiscoverPage() {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "transparent" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", paddingTop: 68, boxSizing: "border-box", background: "transparent" }}>
       <NavBar />
 
       {/* Popup chrome removal + user dot pulse animation */}
@@ -631,7 +631,7 @@ export default function DiscoverPage() {
         </div>
 
         {/* ── Map ── */}
-        <div className="discover-map" style={{ position: "relative", overflow: "hidden" }}>
+        <div className="discover-map" style={{ position: "relative", zIndex: 0, isolation: "isolate", overflow: "hidden" }}>
           <LeafletMap
             stations={filtered}
             userLat={userLat} userLng={userLng}
@@ -649,7 +649,7 @@ export default function DiscoverPage() {
             border: `1px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.07)"}`,
             borderRadius: 14, padding: "10px 16px",
             display: "flex", gap: 14, fontSize: 11, color: textSub,
-            zIndex: 800, boxShadow: "0 4px 20px rgba(0,0,0,.2)",
+            zIndex: 30, boxShadow: "0 4px 20px rgba(0,0,0,.2)",
           }}>
             {[["#00E676", "Available"], ["#FFC043", "Busy"], ["#495154", "Offline"]].map(([c, l]) => (
               <span key={l} style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -665,7 +665,7 @@ export default function DiscoverPage() {
               background: isLight ? "rgba(255,255,255,.96)" : "rgba(16,20,21,.92)",
               backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
               border: `1px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(0,230,118,.2)"}`,
-              borderRadius: 16, padding: "16px 20px", maxWidth: 230, zIndex: 800,
+              borderRadius: 16, padding: "16px 20px", maxWidth: 230, zIndex: 30,
               boxShadow: "0 8px 32px rgba(0,0,0,.25)",
             }}>
               <p style={{ fontSize: 13, color: textSub, marginBottom: 12, lineHeight: 1.5 }}>

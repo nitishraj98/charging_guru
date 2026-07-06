@@ -98,8 +98,8 @@ function CopyContent({ isLight }: { isLight: boolean }) {
 
 export default function HeroSection({ isLight }: { isLight: boolean; t: Tok }) {
 
-  const bg   = isLight ? "#F3F7FB" : "#060809";
-  const fade = isLight ? "#F3F7FB" : "#060809";
+  const bg   = isLight ? "#F8F6F1" : "#060809";
+  const fade = isLight ? "#F8F6F1" : "#060809";
 
   return (
     <div className="hero-two-col" style={{
@@ -125,7 +125,7 @@ export default function HeroSection({ isLight }: { isLight: boolean; t: Tok }) {
         <div style={{
           position: "absolute", inset: 0,
           background: isLight
-            ? `linear-gradient(to right, ${bg} 0%, rgba(248,250,252,.8) 12%, rgba(248,250,252,.3) 30%, transparent 55%)`
+            ? `linear-gradient(to right, ${bg} 0%, rgba(248,246,241,.88) 12%, rgba(248,246,241,.42) 30%, transparent 55%)`
             : `linear-gradient(to right,${bg} 0%,rgba(6,8,9,.18) 20%,transparent 45%)`,
           pointerEvents: "none",
         }} />

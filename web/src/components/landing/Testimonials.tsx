@@ -73,8 +73,8 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
   const accent = isLight ? "#00D26A" : "#00E676";
 
   /* Marquee fade edge colours must match section bg exactly */
-  const edgeColor1 = isLight ? "#F0F5F9" : "#07090F";
-  const edgeColor2 = isLight ? "#EDF1F6" : "#060810";
+  const edgeColor1 = isLight ? "#F8F6F1" : "#07090F";
+  const edgeColor2 = isLight ? "#FBFAF7" : "#060810";
 
   return (
     <section
@@ -83,7 +83,7 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
       style={{
         padding: "0 0 120px",
         background: isLight
-          ? "linear-gradient(180deg, #F0F5F9 0%, #EDF1F6 60%, #F0F5F9 100%)"
+          ? "linear-gradient(180deg, #F8F6F1 0%, #FBFAF7 60%, #F8F6F1 100%)"
           : "linear-gradient(160deg,#07090F 0%,#0A0E18 35%,#080C14 65%,#060810 100%)",
         overflow: "hidden", position: "relative",
       }}
@@ -152,12 +152,12 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
         <div style={{
           position:"absolute", top:"5%", right:"8%",
           width:620, height:620, borderRadius:"50%", pointerEvents:"none",
-          background:"radial-gradient(ellipse,rgba(255,192,67,.07) 0%,transparent 65%)",
+          background:"radial-gradient(ellipse,rgba(248,246,241,.50) 0%,transparent 65%)",
         }}/>
         <div style={{
           position:"absolute", bottom:"8%", left:"5%",
           width:480, height:480, borderRadius:"50%", pointerEvents:"none",
-          background:"radial-gradient(ellipse,rgba(14,165,233,.05) 0%,transparent 65%)",
+          background:"radial-gradient(ellipse,rgba(248,246,241,.58) 0%,transparent 65%)",
         }}/>
       </>)}
 
@@ -165,7 +165,7 @@ export default function Testimonials({ isLight, t }: { isLight: boolean; t: Tok 
       <div style={{ textAlign: "center", padding: "clamp(40px,7vw,80px) clamp(16px,5vw,60px) 0", marginBottom: "clamp(28px,4vw,56px)", position: "relative" }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18,
-          background: "rgba(255,192,67,.08)",
+          background: isLight ? "rgba(248,246,241,.52)" : "rgba(255,192,67,.08)",
           border: "1px solid rgba(255,192,67,.28)",
           borderRadius: 999, padding: "5px 16px",
         }}>

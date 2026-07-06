@@ -70,7 +70,7 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
     <section ref={sectionRef} className="section-fade" style={{
       padding: `0 clamp(16px,5vw,60px) clamp(48px,8vw,100px)`,
       background: isLight
-        ? "linear-gradient(180deg,#EBF2F7 0%,#EFF4F9 60%,#EBF2F7 100%)"
+        ? "linear-gradient(180deg,#F8F6F1 0%,#FBFAF7 60%,#F8F6F1 100%)"
         : "linear-gradient(160deg,#060C12 0%,#09101A 35%,#070D15 65%,#050A10 100%)",
       position: "relative", overflow: "hidden",
     }}>
@@ -109,15 +109,15 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
 
       {/* ── Light mode ambient glows ── */}
       {isLight && (<>
-        <div style={{ position:"absolute", top:"10%", left:"6%", width:560, height:560, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(14,165,233,.06) 0%,transparent 65%)" }}/>
-        <div style={{ position:"absolute", bottom:"8%", right:"5%", width:460, height:460, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(0,200,90,.05) 0%,transparent 65%)" }}/>
+        <div style={{ position:"absolute", top:"10%", left:"6%", width:560, height:560, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(248,246,241,.62) 0%,transparent 65%)" }}/>
+        <div style={{ position:"absolute", bottom:"8%", right:"5%", width:460, height:460, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(248,246,241,.45) 0%,transparent 65%)" }}/>
       </>)}
 
       {/* ── Section header ── */}
       <div style={{ textAlign: "center", marginBottom: "clamp(24px,4vw,48px)", position: "relative", paddingTop: "clamp(40px,7vw,80px)" }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18,
-          background: isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.07)",
+          background: isLight ? "rgba(248,246,241,.66)" : "rgba(0,230,118,.07)",
           border: `1px solid ${isLight ? "rgba(0,210,106,.2)" : "rgba(0,230,118,.18)"}`,
           borderRadius: 999, padding: "5px 16px",
         }}>
@@ -160,7 +160,7 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
         <div className="live-map-sidebar" style={{
           display: "flex", flexDirection: "column",
           borderRight: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.05)"}`,
-          background: isLight ? "#FAFBFC" : "#0D1213",
+          background: isLight ? "#FBFAF7" : "#0D1213",
         }}>
           {/* Search */}
           <div style={{ padding: "24px 24px 0" }}>
@@ -291,14 +291,14 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
         </div>
 
         {/* ── Right: real Leaflet map ── */}
-        <div style={{ position: "relative", minHeight: 520, overflow: "hidden", background: mapLoadingBg }}>
+        <div style={{ position: "relative", zIndex: 0, isolation: "isolate", minHeight: 520, overflow: "hidden", background: mapLoadingBg }}>
 
           {/* Leaflet map fills the panel */}
           <LiveMapLeaflet isLight={isLight} />
 
-          {/* Top bar overlay — zIndex > Leaflet controls (800) */}
+          {/* Top bar overlay */}
           <div style={{
-            position: "absolute", top: 16, left: 16, right: 16, zIndex: 1100,
+            position: "absolute", top: 16, left: 16, right: 16, zIndex: 30,
             display: "flex", alignItems: "center", justifyContent: "space-between",
             background: isLight ? "rgba(255,255,255,.88)" : "rgba(18,28,40,.88)",
             backdropFilter: "blur(14px)",
@@ -327,7 +327,7 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
 
           {/* Left fade to blend with sidebar */}
           <div style={{
-            position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1050,
+            position: "absolute", inset: 0, pointerEvents: "none", zIndex: 20,
             background: isLight
               ? "linear-gradient(90deg,rgba(250,251,252,.92) 0%,transparent 14%)"
               : "linear-gradient(90deg,rgba(11,15,16,.92) 0%,transparent 14%)",
@@ -335,7 +335,7 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
 
           {/* Battery range widget */}
           <div style={{
-            position: "absolute", bottom: 20, right: 20, zIndex: 1100,
+            position: "absolute", bottom: 20, right: 20, zIndex: 30,
             background: isLight ? "rgba(255,255,255,.92)" : "rgba(18,28,40,.92)",
             border: `1px solid ${isLight ? "rgba(0,0,0,.09)" : "rgba(255,255,255,.1)"}`,
             borderRadius: 14, padding: "14px 16px", backdropFilter: "blur(12px)",
@@ -352,7 +352,7 @@ function LiveMapSection({ isLight }: { isLight: boolean }) {
 
           {/* Pin legend */}
           <div style={{
-            position: "absolute", bottom: 20, left: 20, zIndex: 1100,
+            position: "absolute", bottom: 20, left: 20, zIndex: 30,
             background: isLight ? "rgba(255,255,255,.92)" : "rgba(18,28,40,.92)",
             border: `1px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.1)"}`,
             borderRadius: 10, padding: "10px 14px", backdropFilter: "blur(10px)",
@@ -423,7 +423,7 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
 
   return (
     <div ref={sectionRef} className="section-fade final-cta-grid" style={{
-      background: isLight ? "linear-gradient(135deg,#F2F8F5 0%,#EDF4FF 50%,#F2F8F5 100%)" : t.bg,
+      background: isLight ? "linear-gradient(135deg,#F8F6F1 0%,#FBFAF7 50%,#F8F6F1 100%)" : t.bg,
       overflow: "hidden", position: "relative",
       minHeight: "clamp(560px,70vw,90vh)", display: "grid", gridTemplateColumns: "1fr 1fr",
     }}>
@@ -443,7 +443,7 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
         position: "absolute", top: "15%", left: 0,
         width: 640, height: 640, borderRadius: "50%", pointerEvents: "none",
         background: isLight
-          ? "radial-gradient(ellipse, rgba(0,210,106,.09) 0%, transparent 65%)"
+          ? "radial-gradient(ellipse, rgba(248,246,241,.72) 0%, transparent 65%)"
           : "radial-gradient(ellipse, rgba(0,230,118,.07) 0%, transparent 65%)",
       }} />
 
@@ -451,7 +451,7 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", zIndex: 1, padding: "clamp(48px,7vw,80px) clamp(20px,4vw,52px) clamp(48px,7vw,80px) clamp(24px,6vw,80px)" }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 24,
-              background: isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.08)",
+              background: isLight ? "rgba(248,246,241,.66)" : "rgba(0,230,118,.08)",
               border: `1px solid ${isLight ? "rgba(0,210,106,.2)" : "rgba(0,230,118,.2)"}`,
               borderRadius: 999, padding: "5px 16px", width: "fit-content",
             }}>
@@ -550,7 +550,7 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
           background: isLight
-            ? "radial-gradient(ellipse at 55% 38%, rgba(0,210,106,.08) 0%, rgba(34,211,238,.04) 45%, transparent 70%)"
+            ? "radial-gradient(ellipse at 55% 38%, rgba(248,246,241,.66) 0%, rgba(34,211,238,.04) 45%, transparent 70%)"
             : "radial-gradient(ellipse at 55% 38%, rgba(0,230,118,.06) 0%, rgba(34,211,238,.03) 45%, transparent 70%)",
         }} />
 
@@ -654,7 +654,7 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
         <div style={{
           position: "absolute", left: 0, top: 0, bottom: 0, width: 80, pointerEvents: "none",
           background: isLight
-            ? "linear-gradient(90deg,#F2F8F5,transparent)"
+            ? "linear-gradient(90deg,#F8F6F1,transparent)"
             : `linear-gradient(90deg,${t.bg},transparent)`,
         }} />
       </div>
@@ -694,7 +694,7 @@ export default function LandingPage() {
         width: 700, height: 700, borderRadius: "50%",
         transform: "translate(-50%,-50%)",
         background: isLight
-          ? "radial-gradient(circle, rgba(0,184,94,.035) 0%, rgba(14,165,233,.02) 40%, transparent 65%)"
+          ? "radial-gradient(circle, rgba(248,246,241,.34) 0%, rgba(248,246,241,.35) 40%, transparent 65%)"
           : "radial-gradient(circle, rgba(0,230,118,.05) 0%, transparent 65%)",
         transition: "left .18s ease-out, top .18s ease-out",
       }} />
@@ -757,7 +757,7 @@ export default function LandingPage() {
       <div style={{
         position: "relative",
         background: isLight
-          ? "linear-gradient(180deg, #EDF5F0 0%, #F4FAF7 50%, #EDF5F0 100%)"
+          ? "linear-gradient(180deg, #F8F6F1 0%, #FBFAF7 50%, #F8F6F1 100%)"
           : "linear-gradient(160deg,#06100A 0%,#091408 35%,#070E06 65%,#050A04 100%)",
         overflow: "hidden",
       }}>
@@ -795,14 +795,14 @@ export default function LandingPage() {
 
         {/* ── Light mode ambient glows ── */}
         {isLight && (<>
-          <div style={{ position:"absolute", top:"20%", left:"20%", transform:"translate(-50%,-50%)", width:800, height:500, borderRadius:"50%", background:"radial-gradient(ellipse,rgba(0,184,94,.08) 0%,rgba(14,165,233,.04) 50%,transparent 70%)", pointerEvents:"none", animation:"aurora-shift 18s ease-in-out infinite" }}/>
-          <div style={{ position:"absolute", bottom:"10%", right:"10%", width:500, height:300, borderRadius:"50%", background:"radial-gradient(ellipse,rgba(14,165,233,.06) 0%,transparent 70%)", pointerEvents:"none", animation:"aurora-shift 24s ease-in-out 8s infinite reverse" }}/>
+          <div style={{ position:"absolute", top:"20%", left:"20%", transform:"translate(-50%,-50%)", width:800, height:500, borderRadius:"50%", background:"radial-gradient(ellipse,rgba(248,246,241,.54) 0%,rgba(248,246,241,.52) 50%,transparent 70%)", pointerEvents:"none", animation:"aurora-shift 18s ease-in-out infinite" }}/>
+          <div style={{ position:"absolute", bottom:"10%", right:"10%", width:500, height:300, borderRadius:"50%", background:"radial-gradient(ellipse,rgba(248,246,241,.62) 0%,transparent 70%)", pointerEvents:"none", animation:"aurora-shift 24s ease-in-out 8s infinite reverse" }}/>
           {/* Background grid */}
-          <div style={{ position:"absolute", inset:0, pointerEvents:"none", backgroundImage:"linear-gradient(rgba(0,184,94,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,184,94,.06) 1px, transparent 1px)", backgroundSize:"48px 48px", maskImage:"radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%)" }}/>
+          <div style={{ position:"absolute", inset:0, pointerEvents:"none", backgroundImage:"linear-gradient(rgba(248,246,241,.48) 1px, transparent 1px), linear-gradient(90deg, rgba(248,246,241,.48) 1px, transparent 1px)", backgroundSize:"48px 48px", maskImage:"radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%)" }}/>
         </>)}
 
         <div style={{ textAlign: "center", padding: "clamp(40px,8vw,80px) clamp(16px,5vw,60px) 40px", position: "relative" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.08)", border: `1px solid ${isLight ? "rgba(0,210,106,.2)" : "rgba(0,230,118,.2)"}`, borderRadius: 999, padding: "5px 16px", marginBottom: 20 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: isLight ? "rgba(248,246,241,.66)" : "rgba(0,230,118,.08)", border: `1px solid ${isLight ? "rgba(0,210,106,.2)" : "rgba(0,230,118,.2)"}`, borderRadius: 999, padding: "5px 16px", marginBottom: 20 }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: isLight ? "#00D26A" : "#00E676", display: "inline-block", boxShadow: `0 0 8px ${isLight ? "#00D26A" : "#00E676"}` }} />
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", color: isLight ? "#00D26A" : "#00E676" }}>LIVE JOURNEY TRACKER</span>
           </div>

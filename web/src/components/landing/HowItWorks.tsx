@@ -301,7 +301,7 @@ function ChargingScreen({ step, isLight }: { step: typeof STEPS[0]; isLight: boo
           ))}
         </div>
       </div>
-      <div style={{ background: "rgba(255,192,67,.08)", border: "1px solid rgba(255,192,67,.22)", borderRadius: 10, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ background: isLight ? "rgba(248,246,241,.52)" : "rgba(255,192,67,.08)", border: "1px solid rgba(255,192,67,.22)", borderRadius: 10, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ color: "#FFC043", display: "flex" }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M8 21h8M12 17v4M17 5H7v6a5 5 0 0 0 10 0V5z"/>
@@ -392,7 +392,7 @@ export default function HowItWorks({ isLight, t }: { isLight: boolean; t: Tok })
       style={{
         padding: "clamp(48px,8vw,100px) clamp(16px,5vw,60px) clamp(60px,10vw,120px)",
         background: isLight
-          ? "linear-gradient(180deg, #F0F5F8 0%, #F3F7FB 50%, #EDF4F9 100%)"
+          ? "linear-gradient(180deg, #F8F6F1 0%, #F8F6F1 50%, #FBFAF7 100%)"
           : "linear-gradient(160deg,#080C10 0%,#0A1016 35%,#080D14 65%,#060A10 100%)",
         position: "relative", overflow: "hidden",
       }}
@@ -425,7 +425,7 @@ export default function HowItWorks({ isLight, t }: { isLight: boolean; t: Tok })
 
       {/* ── Light mode ambient glows ── */}
       {isLight && (<>
-        <div style={{ position:"absolute", top:"-4%", right:"-4%", width:560, height:560, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(14,165,233,.06) 0%,transparent 65%)" }}/>
+        <div style={{ position:"absolute", top:"-4%", right:"-4%", width:560, height:560, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(248,246,241,.62) 0%,transparent 65%)" }}/>
         <div style={{ position:"absolute", bottom:"8%", left:"-4%", width:460, height:460, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(124,58,237,.05) 0%,transparent 65%)" }}/>
       </>)}
 
@@ -588,7 +588,7 @@ export default function HowItWorks({ isLight, t }: { isLight: boolean; t: Tok })
               </div>
 
               {/* Screen */}
-              <div style={{ position: "absolute", inset: 0, background: isLight ? "#F3F7FB" : "#0C1115", borderRadius: 29, paddingTop: 32, overflow: "hidden" }}>
+              <div style={{ position: "absolute", inset: 0, background: isLight ? "#F8F6F1" : "#0C1115", borderRadius: 29, paddingTop: 32, overflow: "hidden" }}>
                 {/* Status bar */}
                 <div style={{ padding: "4px 14px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 8.5, fontWeight: 700, color: isLight ? "#374151" : "#6B7479" }}>9:41</span>

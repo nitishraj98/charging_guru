@@ -51,6 +51,8 @@ const NAV = [
   },
 ];
 
+const BODY_NAV_OFFSET = 68;
+
 type Status = "checking" | "login" | "ready";
 type LoginStep = "phone" | "otp";
 
@@ -161,7 +163,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // ── Checking spinner ──────────────────────────────────────────────────────────
   if (status === "checking") return (
-    <div style={{ background: th.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ background: th.bg, minHeight: "100vh", marginTop: -BODY_NAV_OFFSET, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{ width: 28, height: 28, border: `3px solid ${th.border}`, borderTopColor: C.green, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
     </div>
@@ -193,7 +195,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     ];
 
     return (
-      <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", background: pageBg, fontFamily: C.sans }}>
+      <div style={{ minHeight: "100vh", marginTop: -BODY_NAV_OFFSET, display: "grid", gridTemplateColumns: "1fr 1fr", background: pageBg, fontFamily: C.sans }}>
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
           * { box-sizing: border-box; }
@@ -401,7 +403,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // ── Admin panel ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: th.bg, fontFamily: C.sans }}>
+    <div style={{ display: "flex", height: "100vh", marginTop: -BODY_NAV_OFFSET, overflow: "hidden", background: th.bg, fontFamily: C.sans }}>
       <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }

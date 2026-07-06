@@ -515,7 +515,7 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
         background: isLight
-          ? "linear-gradient(180deg, transparent 40%, rgba(196,220,237,0.22) 100%)"
+          ? "linear-gradient(180deg, transparent 40%, rgba(248,246,241,0.34) 100%)"
           : "linear-gradient(180deg, transparent 35%, rgba(5,10,28,0.22) 100%)",
       }}/>
 

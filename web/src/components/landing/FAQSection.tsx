@@ -120,7 +120,7 @@ const FAQS = [
 const CATS = ["All", "Booking", "Payments", "Stations"];
 
 const CAT_META: Record<string, { color: string; darkColor: string; bg: string; darkBg: string }> = {
-  All:      { color: "#00C85A", darkColor: "#00E676", bg: "rgba(0,200,90,.10)",   darkBg: "rgba(0,230,118,.10)"  },
+  All:      { color: "#00C85A", darkColor: "#00E676", bg: "rgba(248,246,241,.70)",   darkBg: "rgba(0,230,118,.10)"  },
   Booking:  { color: "#0EA5E9", darkColor: "#38BDF8", bg: "rgba(14,165,233,.10)", darkBg: "rgba(56,189,248,.10)" },
   Payments: { color: "#8B5CF6", darkColor: "#A78BFA", bg: "rgba(139,92,246,.10)", darkBg: "rgba(167,139,250,.10)"},
   Stations: { color: "#F59E0B", darkColor: "#FFC043", bg: "rgba(245,158,11,.10)", darkBg: "rgba(255,192,67,.10)" },
@@ -158,7 +158,7 @@ function FAQItem({
         ? (isLight ? "rgba(255,255,255,.98)" : "rgba(255,255,255,.06)")
         : (isLight ? "rgba(255,255,255,.65)" : "rgba(255,255,255,.025)"),
       boxShadow: isOpen
-        ? (isLight ? "0 8px 36px rgba(0,200,90,.10), 0 2px 8px rgba(0,0,0,.05)" : "0 8px 36px rgba(0,230,118,.07)")
+        ? (isLight ? "0 8px 36px rgba(248,246,241,.70), 0 2px 8px rgba(0,0,0,.05)" : "0 8px 36px rgba(0,230,118,.07)")
         : "none",
       overflow: "hidden",
       transition: "border-color .25s, background .25s, box-shadow .25s",
@@ -204,7 +204,7 @@ function FAQItem({
           display: "flex", alignItems: "center", justifyContent: "center",
           color: isOpen ? accent : (isLight ? "#9CA3AF" : "#4B5563"),
           background: isOpen
-            ? (isLight ? "rgba(0,200,90,.10)" : "rgba(0,230,118,.10)")
+            ? (isLight ? "rgba(248,246,241,.70)" : "rgba(0,230,118,.10)")
             : (isLight ? "rgba(0,0,0,.04)"    : "rgba(255,255,255,.05)"),
           border: `1px solid ${isOpen
             ? (isLight ? "rgba(0,200,90,.25)" : "rgba(0,230,118,.20)")
@@ -275,7 +275,7 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
       style={{
         padding: "clamp(36px,6vw,72px) clamp(16px,5vw,60px) clamp(32px,5vw,64px)",
         background: isLight
-          ? "linear-gradient(180deg,#EDF2F7 0%,#F7F9FB 100%)"
+          ? "linear-gradient(180deg,#F8F6F1 0%,#FBFAF7 100%)"
           : "linear-gradient(160deg,#080E18 0%,#0B1422 40%,#0A1019 70%,#091018 100%)",
         position: "relative", overflow: "hidden",
       }}
@@ -344,12 +344,12 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
         <div style={{
           position:"absolute", top:"18%", left:"8%",
           width:600, height:600, borderRadius:"50%", pointerEvents:"none",
-          background:"radial-gradient(ellipse,rgba(0,200,90,.07) 0%,transparent 65%)",
+          background:"radial-gradient(ellipse,rgba(248,246,241,.58) 0%,transparent 65%)",
         }}/>
         <div style={{
           position:"absolute", bottom:"10%", right:"6%",
           width:480, height:480, borderRadius:"50%", pointerEvents:"none",
-          background:"radial-gradient(ellipse,rgba(14,165,233,.05) 0%,transparent 65%)",
+          background:"radial-gradient(ellipse,rgba(248,246,241,.58) 0%,transparent 65%)",
         }}/>
       </>)}
 
@@ -363,7 +363,7 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
         }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12,
-            background: isLight ? "rgba(0,200,90,.08)" : "rgba(0,230,118,.08)",
+            background: isLight ? "rgba(248,246,241,.62)" : "rgba(0,230,118,.08)",
             border: `1px solid ${isLight ? "rgba(0,200,90,.22)" : "rgba(0,230,118,.22)"}`,
             borderRadius: 999, padding: "6px 18px",
           }}>
@@ -447,7 +447,7 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
             {/* Contact strip */}
             <div style={{
               marginTop: 4, padding: "14px 18px", borderRadius: 14,
-              background: isLight ? "rgba(0,200,90,.05)" : "rgba(0,230,118,.06)",
+              background: isLight ? "rgba(248,246,241,.45)" : "rgba(0,230,118,.06)",
               border: `1px solid ${isLight ? "rgba(0,200,90,.18)" : "rgba(0,230,118,.18)"}`,
               display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
               opacity: visible ? 1 : 0, transition: "opacity .6s .5s",
@@ -457,7 +457,7 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
                   width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   color: accent,
-                  background: isLight ? "rgba(0,200,90,.10)" : "rgba(0,230,118,.10)",
+                  background: isLight ? "rgba(248,246,241,.70)" : "rgba(0,230,118,.10)",
                   border: `1px solid ${isLight ? "rgba(0,200,90,.22)" : "rgba(0,230,118,.18)"}`,
                 }}>
                   {Icons.chat}

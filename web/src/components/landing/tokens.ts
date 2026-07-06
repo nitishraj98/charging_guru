@@ -18,7 +18,7 @@ export const D = {
 };
 
 export const L = {
-  bg:         "#F3F7FB",         // Warm cool white — not pure #FFF
+  bg:         "#F8F6F1",         // Warm cool white — not pure #FFF
   surface:    "#FFFFFF",
   raised:     "#EEF2F7",         // Soft blue-grey lifted surface
   border:     "#D8E2ED",

@@ -145,7 +145,7 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
       style={{
         padding: "clamp(48px,8vw,100px) clamp(16px,5vw,60px) clamp(40px,7vw,80px)",
         background: isLight
-          ? "linear-gradient(180deg,#F3F7FB 0%,#EFF4F8 50%,#F3F7FB 100%)"
+          ? "linear-gradient(180deg,#F8F6F1 0%,#FBFAF7 50%,#F8F6F1 100%)"
           : "linear-gradient(160deg,#080E0A 0%,#091208 35%,#080E0A 65%,#060A07 100%)",
         position: "relative", overflow: "hidden",
       }}
@@ -168,7 +168,7 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
           </defs>
           <rect width="100%" height="100%" fill="url(#pricing-dots)"/>
         </svg>
-        <div style={{ position:"absolute", bottom:"-10%", left:"50%", transform:"translateX(-50%)", width:900, height:600, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(0,230,118,.13) 0%,rgba(0,200,90,.05) 40%,transparent 70%)" }}/>
+        <div style={{ position:"absolute", bottom:"-10%", left:"50%", transform:"translateX(-50%)", width:900, height:600, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(0,230,118,.13) 0%,rgba(255,192,67,.05) 40%,transparent 70%)" }}/>
         <div style={{ position:"absolute", top:"-5%", left:"-4%", width:550, height:550, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(0,230,118,.10) 0%,transparent 62%)" }}/>
         <div style={{ position:"absolute", top:"5%", right:"-4%", width:480, height:480, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(34,211,238,.08) 0%,transparent 62%)" }}/>
         <div style={{ position:"absolute", bottom:"0%", left:"10%", width:380, height:380, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(139,92,246,.07) 0%,transparent 62%)" }}/>
@@ -176,7 +176,7 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
         <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, pointerEvents:"none", background:"linear-gradient(90deg,transparent 0%,rgba(0,230,118,.20) 50%,transparent 100%)" }}/>
       </>)}
       {isLight && (
-        <div style={{ position:"absolute", bottom:"-5%", left:"50%", transform:"translateX(-50%)", width:800, height:500, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(255,192,67,.08) 0%,rgba(0,184,94,.04) 40%,transparent 70%)" }}/>
+        <div style={{ position:"absolute", bottom:"-5%", left:"50%", transform:"translateX(-50%)", width:800, height:500, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(248,246,241,.52) 0%,rgba(248,246,241,.40) 40%,transparent 70%)" }}/>
       )}
 
       <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
@@ -189,7 +189,7 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
         }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18,
-            background: "rgba(255,192,67,.08)", border: "1px solid rgba(255,192,67,.28)",
+            background: isLight ? "rgba(248,246,241,.52)" : "rgba(255,192,67,.08)", border: "1px solid rgba(255,192,67,.28)",
             borderRadius: 999, padding: "5px 16px",
           }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FFC043", display: "inline-block", boxShadow: "0 0 8px #FFC043", animation: "glow-pulse 2s ease-in-out infinite" }}/>

@@ -287,7 +287,7 @@ export default function Features({ isLight, t }: { isLight: boolean; t: Tok }) {
       style={{
         padding: "clamp(40px,7vw,80px) clamp(16px,5vw,60px) clamp(60px,10vw,120px)",
         background: isLight
-          ? "linear-gradient(180deg, #F0F5F8 0%, #F3F7FB 60%, #EEF3F7 100%)"
+          ? "linear-gradient(180deg, #F8F6F1 0%, #F8F6F1 60%, #F8F6F1 100%)"
           : "linear-gradient(160deg,#0A080E 0%,#100C18 35%,#0C0A14 65%,#08060F 100%)",
         position: "relative", overflow: "hidden",
       }}
@@ -327,7 +327,7 @@ export default function Features({ isLight, t }: { isLight: boolean; t: Tok }) {
       {/* ── Light mode ambient glows ── */}
       {isLight && (<>
         <div style={{ position:"absolute", top:"8%", left:"-6%", width:600, height:600, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(124,58,237,.05) 0%,transparent 65%)" }}/>
-        <div style={{ position:"absolute", bottom:"5%", right:"-4%", width:480, height:480, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(14,165,233,.04) 0%,transparent 65%)" }}/>
+        <div style={{ position:"absolute", bottom:"5%", right:"-4%", width:480, height:480, borderRadius:"50%", pointerEvents:"none", background:"radial-gradient(ellipse,rgba(248,246,241,.52) 0%,transparent 65%)" }}/>
       </>)}
 
       <div style={{ position: "relative" }}>

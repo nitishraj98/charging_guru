@@ -39,20 +39,28 @@ const ROUTE2: [number, number][] = [
   [22.5726, 88.3639],
 ];
 
-function makeIcon(color: string, pulsing: boolean, isLight: boolean) {
-  const bg = isLight ? "#ffffff" : "#1d2535";
-  const glow = pulsing ? `0 0 14px ${color}` : `0 0 6px ${color}60`;
+function makeIcon(color: string, count: number, pulsing: boolean) {
+  const ring = pulsing
+    ? `0 0 0 4px ${color}40,0 4px 20px ${color}50`
+    : count > 0
+      ? `0 0 0 3px ${color}25,0 0 12px ${color}30`
+      : "none";
+
   return L.divIcon({
     className: "",
-    iconSize:   [26, 26],
-    iconAnchor: [13, 13],
-    tooltipAnchor: [13, -13],
+    iconSize: [52, 44],
+    iconAnchor: [26, 44],
+    tooltipAnchor: [0, -46],
     html: `
-      <div style="position:relative;width:26px;height:26px;display:flex;align-items:center;justify-content:center">
-        ${pulsing ? `<div class="ping-green" style="position:absolute;inset:-7px;border-radius:50%;border:1.5px solid ${color};opacity:.6;"></div>` : ""}
-        <div style="width:22px;height:22px;border-radius:50%;background:${bg};border:2.5px solid ${color};display:flex;align-items:center;justify-content:center;box-shadow:${glow},0 2px 8px rgba(0,0,0,.35)">
-          <div style="width:8px;height:8px;border-radius:50%;background:${color};box-shadow:0 0 5px ${color}"></div>
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;transform:${pulsing ? "scale(1.16)" : "scale(1)"};transition:transform .2s cubic-bezier(.34,1.56,.64,1);">
+        <div style="background:${color};color:#050708;font-weight:800;font-size:12px;padding:5px 11px;border-radius:20px;white-space:nowrap;border:2.5px solid rgba(255,255,255,0.9);box-shadow:${ring};display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;min-width:44px;justify-content:center;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          ${count}
         </div>
+        <div style="width:2px;height:7px;background:${color};margin-top:-1px;border-radius:0 0 2px 2px;opacity:.7;"></div>
+        <div style="width:5px;height:5px;border-radius:50%;background:${color};margin-top:-1px;opacity:.5;"></div>
       </div>
     `,
   });
@@ -69,7 +77,7 @@ export default function LiveMapLeaflet({ isLight }: Props) {
   }, []);
 
   const tileUrl = isLight
-    ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+    ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
     : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 
   const accent  = isLight ? "#00D26A" : "#00E676";
@@ -89,7 +97,12 @@ export default function LiveMapLeaflet({ isLight }: Props) {
       attributionControl={false}
       style={{ height: "100%", width: "100%", minHeight: 520 }}
     >
-      <TileLayer url={tileUrl} subdomains="abcd" maxZoom={20} />
+      <TileLayer
+        url={tileUrl}
+        subdomains="abcd"
+        maxZoom={20}
+        attribution="OSM CARTO"
+      />
 
       {/* Primary charging corridor */}
       <Polyline positions={ROUTE}  color={accent}    weight={3.5} opacity={.9} dashArray="10 6" />
@@ -101,7 +114,7 @@ export default function LiveMapLeaflet({ isLight }: Props) {
         <Marker
           key={s.name}
           position={[s.lat, s.lng]}
-          icon={makeIcon(s.color, i === pulseIdx, isLight)}
+          icon={makeIcon(s.color, s.chargers, i === pulseIdx)}
         >
           <Tooltip direction="top" offset={[0, -6]} opacity={1}>
             <div style={{
