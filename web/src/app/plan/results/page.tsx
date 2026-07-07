@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
 import { checkAuth } from "@/lib/auth";
-import { planRoute, PlanResult, ChargingStop } from "@/lib/services/routePlanner";
+import { planRoute, PlanResult } from "@/lib/services/routePlanner";
 import { listVehicles, STATIC_VEHICLES } from "@/lib/services/vehicleService";
 import type { UserVehicle } from "@/lib/services/vehicleService";
 import { decodePolyline } from "@/lib/services/googleMaps";
@@ -93,7 +93,7 @@ function AvailBadge({ avail, isLight }: { avail: string; isLight: boolean }) {
   return <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, color: m.color, background: m.bg }}>{m.label}</span>;
 }
 
-function DataSourceBadge({ source, isLight }: { source: PlanResult["data_source"]; isLight: boolean }) {
+function DataSourceBadge({ source }: { source: PlanResult["data_source"] }) {
   if (source === "google+backend") return null;
   const labels: Record<string, string> = {
     "google+ocm": "Open Charge Map data",
@@ -169,7 +169,12 @@ function ResultsInner() {
   useEffect(() => { loadPlan(); }, [loadPlan]);
 
   function toggleStop(i: number) {
-    setSelected(prev => { const next = new Set(prev); next.has(i) ? next.delete(i) : next.add(i); return next; });
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
   }
 
   async function handleReserve() {
@@ -276,7 +281,7 @@ function ResultsInner() {
 
         {/* Left: stops */}
         <div>
-          <DataSourceBadge source={plan.data_source} isLight={isLight} />
+          <DataSourceBadge source={plan.data_source} />
 
           {plan.polyline && (
             <div style={{ height: 280, borderRadius: 20, overflow: "hidden", border: `1px solid ${cardBorder}`, marginBottom: 20 }}>

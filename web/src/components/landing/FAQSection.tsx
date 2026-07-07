@@ -131,9 +131,9 @@ const ACCENT_DARK  = "#00E676";
 
 /* ── Single FAQ item ── */
 function FAQItem({
-  q, a, cat, icon, index, isOpen, onToggle, isLight, tok,
+  q, a, cat, icon, isOpen, onToggle, isLight, tok,
 }: {
-  q: string; a: string; cat: string; icon: React.ReactNode; index: number;
+  q: string; a: string; cat: string; icon: React.ReactNode;
   isOpen: boolean; onToggle: () => void; isLight: boolean; tok: Tok;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -437,7 +437,7 @@ export default function FAQSection({ isLight, t }: { isLight: boolean; t: Tok })
               }}>
                 <FAQItem
                   q={f.q} a={f.a} cat={f.cat} icon={f.icon}
-                  index={i} isOpen={openIdx === i}
+                  isOpen={openIdx === i}
                   onToggle={() => toggle(i)}
                   isLight={isLight} tok={t}
                 />

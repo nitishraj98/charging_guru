@@ -241,7 +241,7 @@ export default function Pricing({ isLight, t }: { isLight: boolean; t: Tok }) {
           borderRadius: 16, overflow: "hidden", backdropFilter: "blur(8px)",
           opacity: visible ? 1 : 0, transition: "opacity .6s .1s",
         }}>
-          {TRUST_STRIP.map((item, i) => (
+          {TRUST_STRIP.map((item) => (
             <div key={item.label} style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
               padding: "16px 8px",

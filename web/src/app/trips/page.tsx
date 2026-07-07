@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Zap, CheckCircle, CreditCard, MapPin, QrCode, ArrowRight,
-  Calendar, ChevronRight, Map, Battery, Navigation,
+  Zap, CheckCircle, CreditCard, QrCode,
+  Calendar, Map, Battery, Navigation,
 } from "lucide-react";
 import { bookings, Booking } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
@@ -70,8 +70,6 @@ export default function TripsPage() {
   const nextBooking  = upcomingList[0];
   const completed    = list.filter(b => b.status === "COMPLETED");
   const totalPaise   = completed.reduce((sum, b) => sum + (b.amount ?? 0), 0);
-
-  const iconProps = { size: 14, strokeWidth: 2 };
 
   return (
     <div style={{ background: "transparent", minHeight: "100vh" }}>

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Car, Plus, X, Battery, Zap, Trash2, Star, ChevronRight } from "lucide-react";
+import { Car, Plus, X, Battery, Zap, Trash2, Star } from "lucide-react";
 import { vehicles as vehiclesApi, Vehicle, VehicleCreateRequest } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";

@@ -2,18 +2,20 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { Car, Compass, Crown, Gift, Route, TicketCheck } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { auth } from "@/lib/api";
 import Logo from "@/components/Logo";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
 
-const NAV_LINKS = [
-  { href: "/plan",       label: "Plan Journey" },
-  { href: "/discover",   label: "Discover" },
-  { href: "/trips",      label: "My Trips" },
-  { href: "/vehicles",   label: "Vehicles" },
-  { href: "/rewards",    label: "Rewards" },
-  { href: "/membership", label: "Membership" },
+const NAV_LINKS: Array<{ href: string; label: string; Icon: LucideIcon }> = [
+  { href: "/plan",       label: "Plan",       Icon: Route },
+  { href: "/discover",   label: "Discover",   Icon: Compass },
+  { href: "/trips",      label: "Trips",      Icon: TicketCheck },
+  { href: "/vehicles",   label: "Vehicles",   Icon: Car },
+  { href: "/rewards",    label: "Rewards",    Icon: Gift },
+  { href: "/membership", label: "Member",     Icon: Crown },
 ];
 
 function SunIcon() {
@@ -76,6 +78,8 @@ export default function NavBar() {
       ind.style.opacity = "1";
       ind.style.width = rect.width + "px";
       ind.style.left = (rect.left - parentRect.left) + "px";
+      ind.style.top = (rect.top - parentRect.top) + "px";
+      ind.style.height = rect.height + "px";
     } else if (ind) {
       ind.style.opacity = "0";
     }
@@ -98,25 +102,27 @@ export default function NavBar() {
     }
   }
 
-  const blur = "blur(24px) saturate(200%)";
+  const blur = "blur(26px) saturate(210%)";
 
-  const navBg = isLight ? "rgba(255,255,255,0.88)" : "rgba(8,10,11,0.92)";
+  const navBg = isLight
+    ? "linear-gradient(135deg,rgba(255,255,255,0.92),rgba(244,250,247,0.84))"
+    : "linear-gradient(135deg,rgba(5,8,9,0.94),rgba(8,13,14,0.90))";
 
   const glowBorder = isLight
-    ? "1px solid rgba(0,210,106,0.18)"
-    : "1px solid rgba(0,230,118,0.12)";
+    ? "1px solid rgba(15,23,42,0.08)"
+    : "1px solid rgba(255,255,255,0.10)";
 
   const navShadow = isLight
-    ? "0 4px 32px rgba(0,0,0,0.09), 0 1px 0 rgba(255,255,255,0.9) inset, 0 0 0 1px rgba(0,210,106,0.08)"
-    : "0 4px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,230,118,0.06)";
+    ? "0 10px 34px rgba(15,23,42,0.10), 0 1px 0 rgba(255,255,255,0.86) inset"
+    : "0 14px 42px rgba(0,0,0,0.50), 0 1px 0 rgba(255,255,255,0.07) inset, 0 0 0 1px rgba(0,230,118,0.035)";
 
-  const linkColor = isLight ? "#374151" : "#64748B";
-  const linkActiveColor = isLight ? "#059669" : "#00E676";
+  const linkColor = isLight ? "#475569" : "#9AA6B2";
+  const linkActiveColor = isLight ? "#064E3B" : "#E9FFF3";
 
   return (
     <>
       {/* Fixed nav wrapper */}
-      <div style={{
+      <div className="nav-shell" style={{
         position: "fixed",
         top: 0,
         left: 0,
@@ -124,7 +130,7 @@ export default function NavBar() {
         zIndex: 5000,
         pointerEvents: "none",
       }}>
-        <nav style={{
+        <nav className="nav-inner" style={{
           display: "flex",
           alignItems: "center",
           width: "100%",
@@ -139,11 +145,19 @@ export default function NavBar() {
           overflow: "hidden",
           position: "relative",
         }}>
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: isLight
+              ? "linear-gradient(90deg,rgba(0,210,106,0.10),transparent 26%,transparent 74%,rgba(14,165,233,0.08))"
+              : "linear-gradient(90deg,rgba(0,230,118,0.055),transparent 30%,transparent 70%,rgba(34,211,238,0.045))",
+            pointerEvents: "none",
+          }} />
           {/* Subtle top highlight line */}
           {!isLight && (
             <div style={{
               position: "absolute", top: 0, left: 0, right: 0, height: 1,
-              background: "linear-gradient(90deg, transparent, rgba(0,230,118,0.2) 40%, rgba(34,211,238,0.15) 60%, transparent)",
+              background: "linear-gradient(90deg, transparent, rgba(0,230,118,0.12) 40%, rgba(34,211,238,0.10) 60%, transparent)",
               pointerEvents: "none",
             }} />
           )}
@@ -158,35 +172,53 @@ export default function NavBar() {
 
           {/* Logo */}
           <div style={{
-            paddingLeft: 28,
+            paddingLeft: 18,
             flexShrink: 0,
             display: "flex", alignItems: "center",
+            position: "relative",
+            zIndex: 2,
           }}>
             <Logo size="md" theme={isLight ? "light" : "dark"} />
           </div>
 
           {/* Nav links */}
-          <div className="nav-links" style={{ position: "relative", display: "flex", alignItems: "center", gap: 2, marginLeft: 36 }}>
+          <div className="nav-links" style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
+            padding: 4,
+            borderRadius: 16,
+            background: isLight ? "rgba(255,255,255,0.58)" : "rgba(255,255,255,0.045)",
+            border: isLight ? "1px solid rgba(15,23,42,0.05)" : "1px solid rgba(255,255,255,0.06)",
+            boxShadow: isLight
+              ? "0 12px 26px rgba(15,23,42,0.07), 0 1px 0 rgba(255,255,255,0.86) inset"
+              : "0 14px 28px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.05) inset",
+            zIndex: 2,
+          }}>
             {/* Animated sliding indicator */}
             <div
               ref={indicatorRef}
               style={{
                 position: "absolute",
-                bottom: -2,
-                height: 2,
-                borderRadius: 2,
+                top: 4,
+                height: 34,
+                borderRadius: 12,
                 background: isLight
-                  ? "linear-gradient(90deg, #00D26A, #0EA5E9)"
-                  : "linear-gradient(90deg, #00E676, #22D3EE)",
+                  ? "linear-gradient(135deg, rgba(0,210,106,0.18), rgba(14,165,233,0.12))"
+                  : "linear-gradient(135deg, rgba(0,230,118,0.13), rgba(34,211,238,0.08))",
+                border: isLight ? "1px solid rgba(0,168,85,0.22)" : "1px solid rgba(0,230,118,0.16)",
                 opacity: 0,
-                transition: "left .35s cubic-bezier(.2,0,0,1), width .35s cubic-bezier(.2,0,0,1), opacity .25s",
+                transition: "left .35s cubic-bezier(.2,0,0,1), top .35s cubic-bezier(.2,0,0,1), width .35s cubic-bezier(.2,0,0,1), height .35s cubic-bezier(.2,0,0,1), opacity .25s",
                 boxShadow: isLight
-                  ? "0 0 8px rgba(0,210,106,0.6)"
-                  : "0 0 8px rgba(0,230,118,0.8), 0 0 16px rgba(0,230,118,0.4)",
+                  ? "0 10px 22px rgba(0,168,85,0.14)"
+                  : "0 0 18px rgba(0,230,118,0.10), 0 10px 24px rgba(0,0,0,0.22)",
                 pointerEvents: "none",
               }}
             />
-            {NAV_LINKS.map(({ href, label }, i) => {
+            {NAV_LINKS.map(({ href, label, Icon }, i) => {
               const active = path === href || (href !== "/" && !href.startsWith("#") && path.startsWith(href));
               return (
                 <Link
@@ -194,27 +226,31 @@ export default function NavBar() {
                   href={href}
                   ref={(el) => { linksRef.current[i] = el; }}
                   style={{
-                    padding: "8px 14px",
-                    fontSize: 13.5,
-                    fontWeight: active ? 600 : 500,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 7,
+                    padding: "8px 11px",
+                    fontSize: 13,
+                    fontWeight: active ? 750 : 600,
                     textDecoration: "none",
                     whiteSpace: "nowrap",
-                    borderRadius: 10,
+                    borderRadius: 12,
                     color: active ? linkActiveColor : linkColor,
                     background: "transparent",
                     border: "1px solid transparent",
-                    transition: "color .2s, background .2s, transform .15s, box-shadow .2s, border-color .2s",
+                    transition: "color .2s, transform .15s",
                     position: "relative",
+                    zIndex: 1,
+                    letterSpacing: "-.01em",
                   }}
                   onMouseEnter={e => {
                     const el = e.currentTarget as HTMLAnchorElement;
                     if (!active) {
-                      el.style.color = isLight ? "#00C15A" : "#00E676";
-                      el.style.background = isLight ? "rgba(0,193,90,0.08)" : "rgba(0,230,118,0.08)";
+                      el.style.color = isLight ? "#047857" : "#D7FFE9";
+                      el.style.background = isLight ? "rgba(0,168,85,0.10)" : "rgba(0,230,118,0.075)";
                       el.style.boxShadow = isLight
-                        ? "0 0 12px rgba(0,193,90,0.25), inset 0 0 8px rgba(0,193,90,0.06)"
-                        : "0 0 16px rgba(0,230,118,0.3), inset 0 0 10px rgba(0,230,118,0.06)";
-                      el.style.borderColor = isLight ? "rgba(0,193,90,0.3)" : "rgba(0,230,118,0.3)";
+                        ? "0 8px 18px rgba(0,168,85,0.12), inset 0 0 0 1px rgba(0,168,85,0.18)"
+                        : "0 0 16px rgba(0,230,118,0.10), inset 0 0 0 1px rgba(0,230,118,0.15)";
                     }
                     el.style.transform = "translateY(-1px)";
                   }}
@@ -224,11 +260,11 @@ export default function NavBar() {
                       el.style.color = linkColor;
                       el.style.background = "transparent";
                       el.style.boxShadow = "none";
-                      el.style.borderColor = "transparent";
                     }
                     el.style.transform = "none";
                   }}
                 >
+                  <Icon size={14} strokeWidth={active ? 2.5 : 2.1} />
                   {label}
                 </Link>
               );
@@ -238,7 +274,7 @@ export default function NavBar() {
           <div style={{ flex: 1 }} />
 
           {/* Right controls */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, paddingRight: 28 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, paddingRight: 14, position: "relative", zIndex: 2 }}>
 
             {/* Hamburger — mobile only, hidden on desktop via CSS */}
             <button
@@ -247,7 +283,7 @@ export default function NavBar() {
               aria-label="Toggle navigation"
               style={{
                 display: "none",
-                width: 40, height: 40, borderRadius: 11,
+                width: 38, height: 38, borderRadius: 13,
                 alignItems: "center", justifyContent: "center",
                 background: isLight ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.06)",
                 border: isLight ? "1px solid rgba(0,0,0,.09)" : "1px solid rgba(255,255,255,.09)",
@@ -267,7 +303,7 @@ export default function NavBar() {
               onClick={handleThemeToggle}
               title={isLight ? "Switch to dark" : "Switch to light"}
               style={{
-                width: 40, height: 40, borderRadius: 12,
+                width: 38, height: 38, borderRadius: 13,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 background: isLight
                   ? "rgba(0,0,0,0.04)"
@@ -312,13 +348,13 @@ export default function NavBar() {
                   onClick={() => router.push("/profile")}
                   title="My Profile"
                   style={{
-                    width: 36, height: 36, borderRadius: "50%",
-                    background: "linear-gradient(135deg,#00D26A,#00A855)",
+                    width: 36, height: 36, borderRadius: 13,
+                    background: isLight ? "linear-gradient(135deg,#00C862,#059669)" : "linear-gradient(135deg,#00E676,#00A855)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: "#FFF",
                     cursor: "pointer",
                     transition: "box-shadow .2s, transform .2s",
-                    boxShadow: "0 0 0 2px transparent, 0 2px 8px rgba(0,210,106,0.3)",
+                    boxShadow: isLight ? "0 8px 18px rgba(0,168,85,0.24)" : "0 0 0 1px rgba(0,230,118,0.25), 0 10px 22px rgba(0,0,0,0.3)",
                     flexShrink: 0,
                   }}
                   onMouseEnter={e => {
@@ -337,7 +373,7 @@ export default function NavBar() {
                   onClick={logout}
                   disabled={loggingOut}
                   style={{
-                    padding: "8px 16px", borderRadius: 11,
+                    padding: "8px 13px", borderRadius: 12,
                     border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
                     color: isLight ? "#6B7280" : "#9CA3AF",
                     fontSize: 13, fontWeight: 500,
@@ -368,7 +404,7 @@ export default function NavBar() {
                 <Link
                   href="/login"
                   style={{
-                    padding: "9px 18px", borderRadius: 11,
+                    padding: "9px 15px", borderRadius: 12,
                     border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
                     color: isLight ? "#374151" : "#64748B",
                     fontSize: 13.5, fontWeight: 500,
@@ -395,7 +431,7 @@ export default function NavBar() {
                   href="/plan"
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 7,
-                    padding: "9px 20px", borderRadius: 12,
+                    padding: "9px 16px", borderRadius: 13,
                     background: isLight
                       ? "linear-gradient(135deg,#00C15A,#00A348)"
                       : "linear-gradient(135deg,#00E676,#00C15A)",

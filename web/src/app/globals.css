@@ -824,6 +824,11 @@ a { color: inherit; }
   .final-cta-right { display: none !important; }
 }
 
+@media (max-width: 1120px) {
+  .nav-links     { display: none !important; }
+  .nav-hamburger { display: flex !important; }
+}
+
 /* ≤768px: mobile landscape / small tablet */
 @media (max-width: 768px) {
   /* Hero: single column */
@@ -836,6 +841,7 @@ a { color: inherit; }
   .hero-left-col  { padding: 80px 20px 48px !important; justify-content: flex-start !important; }
 
   /* Nav: hide desktop links, show hamburger */
+  .nav-inner { height: 68px !important; border-radius: 0 !important; }
   .nav-links     { display: none !important; }
   .nav-hamburger { display: flex !important; }
 

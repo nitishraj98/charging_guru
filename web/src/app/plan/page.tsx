@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -54,7 +54,7 @@ export default function PlanPage() {
   const [destLng,      setDestLng]     = useState<number | undefined>();
   const [vehicleId,    setVehicleId]   = useState(STATIC_VEHICLES[0].id);
   const [userVehicles, setUserVehicles]= useState<UserVehicle[]>(STATIC_VEHICLES);
-  const [loadingVehicles, setLoadingVehicles] = useState(true);
+  const [, setLoadingVehicles] = useState(true);
   const [battery,      setBattery]     = useState(80);
   const [planning,     setPlanning]    = useState(false);
   const [error,        setError]       = useState("");

@@ -457,7 +457,7 @@ export default function DiscoverPage() {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", paddingTop: 68, boxSizing: "border-box", background: "transparent" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 68px)", boxSizing: "border-box", background: "transparent" }}>
       <NavBar />
 
       {/* Popup chrome removal + user dot pulse animation */}

@@ -38,7 +38,6 @@ export default function JourneyDetailPage() {
   const [loading, setLoading]   = useState(true);
   const [activeStop, setActiveStop] = useState(0);
 
-  const bg          = isLight ? "#F3F7FB" : "#0A0D0E";
   const cardBg      = isLight ? "#FFFFFF" : "#101415";
   const cardBorder  = isLight ? "#CBD5E1" : "#222829";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";

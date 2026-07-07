@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { stations, bookings as bookingsApi, Station, Charger, Review, StationStats, Booking } from "@/lib/api";
 import { useUser } from "@/contexts/UserContext";
@@ -32,7 +32,7 @@ function estChargeTime(kw: number) {
   return m ? `~${h}h ${m}m` : `~${h}h`;
 }
 
-function HeroBanner({ available, total }: { available: number; total: number }) {
+function HeroBanner() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef    = useRef<number>(0);
 
@@ -213,7 +213,6 @@ function HeroBanner({ available, total }: { available: number; total: number }) 
     }
 
     // ── Horizontal energy lines ───────────────────────────────────────────
-    let lineOffset = 0;
     function drawEnergyLines(t: number) {
       const lines = [H * 0.22, H * 0.5, H * 0.78];
       lines.forEach((ly, i) => {
@@ -229,7 +228,6 @@ function HeroBanner({ available, total }: { available: number; total: number }) 
         ctx.lineWidth = 1;
         ctx.stroke();
       });
-      lineOffset = t;
     }
 
     // ── Main loop ─────────────────────────────────────────────────────────
@@ -376,7 +374,7 @@ export default function StationDetailPage() {
 
   const [stats,   setStats]   = useState<StationStats | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [, setReviewsTotal] = useState(0);
   const [reviewableBooking, setReviewableBooking] = useState<Booking | null>(null);
   const [reviewRating,  setReviewRating]  = useState(5);
   const [reviewComment, setReviewComment] = useState("");
@@ -400,10 +398,10 @@ export default function StationDetailPage() {
     stations.stats(id).then(setStats).catch(() => setStats(null));
   }, [id]);
 
-  function loadReviews() {
+  const loadReviews = useCallback(() => {
     stations.reviews.list(id).then(r => { setReviews(r.items); setReviewsTotal(r.total); }).catch(() => {});
-  }
-  useEffect(() => { loadReviews(); }, [id]);
+  }, [id]);
+  useEffect(() => { loadReviews(); }, [loadReviews]);
 
   // Find a COMPLETED booking of this user's at this station that they haven't reviewed yet.
   useEffect(() => {
@@ -530,7 +528,7 @@ export default function StationDetailPage() {
       <div style={{ position: "relative", height: 340, overflow: "hidden", background: "#040A06" }}>
 
         {/* Canvas animation — always dark for best visual impact */}
-        <HeroBanner available={available.length} total={chargers.length}/>
+        <HeroBanner />
 
         {/* Back + share buttons */}
         <div style={{ position: "absolute", top: 22, left: 24, right: 24, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 2 }}>
@@ -769,7 +767,7 @@ export default function StationDetailPage() {
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 14, color: textPrimary, marginBottom: 4 }}>Verified station</div>
-                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>This station is certified, regularly inspected, and monitored for safety and uptime. All chargers are covered under Charging Guru's guarantee.</div>
+                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>This station is certified, regularly inspected, and monitored for safety and uptime. All chargers are covered under Charging Guru&apos;s guarantee.</div>
                   </div>
                 </div>
               </div>
