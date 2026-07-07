@@ -18,33 +18,122 @@ const NAV_LINKS: Array<{ href: string; label: string; Icon: LucideIcon }> = [
   { href: "/membership", label: "Member",     Icon: Crown },
 ];
 
-function SunIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-      <circle cx="12" cy="12" r="4.5"/>
-      <line x1="12" y1="1.5" x2="12" y2="3.5"/>
-      <line x1="12" y1="20.5" x2="12" y2="22.5"/>
-      <line x1="4.5" y1="4.5" x2="5.9" y2="5.9"/>
-      <line x1="18.1" y1="18.1" x2="19.5" y2="19.5"/>
-      <line x1="1.5" y1="12" x2="3.5" y2="12"/>
-      <line x1="20.5" y1="12" x2="22.5" y2="12"/>
-      <line x1="4.5" y1="19.5" x2="5.9" y2="18.1"/>
-      <line x1="18.1" y1="5.9" x2="19.5" y2="4.5"/>
-    </svg>
-  );
-}
-function MoonIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-    </svg>
-  );
-}
 function BoltIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
       <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z"/>
     </svg>
+  );
+}
+
+function ThemeSwitch({
+  isLight,
+  animating,
+  onToggle,
+}: {
+  isLight: boolean;
+  animating: boolean;
+  onToggle: () => void;
+}) {
+  const dark = !isLight;
+  const switchWidth = 54;
+  const switchHeight = 30;
+  const knobSize = 26;
+  const travel = 24;
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      role="switch"
+      aria-checked={dark}
+      title={isLight ? "Switch to dark" : "Switch to light"}
+      style={{
+        width: switchWidth,
+        minWidth: switchWidth,
+        height: switchHeight,
+        borderRadius: 999,
+        border: isLight ? "1px solid rgba(0,168,85,0.24)" : "1px solid rgba(0,230,118,0.20)",
+        background: dark
+          ? "linear-gradient(135deg,#071011 0%,#0B1F16 55%,#0A2E1B 100%)"
+          : "linear-gradient(135deg,#F7FFFB 0%,#DFF8EC 58%,#CDEFFF 100%)",
+        boxShadow: isLight
+          ? "0 8px 18px rgba(0,168,85,0.12), inset 0 1px 0 rgba(255,255,255,0.82)"
+          : "0 0 0 1px rgba(0,230,118,0.05), 0 8px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08)",
+        cursor: "pointer",
+        padding: 0,
+        position: "relative",
+        overflow: "hidden",
+        flexShrink: 0,
+        transition: "background 200ms cubic-bezier(.445,.05,.55,.95), border-color .2s, box-shadow .2s",
+        fontFamily: "inherit",
+      }}
+    >
+      {[
+        { left: 21, top: 6, width: dark ? 2 : 18, height: dark ? 2 : 2, zIndex: 0, move: 0 },
+        { left: 17, top: 11, width: dark ? 3 : 18, height: dark ? 3 : 2, zIndex: 1, move: -3 },
+        { left: 24, top: 17, width: dark ? 2 : 18, height: dark ? 2 : 2, zIndex: 0, move: -4 },
+        { left: 8, top: 10, width: 2, height: 2, zIndex: 0, move: 2, late: 160 },
+        { left: 11, top: 21, width: 2.5, height: 2.5, zIndex: 0, move: 2, late: 240 },
+        { left: 18, top: 23, width: 2, height: 2, zIndex: 0, move: 2, late: 320 },
+      ].map((star, i) => (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            width: star.width,
+            height: star.height,
+            borderRadius: "50%",
+            background: i < 3 && !dark ? "#22D3EE" : "#FFFFFF",
+            left: star.left,
+            top: star.top,
+            zIndex: star.zIndex,
+            opacity: i < 3 ? 1 : dark ? 1 : 0,
+            transform: dark ? "translate3d(0,0,0)" : `translate3d(${star.move}px,0,0)`,
+            transition: `all 300ms ${dark ? star.late ?? 0 : 0}ms cubic-bezier(.445,.05,.55,.95)`,
+            boxShadow: dark ? "0 0 6px rgba(255,255,255,0.72)" : "0 0 6px rgba(34,211,238,0.28)",
+          }}
+        />
+      ))}
+      <span style={{
+        position: "absolute",
+        zIndex: 1,
+        top: 2,
+        left: 3,
+        width: knobSize,
+        height: knobSize,
+        borderRadius: 50,
+        background: dark
+          ? "radial-gradient(circle at 35% 30%,#FFF5D6 0%,#DDE8F0 56%,#A9BAC8 100%)"
+          : "radial-gradient(circle at 34% 30%,#FFFFFF 0%,#B7FFE0 42%,#00D26A 100%)",
+        boxShadow: dark
+          ? "0 2px 8px rgba(0,0,0,0.36), 0 0 0 1px rgba(255,255,255,0.45) inset"
+          : "0 2px 8px rgba(0,168,85,0.28), 0 0 0 1px rgba(255,255,255,0.72) inset",
+        transform: `translate3d(${dark ? travel : 0}px, 0, 0) rotate(${dark ? 0 : -45}deg) scale(${animating ? 0.94 : 1})`,
+        transition: "all 400ms cubic-bezier(.68,-.55,.265,1.55)",
+      }}>
+        {[
+          { left: 7, top: 11, size: 3 },
+          { left: 13, top: 17, size: 4 },
+          { left: 15, top: 6, size: 5 },
+        ].map((crater, i) => (
+          <span
+            key={i}
+            style={{
+              position: "absolute",
+              width: crater.size,
+              height: crater.size,
+              borderRadius: "50%",
+              backgroundColor: "rgba(116,126,139,0.26)",
+              left: crater.left,
+              top: crater.top,
+              opacity: dark ? 1 : 0,
+              transition: "opacity 200ms ease-in-out",
+            }}
+          />
+        ))}
+      </span>
+    </button>
   );
 }
 
@@ -299,41 +388,7 @@ export default function NavBar() {
             </button>
 
             {/* Theme toggle — premium pill */}
-            <button
-              onClick={handleThemeToggle}
-              title={isLight ? "Switch to dark" : "Switch to light"}
-              style={{
-                width: 38, height: 38, borderRadius: 13,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: isLight
-                  ? "rgba(0,0,0,0.04)"
-                  : "rgba(255,255,255,0.06)",
-                border: isLight
-                  ? "1px solid rgba(0,0,0,0.08)"
-                  : "1px solid rgba(255,255,255,0.09)",
-                color: isLight ? "#4B5563" : "#9CA3AF",
-                cursor: "pointer",
-                flexShrink: 0,
-                transition: "all .2s cubic-bezier(.2,0,0,1)",
-                transform: themeAnimating ? "rotate(180deg) scale(0.85)" : "rotate(0deg) scale(1)",
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget;
-                el.style.background = isLight ? "rgba(0,0,0,0.07)" : "rgba(255,255,255,0.1)";
-                el.style.borderColor = isLight ? "rgba(0,210,106,0.3)" : "rgba(0,230,118,0.3)";
-                el.style.color = isLight ? "#059669" : "#00E676";
-                el.style.boxShadow = isLight ? "0 0 14px rgba(0,210,106,0.2)" : "0 0 14px rgba(0,230,118,0.25)";
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget;
-                el.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.06)";
-                el.style.borderColor = isLight ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.09)";
-                el.style.color = isLight ? "#4B5563" : "#9CA3AF";
-                el.style.boxShadow = "none";
-              }}
-            >
-              {isLight ? <MoonIcon /> : <SunIcon />}
-            </button>
+            <ThemeSwitch isLight={isLight} animating={themeAnimating} onToggle={handleThemeToggle} />
 
             {/* Divider */}
             <div style={{
@@ -403,26 +458,9 @@ export default function NavBar() {
                 {/* Login — ghost */}
                 <Link
                   href="/login"
+                  className="cg-login-button"
                   style={{
-                    padding: "9px 15px", borderRadius: 12,
-                    border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
-                    color: isLight ? "#374151" : "#64748B",
-                    fontSize: 13.5, fontWeight: 500,
                     textDecoration: "none",
-                    transition: "all .2s",
-                    background: "transparent",
-                  }}
-                  onMouseEnter={e => {
-                    const el = e.currentTarget as HTMLAnchorElement;
-                    el.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.07)";
-                    el.style.borderColor = isLight ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.15)";
-                    el.style.color = isLight ? "#111827" : "#CBD5E1";
-                  }}
-                  onMouseLeave={e => {
-                    const el = e.currentTarget as HTMLAnchorElement;
-                    el.style.background = "transparent";
-                    el.style.borderColor = isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)";
-                    el.style.color = isLight ? "#374151" : "#64748B";
                   }}
                 >Log in</Link>
 
@@ -514,17 +552,17 @@ export default function NavBar() {
 
             {/* Bottom: theme + auth */}
             <div style={{ padding: "0 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-              <button onClick={handleThemeToggle} style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500,
-                background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)",
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                padding: "10px 12px", borderRadius: 14,
+                background: isLight ? "rgba(0,0,0,.035)" : "rgba(255,255,255,.045)",
                 border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)",
-                color: isLight ? "#4B5563" : "#9CA3AF",
-                cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left",
               }}>
-                {isLight ? <MoonIcon /> : <SunIcon />}
-                {isLight ? "Switch to Dark" : "Switch to Light"}
-              </button>
+                <span style={{ fontSize: 13, fontWeight: 700, color: isLight ? "#334155" : "#CBD5E1" }}>
+                  {isLight ? "Light mode" : "Dark mode"}
+                </span>
+                <ThemeSwitch isLight={isLight} animating={themeAnimating} onToggle={handleThemeToggle} />
+              </div>
               {loggedIn ? (
                 <>
                   <Link href="/profile" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: isLight ? "#374151" : "#64748B", background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)", border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)", textDecoration: "none" }}>
@@ -537,7 +575,7 @@ export default function NavBar() {
                 </>
               ) : (
                 <>
-                  <Link href="/login" style={{ display: "block", padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: isLight ? "#374151" : "#64748B", background: isLight ? "rgba(0,0,0,.04)" : "rgba(255,255,255,.05)", border: isLight ? "1px solid rgba(0,0,0,.08)" : "1px solid rgba(255,255,255,.08)", textDecoration: "none", textAlign: "center" }}>Log in</Link>
+                  <Link href="/login" className="cg-login-button cg-login-button--mobile" style={{ textDecoration: "none", textAlign: "center" }}>Log in</Link>
                   <Link href="/plan" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "13px 16px", borderRadius: 12, fontSize: 14, fontWeight: 700, background: "linear-gradient(135deg,#00D26A,#00A855)", color: "#FFF", textDecoration: "none", boxShadow: "0 4px 16px rgba(0,210,106,.35)" }}>
                     <BoltIcon /> Get Started
                   </Link>
