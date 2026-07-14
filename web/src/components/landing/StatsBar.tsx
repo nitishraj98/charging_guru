@@ -125,7 +125,7 @@ function NetworkMini({ isLight }: { isLight: boolean }) {
       </svg>
       <div style={{
         position: "absolute", bottom: 6, right: 8,
-        fontSize: 8, fontWeight: 700, color: isLight ? "#94A3B8" : "#4B5563",
+        fontSize: 8, fontWeight: 700, color: isLight ? "#64748B" : "#4B5563",
         letterSpacing: ".06em",
       }}>INDIA NETWORK</div>
     </div>
@@ -150,9 +150,10 @@ export default function StatsBar({ isLight, t }: { isLight: boolean; t: Tok }) {
   return (
     <div
       ref={ref}
+      className="stats-bar-grid"
       style={{
         background: isLight
-          ? "linear-gradient(90deg, #FFFFFF, #F6F8FA 50%, #FFFFFF)"
+          ? "linear-gradient(90deg, #FFFFFF, #F8F6F1 50%, #FFFFFF)"
           : "rgba(8,10,11,.9)",
         borderTop: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.04)"}`,
         borderBottom: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.04)"}`,
@@ -166,7 +167,7 @@ export default function StatsBar({ isLight, t }: { isLight: boolean; t: Tok }) {
       {/* Animated shimmer sweep */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: `linear-gradient(90deg, transparent 0%, ${isLight ? "rgba(0,210,106,.025)" : "rgba(0,230,118,.03)"} 50%, transparent 100%)`,
+        background: `linear-gradient(90deg, transparent 0%, ${isLight ? "rgba(248,246,241,.28)" : "rgba(0,230,118,.03)"} 50%, transparent 100%)`,
         animation: "slide-left 8s linear infinite",
         backgroundSize: "200% 100%",
       }} />
@@ -176,13 +177,13 @@ export default function StatsBar({ isLight, t }: { isLight: boolean; t: Tok }) {
       ))}
 
       {/* India network mini-map */}
-      <div style={{
+      <div className="stats-network" style={{
         borderLeft: `1px solid ${isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.05)"}`,
         padding: "8px 12px",
         display: "flex", alignItems: "center", justifyContent: "center",
         position: "relative",
         background: isLight
-          ? "linear-gradient(135deg,rgba(0,184,94,.03),rgba(14,165,233,.02))"
+          ? "linear-gradient(135deg,rgba(248,246,241,.30),rgba(248,246,241,.35))"
           : "linear-gradient(135deg,rgba(0,230,118,.03),rgba(34,211,238,.02))",
       }}>
         <NetworkMini isLight={isLight} />

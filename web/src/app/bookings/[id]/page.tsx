@@ -5,6 +5,7 @@ import { bookings, payments, Booking, PaymentRecord } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Skeleton, BookingDetailSkeleton } from "@/components/Skeleton";
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; icon: string }> = {
   PENDING_PAYMENT: { label: "Pending Payment", color: "#FFC043", bg: "rgba(255,192,67,.1)",  icon: "⏳" },
@@ -55,7 +56,7 @@ function Timeline({ status }: { status: string }) {
   const isCancelled = status === "CANCELLED" || status === "EXPIRED";
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 0, width: "100%" }}>
+    <div className="booking-timeline" style={{ gap: 0 }}>
       {STEPS.map((step, i) => {
         const done = currentIdx >= i && !isCancelled;
         const active = currentIdx === i && !isCancelled;
@@ -93,12 +94,11 @@ export default function BookingDetailPage() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
 
-  const bg          = isLight ? "#F8FAFC" : "#0A0D0E";
   const cardBg      = isLight ? "#FFFFFF" : "#101415";
-  const cardBorder  = isLight ? "#E2E8F0" : "#222829";
+  const cardBorder  = isLight ? "#CBD5E1" : "#222829";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
   const textSub     = isLight ? "#64748B" : "#6B7479";
-  const textMuted   = isLight ? "#94A3B8" : "#495154";
+  const textMuted   = isLight ? "#64748B" : "#495154";
   const accent      = isLight ? "#00D26A" : "#00E676";
   const accentDim   = isLight ? "#DCFCE7" : "rgba(0,230,118,.08)";
   const accentBrd   = isLight ? "#86EFAC" : "rgba(0,230,118,.25)";
@@ -174,17 +174,23 @@ export default function BookingDetailPage() {
   }
 
   if (loading) return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: 16 }}>
-        <span className="spinner" style={{ width: 32, height: 32, borderWidth: 3, borderColor: "#222829", borderTopColor: accent }} />
-        <span style={{ color: textSub, fontSize: 14 }}>Loading booking…</span>
+      <div style={{ maxWidth: 640, margin: "0 auto", padding: "36px 24px 80px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+          <Skeleton width={38} height={38} radius={10} />
+          <div>
+            <Skeleton width={140} height={18} style={{ marginBottom: 6 }} />
+            <Skeleton width={100} height={12} />
+          </div>
+        </div>
+        <BookingDetailSkeleton cardBg={cardBg} cardBorder={cardBorder} />
       </div>
     </div>
   );
 
   if (error || !booking) return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
       <div style={{ maxWidth: 560, margin: "60px auto", padding: "0 24px", textAlign: "center" }}>
         <div style={{ fontSize: 40, marginBottom: 16 }}>⚠</div>
@@ -200,7 +206,7 @@ export default function BookingDetailPage() {
   const isCompleted = booking.status === "COMPLETED";
 
   return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
 
       <div className="fade-up" style={{ maxWidth: 640, margin: "0 auto", padding: "36px 24px 80px" }}>

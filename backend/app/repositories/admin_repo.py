@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.booking import Booking
 from app.models.charger import Charger
 from app.models.enums import BookingStatus, ChargerStatus, PaymentStatus, StationStatus
+from app.models.membership_payment import MembershipPayment
 from app.models.payment import Payment
 from app.models.station import Station
 from app.models.user import User
@@ -266,6 +267,37 @@ class AdminRepo:
             )
         ).scalars().all()
         return list(rows), total
+
+    async def list_membership_payments(
+        self,
+        status: PaymentStatus | None,
+        page: int,
+        per_page: int,
+    ) -> tuple[list, int]:
+        base = select(MembershipPayment)
+        count_base = select(func.count()).select_from(MembershipPayment)
+        if status is not None:
+            base = base.where(MembershipPayment.status == status)
+            count_base = count_base.where(MembershipPayment.status == status)
+
+        total = (await self.session.execute(count_base)).scalar_one()
+        rows = (
+            await self.session.execute(
+                base.order_by(MembershipPayment.created_at.desc())
+                .offset((page - 1) * per_page)
+                .limit(per_page)
+            )
+        ).scalars().all()
+        return list(rows), total
+
+    async def sum_membership_revenue_total(self) -> int:
+        """All-time total revenue from captured membership payments."""
+        res = await self.session.execute(
+            select(func.coalesce(func.sum(MembershipPayment.amount), 0))
+            .select_from(MembershipPayment)
+            .where(MembershipPayment.status == PaymentStatus.CAPTURED)
+        )
+        return int(res.scalar_one())
 
     async def list_user_bookings(
         self,

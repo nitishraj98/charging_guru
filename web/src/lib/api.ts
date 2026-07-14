@@ -88,6 +88,16 @@ export const stations = {
     const q = date ? `?date=${date}` : "";
     return request<Slot[]>(`/api/v1/chargers/${chargerId}/slots${q}`, {}, false);
   },
+  stats: (id: string) => request<StationStats>(`/api/v1/stations/${id}/stats`, {}, false),
+  reviews: {
+    list: (stationId: string, page = 1, per_page = 20) =>
+      request<PagedResult<Review>>(`/api/v1/stations/${stationId}/reviews?page=${page}&per_page=${per_page}`, {}, false),
+    create: (stationId: string, bookingId: string, rating: number, comment?: string) =>
+      request<Review>(`/api/v1/stations/${stationId}/reviews?booking_id=${bookingId}`, {
+        method: "POST",
+        body: JSON.stringify({ rating, comment: comment || null }),
+      }),
+  },
 };
 
 // ── Bookings ──────────────────────────────────────────────────────────────────
@@ -152,7 +162,10 @@ export const routes = {
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-export interface User { id: string; phone: string; full_name?: string; email?: string; roles?: string[]; }
+export interface User {
+  id: string; phone: string; full_name?: string; email?: string; roles?: string[];
+  reward_points: number; membership_tier: "FREE" | "SILVER" | "GOLD"; referral_code: string;
+}
 export interface Charger {
   id: string; label: string; charger_type: string; connector_type: string;
   power_kw: number; price_per_kwh: number; status: string;
@@ -163,8 +176,13 @@ export interface Station {
   chargers: Charger[]; distance_km?: number;
 }
 export interface Slot { slot_start: string; slot_end: string; available: boolean; }
+export interface Review {
+  id: string; user_id: string; rating: number; comment?: string | null; created_at: string;
+}
+export interface PagedResult<T> { items: T[]; total: number; page: number; per_page: number; pages: number; }
+export interface StationStats { sessions_today: number; uptime_pct: number; }
 export interface Booking {
-  id: string; charger_id: string; status: string; slot_start: string;
+  id: string; charger_id: string; station_id?: string; status: string; slot_start: string;
   slot_end: string; amount: number; qr_jti?: string;
   hold_expires_at?: string;
   charger?: Charger; station?: Station;
@@ -280,14 +298,37 @@ export interface Journey {
 }
 
 // ── Rewards ───────────────────────────────────────────────────────────────────
+export type MembershipTier = "FREE" | "SILVER" | "GOLD";
 export interface RewardSummary {
-  points: number; tier: string; next_tier: string; points_to_next: number;
+  points: number; tier: MembershipTier; next_tier: MembershipTier | null;
+  points_to_next: number; referral_code: string;
 }
 export interface RewardTransaction {
-  id: string; type: "earned" | "redeemed" | "expired";
-  points: number; description: string; created_at: string; booking_id?: string;
+  id: string; type: "EARNED" | "REDEEMED" | "EXPIRED";
+  points: number; description: string; created_at: string;
 }
 export const rewards = {
   summary: () => request<RewardSummary>("/api/v1/rewards/summary"),
   history: () => request<RewardTransaction[]>("/api/v1/rewards/history"),
+  redeem: (points: number) =>
+    request<RewardTransaction>("/api/v1/rewards/redeem", { method: "POST", body: JSON.stringify({ points }) }),
+};
+
+// ── Membership ───────────────────────────────────────────────────────────────
+export interface MembershipTierInfo {
+  tier: MembershipTier; price_paise: number; points_multiplier: number; discount_pct: number;
+}
+export interface MembershipOrder {
+  id: string; tier: MembershipTier; razorpay_order_id: string; amount: number; created_at: string;
+}
+export const membership = {
+  tiers: () => request<MembershipTierInfo[]>("/api/v1/membership/tiers", {}, false),
+  me: () => request<MembershipTierInfo>("/api/v1/membership/me"),
+  createOrder: (tier: MembershipTier) =>
+    request<MembershipOrder>("/api/v1/membership/order", { method: "POST", body: JSON.stringify({ tier }) }),
+  verify: (razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string) =>
+    request<MembershipTierInfo>("/api/v1/membership/verify", {
+      method: "POST",
+      body: JSON.stringify({ razorpay_order_id, razorpay_payment_id, razorpay_signature }),
+    }),
 };

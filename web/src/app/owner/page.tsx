@@ -4,12 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
 import { MapPin, Zap, Clock, Plus, RefreshCw, ChevronRight, Activity } from "lucide-react";
-
-function getToken() {
-  if (typeof document === "undefined") return "";
-  const m = document.cookie.match(/(?:^|; )cg_access=([^;]*)/);
-  return m ? decodeURIComponent(m[1]) : "";
-}
+import { authFetch } from "@/lib/admin-ui";
 
 interface Charger {
   id: string; label: string; connector_type: string;
@@ -37,9 +32,9 @@ const STATION_BADGE: Record<string, { color: string; bg: string; label: string }
 
 function getTheme(isLight: boolean) {
   return isLight ? {
-    bg: "#F1F5F9", card: "#FFFFFF", raised: "#F8FAFC", raised2: "#EEF2F7",
+    bg: "#F1F5F9", card: "#FFFFFF", raised: "#F3F7FB", raised2: "#EEF2F7",
     border: "rgba(15,23,42,0.08)", borderHi: "rgba(15,23,42,0.14)",
-    text: "#0F172A", sub: "#64748B", muted: "#94A3B8",
+    text: "#0F172A", sub: "#64748B", muted: "#64748B",
     statGrad1: "linear-gradient(135deg,#FFFFFF,#F0FDF4)",
     statGrad2: "linear-gradient(135deg,#FFFFFF,#F0F9FF)",
     statGrad3: "linear-gradient(135deg,#FFFFFF,#FFFBEB)",
@@ -211,9 +206,7 @@ export default function OwnerDashboard() {
     if (!quiet) setLoading(true); else setRefreshing(true);
     setError("");
     try {
-      const res = await fetch("/api/v1/owner/stations", {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch("/api/v1/owner/stations");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setStations(Array.isArray(data) ? data : []);
@@ -229,9 +222,9 @@ export default function OwnerDashboard() {
   async function setChargerStatus(chargerId: string, newStatus: string) {
     setUpdatingCharger(chargerId);
     try {
-      const res = await fetch(`/api/v1/chargers/${chargerId}/status`, {
+      const res = await authFetch(`/api/v1/chargers/${chargerId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) await load(true);
@@ -257,10 +250,10 @@ export default function OwnerDashboard() {
   );
 
   return (
-    <div style={{ padding: "28px 32px 48px", fontFamily: SANS, background: th.bg, minHeight: "100%" }}>
+    <div className="owner-pad" style={{ fontFamily: SANS, background: th.bg, minHeight: "100%" }}>
 
       {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32 }}>
+      <div className="owner-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32 }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: GREEN, letterSpacing: ".08em", marginBottom: 4, opacity: 0.85 }}>
             {greeting}
@@ -302,7 +295,7 @@ export default function OwnerDashboard() {
       </div>
 
       {/* ── Stat cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 32 }}>
+      <div className="owner-stat-grid" style={{ marginBottom: 32 }}>
         <StatCard
           label="Total Stations" value={stations.length}
           sub={`${activeStations} active${pendingStations ? `, ${pendingStations} pending` : ""}`}
@@ -385,7 +378,7 @@ export default function OwnerDashboard() {
                     ? "linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(240,255,244,0.3) 100%)"
                     : "linear-gradient(180deg,rgba(0,210,106,0.02) 0%,transparent 100%)",
                 }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                  <div className="owner-station-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
 
                     {/* Left: name + meta */}
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
@@ -420,7 +413,7 @@ export default function OwnerDashboard() {
                     </div>
 
                     {/* Right: charger availability pill + actions */}
-                    <div style={{ display: "flex", flexDirection: "column" as const, alignItems: "flex-end", gap: 10 }}>
+                    <div className="owner-station-right" style={{ display: "flex", flexDirection: "column" as const, alignItems: "flex-end", gap: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <div style={{
                           display: "flex", alignItems: "center", gap: 6,

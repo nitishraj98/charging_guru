@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -13,10 +14,14 @@ from sqlalchemy import (
     String,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPkMixin
 from app.models.enums import BookingStatus, ChargerStatus
+
+if TYPE_CHECKING:
+    from app.models.charger import Charger
+    from app.models.station import Station
 
 # Partial-unique guard: at most one *active* booking per slot. Works on both
 # PostgreSQL and SQLite (both support partial indexes). This is the ultimate
@@ -54,6 +59,9 @@ class Booking(Base, UUIDPkMixin, TimestampMixin):
     energy_kwh_est: Mapped[float | None] = mapped_column()
     hold_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     qr_jti: Mapped[uuid.UUID | None] = mapped_column()
+
+    charger: Mapped["Charger"] = relationship(lazy="selectin")
+    station: Mapped["Station"] = relationship(lazy="selectin")
 
 
 class ChargerStatusHistory(Base, UUIDPkMixin, TimestampMixin):

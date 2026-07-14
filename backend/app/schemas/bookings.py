@@ -8,6 +8,7 @@ from pydantic import Field
 
 from app.models.enums import BookingStatus
 from app.schemas.common import ORMModel, StrictModel
+from app.schemas.stations import ChargerOut, StationOut
 
 
 class BookingCreateIn(StrictModel):
@@ -27,3 +28,5 @@ class BookingOut(ORMModel):
     energy_kwh_est: float | None
     hold_expires_at: datetime | None
     created_at: datetime
+    charger: ChargerOut | None = None
+    station: StationOut | None = None

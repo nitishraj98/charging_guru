@@ -47,11 +47,13 @@ class PaymentService:
         bookings: BookingRepo,
         gateway: RazorpayGateway,
         session,
+        membership=None,
     ):
         self.payments = payments
         self.bookings = bookings
         self.gateway = gateway
         self.session = session
+        self.membership = membership
 
     async def create_order(self, booking_id: uuid.UUID, user_id: uuid.UUID) -> Payment:
         """Create (or return existing) Razorpay order for a pending booking."""
@@ -134,8 +136,13 @@ class PaymentService:
             order_id = entity.get("order_id", "")
             payment_id = entity.get("id", "")
             payment = await self.payments.get_by_order(order_id)
-            if payment is None or payment.status == PaymentStatus.CAPTURED:
-                return  # already processed or unknown order
+            if payment is None:
+                # Not a booking payment — could be a membership order.
+                if self.membership is not None:
+                    await self.membership.handle_webhook_event(event_name, entity)
+                return
+            if payment.status == PaymentStatus.CAPTURED:
+                return  # already processed
 
             payment.razorpay_payment_id = payment_id
             payment.status = PaymentStatus.CAPTURED

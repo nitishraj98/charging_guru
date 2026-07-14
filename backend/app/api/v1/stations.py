@@ -9,18 +9,23 @@ from fastapi import APIRouter, Depends, Query
 from app.api.deps import (
     get_availability_service,
     get_booking_service,
+    get_current_user,
     get_station_service,
     require_roles,
 )
 from app.domain.policies import DEFAULT_DISCOVERY_RADIUS_KM
 from app.models.user import User
+from app.schemas.admin import PagedResult
 from app.schemas.bookings import BookingOut
 from app.schemas.stations import (
     ChargerOut,
     ChargerStatusIn,
+    ReviewCreateIn,
+    ReviewOut,
     StationCreateIn,
     StationDetailOut,
     StationNearbyOut,
+    StationStatsOut,
 )
 from app.services.availability_service import AvailabilityService
 from app.services.booking_service import BookingService
@@ -51,6 +56,37 @@ async def station_detail(
     station_id: uuid.UUID, svc: StationService = Depends(get_station_service)
 ):
     return await svc.get_detail(station_id)
+
+
+@router.get("/stations/{station_id}/stats", response_model=StationStatsOut)
+async def station_stats(
+    station_id: uuid.UUID, svc: StationService = Depends(get_station_service)
+):
+    """Public: sessions started/completed today + rolling uptime %."""
+    return await svc.get_stats(station_id)
+
+
+@router.get("/stations/{station_id}/reviews", response_model=PagedResult[ReviewOut])
+async def list_station_reviews(
+    station_id: uuid.UUID,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    svc: StationService = Depends(get_station_service),
+):
+    items, total = await svc.list_reviews(station_id, page, per_page)
+    pages = (total + per_page - 1) // per_page if total else 0
+    return PagedResult(items=items, total=total, page=page, per_page=per_page, pages=pages)
+
+
+@router.post("/stations/{station_id}/reviews", response_model=ReviewOut, status_code=201)
+async def create_station_review(
+    station_id: uuid.UUID,
+    payload: ReviewCreateIn,
+    booking_id: uuid.UUID = Query(..., description="A COMPLETED booking of yours at this station"),
+    user: User = Depends(get_current_user),
+    svc: StationService = Depends(get_station_service),
+):
+    return await svc.add_review(station_id, user.id, booking_id, payload)
 
 
 @router.get("/owner/stations", response_model=list[StationDetailOut])

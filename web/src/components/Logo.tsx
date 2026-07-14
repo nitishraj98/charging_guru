@@ -15,7 +15,7 @@ const SIZES = {
 
 function LogoIcon({ px, uid }: { px: number; uid: string }) {
   return (
-    <svg width={px} height={px} viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0, display: "block", overflow: "visible" }}>
+    <svg width={px} height={px} viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0, display: "block", overflow: "hidden" }}>
       <defs>
         <radialGradient id={`${uid}a`} cx="38%" cy="22%" r="72%">
           <stop offset="0%"   stopColor="#6FFFC0" />

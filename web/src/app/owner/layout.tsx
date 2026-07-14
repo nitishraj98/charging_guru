@@ -3,12 +3,13 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { checkAuth, bffLogout } from "@/lib/auth";
+import { authFetch } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
 import Logo from "@/components/Logo";
 import {
   LayoutDashboard, MapPin, BookOpen, Zap, Plus,
-  LogOut, Sun, Moon, ChevronRight,
+  LogOut, Sun, Moon, ChevronRight, ShieldCheck,
 } from "lucide-react";
 
 const C = {
@@ -29,12 +30,14 @@ const NAV = [
   ]},
 ];
 
+const BODY_NAV_OFFSET = 68;
+
 function getTheme(isLight: boolean) {
   return isLight ? {
-    bg: "#F1F5F9", panel: "#FFFFFF", card: "#FFFFFF", raised: "#F8FAFC",
+    bg: "#EDF3F7", panel: "rgba(255,255,255,0.92)", card: "#FFFFFF", raised: "#F3F7FB",
     border: "rgba(15,23,42,0.08)", text: "#0F172A", sub: "#64748B",
   } : {
-    bg: "#0A0D0E", panel: "#101415", card: "#101415", raised: "#181D1F",
+    bg: "#070B0C", panel: "rgba(13,17,18,0.94)", card: "#101415", raised: "#181D1F",
     border: "#1E2636", text: "#E6EBED", sub: "#6B7479",
   };
 }
@@ -50,26 +53,21 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
   const th = getTheme(isLight);
 
   useEffect(() => {
-    checkAuth().then(async ok => {
+    // checkAuth() first (silently refreshes an expired access token if
+    // needed), then probe ownership with whatever token is current after
+    // that — a stale token read before refresh would 403 even for a
+    // genuinely-owned account.
+    checkAuth().then(ok => {
       if (!ok) { router.push("/login"); return; }
-      // Check role via /users/me
-      const match = typeof document !== "undefined"
-        ? document.cookie.match(/(?:^|; )cg_access=([^;]*)/)
-        : null;
-      const token = match ? decodeURIComponent(match[1]) : "";
-      const res = await fetch("/api/v1/owner/stations", {
-        headers: { Authorization: `Bearer ${token}` },
+      return authFetch("/api/v1/owner/stations").then(res => {
+        if (res.status === 403) { router.push("/become-owner"); return; }
+        setReady(true);
       });
-      if (res.status === 403) {
-        router.push("/become-owner");
-        return;
-      }
-      setReady(true);
-    });
+    }).catch(() => { router.push("/login"); });
   }, [router]);
 
   if (!ready) return (
-    <div style={{ background: th.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ background: th.bg, minHeight: "100vh", marginTop: -BODY_NAV_OFFSET, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ width: 28, height: 28, border: `3px solid ${th.border}`, borderTopColor: C.green, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -85,32 +83,49 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
     : "O";
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: th.bg, fontFamily: C.sans }}>
-      <style>{`
+    <div style={{
+      display: "flex", height: "100vh", marginTop: -BODY_NAV_OFFSET, overflow: "hidden",
+      background: isLight
+        ? "linear-gradient(135deg,#EDF3F7 0%,#F8FBFC 42%,#EEF9F2 100%)"
+        : "linear-gradient(135deg,#050708 0%,#081012 48%,#06110B 100%)",
+      fontFamily: C.sans,
+    }}>
+      <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px }
         ::-webkit-scrollbar-track { background: transparent }
         ::-webkit-scrollbar-thumb { background: ${isLight ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.08)"}; border-radius: 4px }
         @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+        @keyframes owner-grid-drift { from{transform:translate3d(0,0,0)} to{transform:translate3d(-48px,-48px,0)} }
+        .owner-shell-main::before {
+          content:""; position:fixed; inset:0; pointer-events:none;
+          background-image:
+            linear-gradient(${isLight ? "rgba(15,23,42,0.035)" : "rgba(255,255,255,0.028)"} 1px,transparent 1px),
+            linear-gradient(90deg,${isLight ? "rgba(15,23,42,0.035)" : "rgba(255,255,255,0.028)"} 1px,transparent 1px);
+          background-size:48px 48px; opacity:.6; animation:owner-grid-drift 22s linear infinite;
+        }
       `}</style>
 
       {/* ── Sidebar ── */}
       <aside style={{
         width: 220, flexShrink: 0, display: "flex", flexDirection: "column",
         background: th.panel, borderRight: `1px solid ${th.border}`,
-        boxShadow: isLight ? "2px 0 16px rgba(0,0,0,0.06)" : "4px 0 28px rgba(0,0,0,0.4)",
+        backdropFilter: "blur(18px)",
+        boxShadow: isLight ? "10px 0 34px rgba(15,23,42,0.08)" : "12px 0 42px rgba(0,0,0,0.42)",
       }}>
 
         {/* Brand */}
         <div style={{ padding: "18px 16px 14px", borderBottom: `1px solid ${th.border}` }}>
           <Logo size="sm" href="/owner" theme={isLight ? "light" : "dark"} />
-          <div style={{
-            marginTop: 6, paddingLeft: 42,
-            fontSize: 8, fontWeight: 700, letterSpacing: "0.22em",
-            color: C.green, opacity: 0.7, textTransform: "uppercase" as const,
-            fontFamily: C.sans,
-          }}>STATION PORTAL</div>
+          <div style={{ marginTop: 10, marginLeft: 42, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 8px", borderRadius: 999, background: "rgba(0,210,106,0.10)", border: "1px solid rgba(0,210,106,0.18)" }}>
+            <ShieldCheck size={10} color={C.green} />
+            <span style={{
+              fontSize: 8, fontWeight: 800, letterSpacing: "0.18em",
+              color: C.green, textTransform: "uppercase" as const,
+              fontFamily: C.sans,
+            }}>Station Portal</span>
+          </div>
         </div>
 
         {/* Nav */}
@@ -150,7 +165,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Footer */}
-        <div style={{ borderTop: `1px solid ${th.border}` }}>
+        <div style={{ borderTop: `1px solid ${th.border}`, background: isLight ? "rgba(248,250,252,0.66)" : "rgba(255,255,255,0.015)" }}>
           {/* Theme toggle */}
           <div style={{ padding: "10px 14px", borderBottom: `1px solid ${th.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: 11, color: th.sub }}>{isLight ? "Light mode" : "Dark mode"}</span>
@@ -203,7 +218,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ── Main content ── */}
-      <main style={{ flex: 1, overflow: "auto", background: th.bg }}>
+      <main className="owner-shell-main" style={{ flex: 1, overflow: "auto", background: "transparent", position: "relative" }}>
         {children}
       </main>
     </div>

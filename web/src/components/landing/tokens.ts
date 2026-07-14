@@ -18,7 +18,7 @@ export const D = {
 };
 
 export const L = {
-  bg:         "#F6F8FA",         // Warm cool white — not pure #FFF
+  bg:         "#F8F6F1",         // Warm cool white — not pure #FFF
   surface:    "#FFFFFF",
   raised:     "#EEF2F7",         // Soft blue-grey lifted surface
   border:     "#D8E2ED",
@@ -29,7 +29,7 @@ export const L = {
   accentDim:  "#D1FAE5",
   accentBrd:  "#6EE7B7",
   cardBg:     "#FFFFFF",
-  cardBorder: "#E2E8F0",
+  cardBorder: "#CBD5E1",
   cardShadow: "0 1px 3px rgba(15,23,42,.05), 0 4px 20px rgba(15,23,42,.07)",
   iconBg:     "linear-gradient(135deg, #D1FAE5, #E0F9EE)",
   checkBg:    "#D1FAE5",

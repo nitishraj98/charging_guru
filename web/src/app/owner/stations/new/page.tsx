@@ -2,12 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
-
-function getToken() {
-  if (typeof document === "undefined") return "";
-  const m = document.cookie.match(/(?:^|; )cg_access=([^;]*)/);
-  return m ? decodeURIComponent(m[1]) : "";
-}
+import { authFetch } from "@/lib/admin-ui";
 
 interface ChargerForm {
   label: string; charger_type: string; power_kw: string;
@@ -23,15 +18,15 @@ export default function NewStationPage() {
   const { isLight } = useTheme();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const bg          = isLight ? "#F8FAFC" : "#0A0D0E";
+  const bg          = isLight ? "#F3F7FB" : "#0A0D0E";
   const cardBg      = isLight ? "#FFFFFF" : "#101415";
-  const cardBorder  = isLight ? "#E2E8F0" : "#222829";
+  const cardBorder  = isLight ? "#CBD5E1" : "#222829";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
   const textSub     = isLight ? "#64748B" : "#6B7479";
   const accent      = isLight ? "#00D26A" : "#00E676";
   const raisedBg    = isLight ? "#F1F5F9" : "#181D1F";
-  const inputBg     = isLight ? "#F8FAFC" : "#0A0D0E";
-  const inputBorder = isLight ? "#CBD5E1" : "#2E3638";
+  const inputBg     = isLight ? "#F3F7FB" : "#0A0D0E";
+  const inputBorder = isLight ? "#94A3B8" : "#2E3638";
 
   const [name, setName]         = useState("");
   const [address, setAddress]   = useState("");
@@ -73,7 +68,6 @@ export default function NewStationPage() {
     e.preventDefault();
     setError(""); setSubmitting(true);
     try {
-      const token = getToken();
       const payload = {
         name: name.trim(),
         address: address.trim(),
@@ -91,9 +85,9 @@ export default function NewStationPage() {
           price_per_kwh: parseInt(c.price_per_kwh),
         })),
       };
-      const res = await fetch(`/api/v1/owner/stations`, {
+      const res = await authFetch("/api/v1/owner/stations", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -107,7 +101,7 @@ export default function NewStationPage() {
   }
 
   return (
-    <div style={{ padding: "28px 32px", maxWidth: 720 }}>
+    <div className="owner-pad" style={{ padding: "28px 32px", maxWidth: 720 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: textPrimary, marginBottom: 4 }}>Add New Station</h1>
         <p style={{ fontSize: 13, color: textSub, marginBottom: 28 }}>Your station will be reviewed by admin before going live.</p>
 
@@ -125,7 +119,7 @@ export default function NewStationPage() {
                 <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: textSub, marginBottom: 6 }}>Full Address *</label>
                 <input required value={address} onChange={e => setAddress(e.target.value)} placeholder="Plot 12, Sector 18, Noida" style={inputStyle} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div className="new-station-addr-grid">
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: textSub, marginBottom: 6 }}>City</label>
                   <input value={city} onChange={e => setCity(e.target.value)} placeholder="Noida" style={inputStyle} />
@@ -139,7 +133,7 @@ export default function NewStationPage() {
                   <input value={pincode} onChange={e => setPincode(e.target.value)} placeholder="201301" style={inputStyle} />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="new-station-latlng-grid">
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: textSub, marginBottom: 6 }}>Latitude *</label>
                   <input required type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} placeholder="28.5706" style={inputStyle} />
@@ -194,7 +188,7 @@ export default function NewStationPage() {
                       </button>
                     )}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div className="new-station-charger-grid">
                     <div>
                       <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: textSub, marginBottom: 5 }}>Label</label>
                       <input value={c.label} onChange={e => updateCharger(i, "label", e.target.value)} style={inputStyle} placeholder="Bay 1" />

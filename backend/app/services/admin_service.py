@@ -16,6 +16,7 @@ from app.schemas.admin import (
     ChargerAdminOut,
     ChargerBreakdown,
     DayTrend,
+    MembershipPaymentAdminOut,
     PagedResult,
     PaymentAdminOut,
     StationAdminOut,
@@ -218,6 +219,32 @@ class AdminService:
             per_page=per_page,
             pages=pages,
         )
+
+    async def list_membership_payments(
+        self,
+        status: str | None,
+        page: int,
+        per_page: int,
+    ) -> PagedResult[MembershipPaymentAdminOut]:
+        payment_status: PaymentStatus | None = None
+        if status is not None:
+            try:
+                payment_status = PaymentStatus(status)
+            except ValueError:
+                raise ConflictError(f"Unknown payment status: {status}", code="INVALID_STATUS")
+
+        payments, total = await self.repo.list_membership_payments(payment_status, page, per_page)
+        pages = max(1, math.ceil(total / per_page)) if total else 1
+        return PagedResult(
+            items=[MembershipPaymentAdminOut.model_validate(p) for p in payments],
+            total=total,
+            page=page,
+            per_page=per_page,
+            pages=pages,
+        )
+
+    async def get_membership_revenue_total(self) -> int:
+        return await self.repo.sum_membership_revenue_total()
 
     async def list_user_bookings(
         self,

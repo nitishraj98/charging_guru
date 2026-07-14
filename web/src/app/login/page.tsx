@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { BatteryCharging, Gift, LockKeyhole, ShieldCheck, Smartphone, Zap } from "lucide-react";
 import { auth } from "@/lib/api";
 import Logo from "@/components/Logo";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -34,13 +35,12 @@ export default function LoginPage() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const green   = "#00D26A";
-  const pageBg  = isLight ? "#F4F7F3" : "#080E09";
   const leftBg  = isLight
-    ? "linear-gradient(145deg,#071A0D 0%,#0B2714 50%,#061209 100%)"
-    : "linear-gradient(145deg,#060D08 0%,#091508 50%,#040C05 100%)";
-  const panelBg = isLight ? "#FFFFFF" : "#101810";
-  const inputBg = isLight ? "#F6FAF7" : "#0C1A0C";
-  const inputBdr = isLight ? "rgba(15,23,42,0.12)" : "rgba(0,210,106,0.15)";
+    ? "linear-gradient(145deg,#06130B 0%,#0C2917 52%,#06110C 100%)"
+    : "linear-gradient(145deg,#030706 0%,#07130D 54%,#020504 100%)";
+  const panelBg = isLight ? "rgba(255,255,255,0.88)" : "rgba(12,18,15,0.84)";
+  const inputBg = isLight ? "rgba(248,252,249,0.92)" : "rgba(5,17,10,0.84)";
+  const inputBdr = isLight ? "rgba(15,23,42,0.10)" : "rgba(0,210,106,0.16)";
   const inputFg  = isLight ? "#0F172A" : "#D4E8D6";
   const sub      = isLight ? "#64748B" : "#8BA896";
   const headFg   = isLight ? "#0F172A" : "#E8F5EB";
@@ -54,11 +54,11 @@ export default function LoginPage() {
   const btnOn: React.CSSProperties = {
     background: `linear-gradient(135deg,${green},#00A855)`,
     color: "#050708",
-    boxShadow: `0 0 0 1px rgba(0,210,106,.25),0 8px 32px rgba(0,210,106,.35)`,
+    boxShadow: `0 0 0 1px rgba(0,210,106,.25),0 12px 34px rgba(0,210,106,.32)`,
   };
   const btnOff: React.CSSProperties = {
-    background: isLight ? "#E2E8F0" : "#0F1A10",
-    color: isLight ? "#94A3B8" : "#3A5040",
+    background: isLight ? "#CBD5E1" : "#0F1A10",
+    color: isLight ? "#64748B" : "#3A5040",
     boxShadow: "none",
   };
 
@@ -127,17 +127,34 @@ export default function LoginPage() {
     if (e.key === "Backspace" && !otp[idx] && idx > 0) otpRefs.current[idx - 1]?.focus();
   }
 
+  function TrustIcon({ label }: { label: string }) {
+    const Icon = label.includes("booking") ? Zap : label.includes("payments") ? ShieldCheck : Gift;
+    return <Icon size={17} strokeWidth={2.4} color={green} />;
+  }
+
   return (
-    <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", background: pageBg, fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
-      <style>{`
+    <div className="lg-grid" style={{
+      minHeight: "100vh",
+      marginTop: -68,
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      background: isLight
+        ? "linear-gradient(135deg,#EEF6F2 0%,#F8FBFC 46%,#E8F7EF 100%)"
+        : "linear-gradient(135deg,#030605 0%,#07100C 50%,#020504 100%)",
+      fontFamily: "'Space Grotesk',system-ui,sans-serif",
+    }}>
+      <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
         @keyframes spin-r    { to { transform: rotate(360deg) } }
         @keyframes float-up  { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
         @keyframes glow-p    { 0%,100% { opacity:.55 } 50% { opacity:1 } }
         @keyframes fadein    { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:none } }
+        @keyframes grid-shift { from { background-position:0 0 } to { background-position:52px 52px } }
         .lg-phone:focus-within { border-color: ${green} !important; box-shadow: 0 0 0 3px rgba(0,210,106,0.14) !important; }
         .otp-box:focus { border-color: ${green} !important; box-shadow: 0 0 0 3px rgba(0,210,106,0.18) !important; outline: none; }
+        .login-card { transition: transform .22s ease, box-shadow .22s ease; }
+        .login-card:hover { transform: translateY(-2px); box-shadow: ${isLight ? "0 24px 70px rgba(15,23,42,0.12)" : "0 0 0 1px rgba(0,210,106,0.12),0 30px 80px rgba(0,0,0,0.58)"} !important; }
         .back-btn:hover { background: ${isLight ? "rgba(0,0,0,0.05)" : "rgba(0,210,106,0.08)"} !important; }
         @media (max-width: 768px) { .lg-grid { grid-template-columns: 1fr !important; } .lg-left { display: none !important; } }
       `}</style>
@@ -147,13 +164,14 @@ export default function LoginPage() {
         position: "relative", overflow: "hidden",
         background: leftBg,
         display: "flex", flexDirection: "column",
-        padding: "52px 56px",
+        padding: "clamp(36px,5vw,52px) clamp(24px,4vw,56px)",
       }}>
         {/* Subtle grid */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
           backgroundImage: `linear-gradient(rgba(0,210,106,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,210,106,0.035) 1px,transparent 1px)`,
           backgroundSize: "52px 52px",
+          animation: "grid-shift 18s linear infinite",
         }} />
 
         {/* Glow orbs */}
@@ -161,8 +179,8 @@ export default function LoginPage() {
         <div style={{ position: "absolute", bottom: -100, left: -80, width: 380, height: 380, borderRadius: "50%", background: "radial-gradient(circle,rgba(0,160,200,0.06) 0%,transparent 70%)", pointerEvents: "none" }} />
 
         {/* Floating icons */}
-        <div style={{ position: "absolute", top: 80, right: 60, fontSize: 64, opacity: 0.06, animation: "float-up 6s ease-in-out infinite", pointerEvents: "none", userSelect: "none" as const }}>⚡</div>
-        <div style={{ position: "absolute", bottom: 180, right: 90, fontSize: 40, opacity: 0.04, animation: "float-up 5s ease-in-out infinite 1.5s", pointerEvents: "none", userSelect: "none" as const }}>🔋</div>
+        <Zap size={74} strokeWidth={1.4} color={green} style={{ position: "absolute", top: 82, right: 62, opacity: 0.08, animation: "float-up 6s ease-in-out infinite", pointerEvents: "none" }} />
+        <BatteryCharging size={46} strokeWidth={1.5} color="#22D3EE" style={{ position: "absolute", bottom: 178, right: 94, opacity: 0.08, animation: "float-up 5s ease-in-out infinite 1.5s", pointerEvents: "none" }} />
 
         {/* Logo */}
         <Logo size="md" href="/" theme="dark" />
@@ -175,7 +193,7 @@ export default function LoginPage() {
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", color: green, textTransform: "uppercase" as const }}>Now live across 50+ cities</span>
           </div>
 
-          <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 50, lineHeight: 1.04, letterSpacing: "-0.04em", color: "#E8F0EB", marginBottom: 18 }}>
+          <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: "clamp(42px,5.2vw,58px)", lineHeight: 1.02, letterSpacing: "-0.05em", color: "#E8F0EB", marginBottom: 18 }}>
             Charge with<br />
             <span style={{ color: green }}>certainty.</span>
           </h1>
@@ -201,8 +219,10 @@ export default function LoginPage() {
         {/* Trust badges */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {TRUST.map(t => (
-            <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0,210,106,0.08)", border: "1px solid rgba(0,210,106,0.16)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{t.icon}</div>
+            <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 12px", borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.055)" }}>
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(0,210,106,0.08)", border: "1px solid rgba(0,210,106,0.16)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <TrustIcon label={t.label} />
+              </div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(232,240,235,0.75)", lineHeight: 1.3 }}>{t.label}</div>
                 <div style={{ fontSize: 11.5, color: "rgba(232,240,235,0.32)", marginTop: 1 }}>{t.desc}</div>
@@ -213,13 +233,65 @@ export default function LoginPage() {
       </div>
 
       {/* ── RIGHT — form panel ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 56px", background: pageBg }}>
-        <div style={{ width: "100%", maxWidth: 400, animation: "fadein 0.35s ease both" }}>
+      <div style={{
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "clamp(32px,5vw,48px) clamp(16px,4vw,56px)",
+        background: isLight
+          ? "linear-gradient(135deg,#F7FFFB 0%,#ECF8F2 42%,#DDF1EA 100%)"
+          : "linear-gradient(135deg,#030605 0%,#08120D 48%,#031008 100%)",
+      }}>
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: isLight ? 0.82 : 0.72 }}>
+          <div style={{ position: "absolute", top: "10%", right: "-12%", width: 520, height: 520, borderRadius: "50%", background: isLight ? "radial-gradient(circle,rgba(0,210,106,0.18),transparent 68%)" : "radial-gradient(circle,rgba(0,230,118,0.12),transparent 68%)" }} />
+          <div style={{ position: "absolute", bottom: "-14%", left: "8%", width: 420, height: 420, borderRadius: "50%", background: isLight ? "radial-gradient(circle,rgba(34,211,238,0.12),transparent 66%)" : "radial-gradient(circle,rgba(34,211,238,0.07),transparent 66%)" }} />
+          <svg viewBox="0 0 820 720" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+            <path d="M-40 560 C 140 470, 160 315, 315 350 S 500 520, 640 380 S 690 165, 880 145" fill="none" stroke={isLight ? "rgba(0,168,85,0.10)" : "rgba(0,230,118,0.09)"} strokeWidth="38" strokeLinecap="round" />
+            <path d="M-40 560 C 140 470, 160 315, 315 350 S 500 520, 640 380 S 690 165, 880 145" fill="none" stroke={isLight ? "rgba(0,210,106,0.48)" : "rgba(0,230,118,0.40)"} strokeWidth="4" strokeLinecap="round" strokeDasharray="18 16" />
+            {[{ x: 250, y: 350 }, { x: 486, y: 462 }, { x: 650, y: 356 }].map((p, i) => (
+              <g key={i} transform={`translate(${p.x} ${p.y})`}>
+                <circle r="22" fill={isLight ? "rgba(255,255,255,0.74)" : "rgba(9,18,13,0.76)"} stroke={isLight ? "rgba(0,168,85,0.22)" : "rgba(0,230,118,0.18)"} />
+                <Zap size={22} x={-11} y={-11} color={green} fill={green} />
+              </g>
+            ))}
+          </svg>
+        </div>
+
+        <div style={{
+          position: "absolute",
+          right: "clamp(24px,5vw,72px)",
+          bottom: "clamp(28px,6vw,86px)",
+          width: 210,
+          padding: "16px 18px",
+          borderRadius: 20,
+          background: isLight ? "rgba(255,255,255,0.64)" : "rgba(7,13,10,0.60)",
+          border: isLight ? "1px solid rgba(15,23,42,0.08)" : "1px solid rgba(0,230,118,0.12)",
+          boxShadow: isLight ? "0 18px 50px rgba(15,23,42,0.10)" : "0 18px 60px rgba(0,0,0,0.32)",
+          backdropFilter: "blur(16px)",
+          pointerEvents: "none",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 11, display: "grid", placeItems: "center", background: "rgba(0,210,106,0.12)", border: "1px solid rgba(0,210,106,0.22)" }}>
+              <BatteryCharging size={17} color={green} />
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: headFg }}>Ready slot</div>
+              <div style={{ fontSize: 10.5, color: sub, marginTop: 1 }}>Connector reserved</div>
+            </div>
+          </div>
+          <div style={{ height: 6, borderRadius: 999, background: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+            <div style={{ width: "72%", height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${green},#22D3EE)` }} />
+          </div>
+        </div>
+
+        <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 430, animation: "fadein 0.35s ease both" }}>
 
           {/* Top badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 36 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: isLight ? "#071A0D" : "rgba(0,210,106,0.10)", border: `1px solid ${isLight ? "transparent" : "rgba(0,210,106,0.20)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 16 }}>⚡</span>
+            <div style={{ width: 40, height: 40, borderRadius: 13, background: isLight ? "#071A0D" : "rgba(0,210,106,0.10)", border: `1px solid ${isLight ? "transparent" : "rgba(0,210,106,0.20)"}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: isLight ? "0 10px 24px rgba(0,168,85,0.18)" : "none" }}>
+              <Zap size={18} fill={green} color={green} />
             </div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: headFg, letterSpacing: "-0.01em" }}>Charging Guru</div>
@@ -228,12 +300,13 @@ export default function LoginPage() {
           </div>
 
           {/* Card */}
-          <div style={{
+          <div className="login-card" style={{
             background: panelBg, borderRadius: 24, padding: "40px 36px",
             boxShadow: isLight
-              ? "0 4px 40px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04)"
+              ? "0 18px 58px rgba(15,23,42,0.10),0 1px 2px rgba(0,0,0,0.04)"
               : "0 0 0 1px rgba(0,210,106,0.08),0 24px 64px rgba(0,0,0,0.5)",
-            border: isLight ? "1px solid rgba(15,23,42,0.06)" : "1px solid rgba(0,210,106,0.08)",
+            border: isLight ? "1px solid rgba(15,23,42,0.07)" : "1px solid rgba(0,210,106,0.08)",
+            backdropFilter: "blur(18px)",
           }}>
 
             {step === "phone" ? (
@@ -252,7 +325,7 @@ export default function LoginPage() {
 
                 <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase" as const, color: sub, marginBottom: 8 }}>Mobile number</label>
                 <div className="lg-phone" style={{ display: "flex", alignItems: "center", background: inputBg, border: `1.5px solid ${inputBdr}`, borderRadius: 16, padding: "0 18px", marginBottom: 24, transition: "border-color .15s,box-shadow .15s" }}>
-                  <span style={{ fontSize: 18, marginRight: 8, flexShrink: 0 }}>🇮🇳</span>
+                  <Smartphone size={18} color={green} style={{ marginRight: 10, flexShrink: 0 }} />
                   <span style={{ fontSize: 15, fontFamily: "'JetBrains Mono',monospace", color: inputFg, opacity: 0.4, marginRight: 4, flexShrink: 0, userSelect: "none" as const }}>+91</span>
                   <input
                     type="tel" value={phone}
@@ -277,7 +350,7 @@ export default function LoginPage() {
                     : <>Get OTP <span style={{ opacity: 0.7 }}>→</span></>}
                 </button>
 
-                <p style={{ fontSize: 12, color: isLight ? "#94A3B8" : "#5A7A62", textAlign: "center", marginTop: 20, lineHeight: 1.7 }}>
+                <p style={{ fontSize: 12, color: isLight ? "#64748B" : "#5A7A62", textAlign: "center", marginTop: 20, lineHeight: 1.7 }}>
                   By continuing you agree to our{" "}
                   <a href="#" style={{ color: sub, textDecoration: "underline" }}>Terms</a>
                   {" "}& <a href="#" style={{ color: sub, textDecoration: "underline" }}>Privacy Policy</a>.
@@ -291,7 +364,10 @@ export default function LoginPage() {
                 </button>
 
                 <div style={{ marginBottom: 28 }}>
-                  <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 26, fontWeight: 800, color: headFg, letterSpacing: "-0.04em", marginBottom: 8 }}>Enter OTP</h2>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <LockKeyhole size={20} color={green} />
+                    <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 26, fontWeight: 800, color: headFg, letterSpacing: "-0.04em", margin: 0 }}>Enter OTP</h2>
+                  </div>
                   <p style={{ color: sub, fontSize: 13.5, lineHeight: 1.65 }}>6-digit code sent to your phone.</p>
                 </div>
 
@@ -345,7 +421,7 @@ export default function LoginPage() {
                 </button>
 
                 <button onClick={resendOtp} disabled={resendCooldown > 0 || resending}
-                  style={{ width: "100%", marginTop: 14, padding: "11px", background: "none", border: "none", color: resendCooldown > 0 ? (isLight ? "#CBD5E1" : "#3D5A44") : sub, fontSize: 12.5, cursor: resendCooldown > 0 ? "not-allowed" : "pointer", fontFamily: "'Space Grotesk',sans-serif", transition: "color .15s" }}>
+                  style={{ width: "100%", marginTop: 14, padding: "11px", background: "none", border: "none", color: resendCooldown > 0 ? (isLight ? "#94A3B8" : "#3D5A44") : sub, fontSize: 12.5, cursor: resendCooldown > 0 ? "not-allowed" : "pointer", fontFamily: "'Space Grotesk',sans-serif", transition: "color .15s" }}>
                   {resending ? "Sending…" : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Didn't receive it? Resend OTP"}
                 </button>
               </>

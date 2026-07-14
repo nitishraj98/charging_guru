@@ -7,7 +7,7 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
-from app.models.enums import BookingStatus, ChargerStatus, PaymentStatus, StationStatus, UserStatus
+from app.models.enums import BookingStatus, ChargerStatus, MembershipTier, PaymentStatus, StationStatus, UserStatus
 from app.schemas.common import ORMModel, StrictModel
 
 T = TypeVar("T")
@@ -113,6 +113,17 @@ class PaymentAdminOut(ORMModel):
     id: uuid.UUID
     booking_id: uuid.UUID
     user_id: uuid.UUID
+    amount: int
+    status: PaymentStatus
+    razorpay_order_id: str
+    razorpay_payment_id: str | None
+    created_at: datetime
+
+
+class MembershipPaymentAdminOut(ORMModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    tier: MembershipTier
     amount: int
     status: PaymentStatus
     razorpay_order_id: str

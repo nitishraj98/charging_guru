@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Clock, CheckCircle, XCircle, BookOpen, Ban, RotateCcw } from "lucide-react";
-import { getTheme, BASE, getToken, fmtDate, fmtDateTime, fmtRupee, STATUS_BOOKING, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtDate, fmtDateTime, fmtRupee, STATUS_BOOKING, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface Booking {
@@ -33,9 +33,7 @@ export default function AdminBookingsPage() {
     setLoading(true); setError("");
     try {
       const q = status !== "ALL" ? `&status=${status}` : "";
-      const res = await fetch(`${BASE}/api/v1/admin/bookings?page=${p}&per_page=20${q}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/bookings?page=${p}&per_page=20${q}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setData(await res.json());
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }
@@ -48,9 +46,7 @@ export default function AdminBookingsPage() {
   const expireHolds = async () => {
     setSweeping(true);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/maintenance/expire-holds`, {
-        method: "POST", headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch("/api/v1/admin/maintenance/expire-holds", { method: "POST" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       showToast(`Expired ${json.expired_count ?? 0} stale holds.`);
@@ -62,9 +58,7 @@ export default function AdminBookingsPage() {
   const doAction = async (id: string, action: "cancel" | "refund") => {
     setActing(id + action);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/bookings/${id}/${action}`, {
-        method: "POST", headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/bookings/${id}/${action}`, { method: "POST" });
       if (!res.ok) { const j = await res.json(); throw new Error(j.detail ?? `HTTP ${res.status}`); }
       showToast(action === "cancel" ? "Booking cancelled." : "Refund initiated.", action === "refund");
       load(page);
@@ -116,7 +110,7 @@ export default function AdminBookingsPage() {
 
       {error && <div style={{ padding: "12px 16px", borderRadius: 10, background: `${C.red}10`, border: `1px solid ${C.red}30`, color: C.red, marginBottom: 16, fontSize: 13 }}>{error}</div>}
 
-      <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+      <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>{["Booking", "Amount", "Status", "Hold Expires", "Created", "Actions"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>

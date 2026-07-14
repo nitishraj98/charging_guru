@@ -27,11 +27,7 @@ function CopyContent({ isLight }: { isLight: boolean }) {
       <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: "clamp(40px,4.6vw,66px)", lineHeight: 1.06, letterSpacing: "-.04em" }}>
         <span style={{ display: "block" }}>
           <span className="hero-word hero-w1" style={{ color: isLight ? "#0F172A" : "#B2FFD6" }}>Plan&nbsp;</span>
-          <span className="hero-word hero-w2" style={{
-            background: isLight ? "linear-gradient(90deg,#00D26A,#22D3EE)" : undefined,
-            WebkitBackgroundClip: isLight ? "text" : undefined,
-            WebkitTextFillColor: isLight ? "transparent" : undefined,
-            backgroundClip: isLight ? "text" : undefined,
+          <span className="hero-word hero-w2 hero-grad-smarter" style={{
             color: isLight ? undefined : "#00E676",
             textShadow: isLight ? "none" : "0 0 32px rgba(0,230,118,.7)",
             animation: isLight ? "hero-word-in .9s cubic-bezier(.16,1,.3,1) .18s both" : "hero-word-in .9s cubic-bezier(.16,1,.3,1) .18s both,glow-green-pulse 3s ease-in-out 1.2s infinite",
@@ -39,11 +35,7 @@ function CopyContent({ isLight }: { isLight: boolean }) {
         </span>
         <span style={{ display: "block", marginTop: "0.06em" }}>
           <span className="hero-word hero-w3" style={{ color: isLight ? "#0F172A" : "#A5F3FC" }}>Charge&nbsp;</span>
-          <span className="hero-word hero-w4" style={{
-            background: isLight ? "linear-gradient(90deg,#0EA5E9,#22D3EE)" : undefined,
-            WebkitBackgroundClip: isLight ? "text" : undefined,
-            WebkitTextFillColor: isLight ? "transparent" : undefined,
-            backgroundClip: isLight ? "text" : undefined,
+          <span className="hero-word hero-w4 hero-grad-faster" style={{
             color: isLight ? undefined : "#22D3EE",
             textShadow: isLight ? "none" : "0 0 32px rgba(34,211,238,.65)",
             animation: isLight ? "hero-word-in .9s cubic-bezier(.16,1,.3,1) .48s both" : "hero-word-in .9s cubic-bezier(.16,1,.3,1) .48s both,glow-cyan-pulse 3.4s ease-in-out 1.5s infinite",
@@ -106,65 +98,41 @@ function CopyContent({ isLight }: { isLight: boolean }) {
 
 export default function HeroSection({ isLight }: { isLight: boolean; t: Tok }) {
 
-  /* ─── DARK MODE — original two-column grid, untouched ─── */
-  if (!isLight) {
-    return (
-      <div style={{
-        position: "relative", height: 680, background: "#060809",
-        display: "grid", gridTemplateColumns: "42% 58%", overflow: "hidden",
-      }}>
-        {/* Left: copy */}
-        <div style={{ position: "relative", zIndex: 3, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 0 80px 52px" }}>
-          <CopyContent isLight={false} />
-        </div>
+  const bg   = isLight ? "#F8F6F1" : "#060809";
+  const fade = isLight ? "#F8F6F1" : "#060809";
 
-        {/* Right: image */}
-        <div style={{ position: "relative", height: "100%", overflow: "hidden" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hero-banner.png" alt="EV charging station" style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: "auto", transform: "translateY(-50%)" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right,#060809 0%,rgba(6,8,9,.18) 20%,transparent 45%)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 100, background: "linear-gradient(transparent,#060809)", pointerEvents: "none" }} />
-        </div>
-
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, zIndex: 8, background: "linear-gradient(transparent,#060809)", pointerEvents: "none" }} />
-      </div>
-    );
-  }
-
-  /* ─── LIGHT MODE — two-column grid ─── */
   return (
-    <div style={{
-      position: "relative", height: 680, background: "#F8FAFC",
+    <div className="hero-two-col" style={{
+      position: "relative", minHeight: "clamp(520px,56vw,720px)", background: bg,
       display: "grid", gridTemplateColumns: "42% 58%", overflow: "hidden",
     }}>
       {/* Left: copy */}
-      <div style={{ position: "relative", zIndex: 3, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 0 80px 52px" }}>
-        <CopyContent isLight={true} />
+      <div className="hero-left-col" style={{ position: "relative", zIndex: 3, display: "flex", flexDirection: "column", justifyContent: "center", padding: "clamp(40px,5vw,64px) clamp(20px,4vw,52px) clamp(72px,10vw,120px) clamp(20px,4vw,52px)" }}>
+        <CopyContent isLight={isLight} />
       </div>
 
-      {/* Right: light-mode hero image */}
-      <div style={{ position: "relative", height: "100%" }}>
+      {/* Right: hero image */}
+      <div className="hero-right-col" style={{ position: "relative", height: "100%", overflow: "hidden" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/hero-banner-light.png"
+          src={isLight ? "/hero-banner-light.png" : "/hero-banner.png"}
           alt="EV charging station"
-          style={{
-            position: "absolute", inset: 0,
-            width: "100%", height: "100%",
-            objectFit: "cover", objectPosition: "right center",
-          }}
+          style={isLight
+            ? { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "right center" }
+            : { position: "absolute", top: "50%", left: 0, width: "100%", height: "auto", transform: "translateY(-50%)" }
+          }
         />
-        {/* Soft left-edge blend */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(to right, #F8FAFC 0%, rgba(248,250,252,.8) 12%, rgba(248,250,252,.3) 30%, transparent 55%)",
+          background: isLight
+            ? `linear-gradient(to right, ${bg} 0%, rgba(248,246,241,.88) 12%, rgba(248,246,241,.42) 30%, transparent 55%)`
+            : `linear-gradient(to right,${bg} 0%,rgba(6,8,9,.18) 20%,transparent 45%)`,
           pointerEvents: "none",
         }} />
-        {/* Bottom fade */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 100, background: "linear-gradient(transparent, #F8FAFC)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 100, background: `linear-gradient(transparent,${fade})`, pointerEvents: "none" }} />
       </div>
 
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, zIndex: 8, background: "linear-gradient(transparent,#F8FAFC)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, zIndex: 8, background: `linear-gradient(transparent,${fade})`, pointerEvents: "none" }} />
     </div>
   );
 }

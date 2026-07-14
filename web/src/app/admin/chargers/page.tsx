@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { PlugZap } from "lucide-react";
-import { getTheme, BASE, getToken, fmtDate, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtDate, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface Charger {
@@ -30,9 +30,7 @@ export default function AdminChargersPage() {
     setLoading(true); setError("");
     try {
       const q = status !== "ALL" ? `&status=${status}` : "";
-      const res = await fetch(`${BASE}/api/v1/admin/chargers?page=${p}&per_page=20${q}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/chargers?page=${p}&per_page=20${q}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setData(await res.json());
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }
@@ -73,7 +71,7 @@ export default function AdminChargersPage() {
 
       {error && <div style={{ padding: "12px 16px", borderRadius: 10, background: `${C.red}10`, border: `1px solid ${C.red}30`, color: C.red, marginBottom: 16, fontSize: 13 }}>{error}</div>}
 
-      <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+      <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>{["Label", "Type", "Connector", "Power", "Price/kWh", "Status", "Added"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>

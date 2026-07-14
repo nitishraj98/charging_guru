@@ -9,7 +9,7 @@ from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPkMixin
-from app.models.enums import UserStatus
+from app.models.enums import MembershipTier, UserStatus
 
 if TYPE_CHECKING:
     from app.models.role import Role
@@ -30,6 +30,11 @@ class User(Base, UUIDPkMixin, TimestampMixin):
     reward_points: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
     referral_code: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
     referred_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    membership_tier: Mapped[MembershipTier] = mapped_column(
+        Enum(MembershipTier, name="membership_tier"),
+        default=MembershipTier.FREE,
+        nullable=False,
+    )
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     roles: Mapped[list["Role"]] = relationship(

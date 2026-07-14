@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Search, Users, BookOpen, ShieldOff, ShieldCheck, Trash2, X } from "lucide-react";
-import { getTheme, BASE, getToken, fmtDate, fmtDateTime, ROLE_COLOR, STATUS_BOOKING, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtDate, fmtDateTime, ROLE_COLOR, STATUS_BOOKING, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface UserRow {
@@ -44,9 +44,7 @@ export default function AdminUsersPage() {
   const load = useCallback(async (p = 1) => {
     setLoading(true); setError("");
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/users?page=${p}&per_page=20`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/users?page=${p}&per_page=20`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: PagedResult<UserRow> = await res.json();
       if (search.trim().length > 1) {
@@ -73,9 +71,7 @@ export default function AdminUsersPage() {
   const loadBookings = useCallback(async (userId: string, p = 1) => {
     setBkLoad(true);
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/users/${userId}/bookings?page=${p}&per_page=10`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/users/${userId}/bookings?page=${p}&per_page=10`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setBkData(await res.json());
     } catch { setBkData(null); }
@@ -93,9 +89,9 @@ export default function AdminUsersPage() {
     if (!detail) return;
     setActBusy(true); setActErr("");
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/users/${detail.id}/status`, {
+      const res = await authFetch(`/api/v1/admin/users/${detail.id}/status`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) { const j = await res.json(); throw new Error(j.detail ?? `HTTP ${res.status}`); }
@@ -124,13 +120,13 @@ export default function AdminUsersPage() {
         <div style={{ position: "relative" }}>
           <Search size={13} color={th.sub} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, phone, email…"
-            style={{ paddingLeft: 34, paddingRight: 14, paddingTop: 8, paddingBottom: 8, borderRadius: 9, background: th.inputBg, border: `1px solid ${th.border}`, color: th.text, fontSize: 13, outline: "none", fontFamily: C.sans, width: 260 }} />
+            style={{ paddingLeft: 34, paddingRight: 14, paddingTop: 8, paddingBottom: 8, borderRadius: 9, background: th.inputBg, border: `1px solid ${th.border}`, color: th.text, fontSize: 13, outline: "none", fontFamily: C.sans, width: "min(260px, calc(100vw - 140px))" }} />
         </div>
       </div>
 
       {error && <div style={{ padding: "12px 16px", borderRadius: 10, background: `${C.red}10`, border: `1px solid ${C.red}30`, color: C.red, marginBottom: 16, fontSize: 13 }}>{error}</div>}
 
-      <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+      <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>{["Name & Phone", "Email", "Roles", "Status", "Points", "Joined", ""].map(h => <th key={h} style={tH}>{h}</th>)}</tr>
@@ -184,7 +180,7 @@ export default function AdminUsersPage() {
       {/* Detail modal */}
       {detail && (
         <div onClick={() => setDetail(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 18, width: 520, maxHeight: "85vh", display: "flex", flexDirection: "column", boxShadow: "0 28px 80px rgba(0,0,0,0.3)", animation: "modal-in 0.15s ease", overflow: "hidden" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 18, width: "min(520px, calc(100vw - 32px))", maxHeight: "85vh", display: "flex", flexDirection: "column", boxShadow: "0 28px 80px rgba(0,0,0,0.3)", animation: "modal-in 0.15s ease", overflow: "hidden" }}>
             <div style={{ padding: "20px 24px 0", borderBottom: `1px solid ${th.border}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <div>

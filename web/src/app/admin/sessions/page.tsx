@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Zap, Clock } from "lucide-react";
-import { getTheme, BASE, getToken, fmtRupee, STATUS_BOOKING, fmtDateTime, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtRupee, STATUS_BOOKING, fmtDateTime, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface Booking {
@@ -25,9 +25,7 @@ export default function AdminSessionsPage() {
   const load = useCallback(async (p = 1) => {
     setLoading(true); setError("");
     try {
-      const res = await fetch(`${BASE}/api/v1/admin/bookings?page=${p}&per_page=20&status=${status}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/bookings?page=${p}&per_page=20&status=${status}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setData(await res.json());
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }
@@ -76,7 +74,7 @@ export default function AdminSessionsPage() {
 
       {error && <div style={{ padding: "12px 16px", borderRadius: 10, background: `${C.red}10`, border: `1px solid ${C.red}30`, color: C.red, marginBottom: 16, fontSize: 13 }}>{error}</div>}
 
-      <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+      <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>{["Booking ID", "User ID", "Status", "Amount", "Started"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>

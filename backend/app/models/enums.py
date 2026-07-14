@@ -69,3 +69,15 @@ class PaymentStatus(str, enum.Enum):
     CAPTURED = "CAPTURED"
     FAILED = "FAILED"
     REFUNDED = "REFUNDED"
+
+
+class MembershipTier(str, enum.Enum):
+    FREE = "FREE"
+    SILVER = "SILVER"
+    GOLD = "GOLD"
+
+
+class RewardTransactionType(str, enum.Enum):
+    EARNED = "EARNED"
+    REDEEMED = "REDEEMED"
+    EXPIRED = "EXPIRED"

@@ -34,12 +34,12 @@ function JourneyNewInner() {
   const totalPaise  = Number(sp.get("total") ?? "0");
   const stops       = stopsCsv ? stopsCsv.split(",") : [];
 
-  const bg          = isLight ? "#F8FAFC" : "#0A0D0E";
+  const bg          = isLight ? "#F3F7FB" : "#0A0D0E";
   const cardBg      = isLight ? "#FFFFFF" : "#101415";
-  const cardBorder  = isLight ? "#E2E8F0" : "#222829";
+  const cardBorder  = isLight ? "#CBD5E1" : "#222829";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
   const textSub     = isLight ? "#64748B" : "#6B7479";
-  const textMuted   = isLight ? "#94A3B8" : "#495154";
+  const textMuted   = isLight ? "#64748B" : "#495154";
   const accent      = isLight ? "#00D26A" : "#00E676";
   const accentDim   = isLight ? "#DCFCE7" : "rgba(0,230,118,.08)";
   const accentBorder = isLight ? "#86EFAC" : "rgba(0,230,118,.25)";
@@ -47,7 +47,7 @@ function JourneyNewInner() {
   const journeyId = `JRN-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
   return (
-    <div style={{ background: bg, minHeight: "100vh" }}>
+    <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
       <div className="fade-up" style={{ maxWidth: 520, margin: "0 auto", padding: "40px 24px 80px", textAlign: "center" }}>
 

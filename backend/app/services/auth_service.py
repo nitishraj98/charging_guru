@@ -178,5 +178,7 @@ class AuthService:
             full_name=user.full_name,
             email=user.email,
             reward_points=user.reward_points,
+            membership_tier=user.membership_tier,
+            referral_code=user.referral_code,
             roles=user.role_names,
         )

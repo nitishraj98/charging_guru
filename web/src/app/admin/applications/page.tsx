@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Building2, CheckCircle, XCircle, MapPin, User } from "lucide-react";
-import { getTheme, getToken, fmtDate, C } from "@/lib/admin-ui";
+import { getTheme, authFetch, fmtDate, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -61,9 +61,7 @@ export default function AdminApplicationsPage() {
   const loadOwner = useCallback(async (p = 1) => {
     setLoading(true); setError("");
     try {
-      const res = await fetch(`/api/v1/admin/owner-applications?status=PENDING&page=${p}&per_page=15`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/owner-applications?status=PENDING&page=${p}&per_page=15`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setOwnerData(await res.json());
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }
@@ -73,9 +71,7 @@ export default function AdminApplicationsPage() {
   const loadStation = useCallback(async (p = 1) => {
     setLoading(true); setError("");
     try {
-      const res = await fetch(`/api/v1/admin/stations?status=PENDING_APPROVAL&page=${p}&per_page=15`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await authFetch(`/api/v1/admin/stations?status=PENDING_APPROVAL&page=${p}&per_page=15`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setStationData(await res.json());
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }
@@ -90,8 +86,8 @@ export default function AdminApplicationsPage() {
   const approveOwner = async (id: string) => {
     setActing(id);
     try {
-      const res = await fetch(`/api/v1/admin/owner-applications/${id}/approve`, {
-        method: "POST", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+      const res = await authFetch(`/api/v1/admin/owner-applications/${id}/approve`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       showToast("Application approved — user now has station owner access.");
@@ -103,9 +99,9 @@ export default function AdminApplicationsPage() {
   const rejectOwner = async (id: string) => {
     setActing(id);
     try {
-      const res = await fetch(`/api/v1/admin/owner-applications/${id}/reject`, {
+      const res = await authFetch(`/api/v1/admin/owner-applications/${id}/reject`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ note: reason.trim() || null }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -121,8 +117,8 @@ export default function AdminApplicationsPage() {
   const approveStation = async (id: string) => {
     setActing(id);
     try {
-      const res = await fetch(`/api/v1/admin/stations/${id}/approve`, {
-        method: "POST", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+      const res = await authFetch(`/api/v1/admin/stations/${id}/approve`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       showToast("Station approved and now live.");
@@ -134,9 +130,9 @@ export default function AdminApplicationsPage() {
   const rejectStation = async (id: string) => {
     setActing(id);
     try {
-      const res = await fetch(`/api/v1/admin/stations/${id}/reject`, {
+      const res = await authFetch(`/api/v1/admin/stations/${id}/reject`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: reason.trim() || null }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -218,7 +214,7 @@ export default function AdminApplicationsPage() {
               <div style={{ fontSize: 13, color: th.sub }}>No pending partner applications.</div>
             </div>
           ) : (
-            <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+            <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>{["Business", "Location", "Planned Stations", "Message", "Submitted", "Actions"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>
@@ -290,7 +286,7 @@ export default function AdminApplicationsPage() {
               <div style={{ fontSize: 13, color: th.sub }}>No pending station approvals.</div>
             </div>
           ) : (
-            <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
+            <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>{["Station", "Location", "Owner", "Submitted", "Actions"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>
@@ -348,7 +344,7 @@ export default function AdminApplicationsPage() {
       {/* Reject modal */}
       {rejectId && (
         <div onClick={() => setRejectId(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 16, padding: "26px", width: 400, animation: "modal-in 0.15s ease", boxShadow: "0 24px 60px rgba(0,0,0,0.25)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 16, padding: "26px", width: "min(400px, calc(100vw - 32px))", animation: "modal-in 0.15s ease", boxShadow: "0 24px 60px rgba(0,0,0,0.25)" }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: th.text, marginBottom: 6 }}>
               {rejectType === "owner" ? "Reject Partner Application" : "Reject Station"}
             </h3>

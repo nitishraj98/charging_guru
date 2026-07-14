@@ -2,12 +2,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
-
-function getToken() {
-  if (typeof document === "undefined") return "";
-  const m = document.cookie.match(/(?:^|; )cg_access=([^;]*)/);
-  return m ? decodeURIComponent(m[1]) : "";
-}
+import { authFetch } from "@/lib/admin-ui";
 
 interface Booking {
   id: string; status: string; slot_start: string; amount: number;
@@ -16,10 +11,7 @@ interface Booking {
 }
 
 async function apiPost(path: string) {
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
+  const res = await authFetch(path, { method: "POST" });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.detail ?? `HTTP ${res.status}`);
   return data;
@@ -40,24 +32,21 @@ function SessionManagerInner() {
   const [qrToken, setQrToken]       = useState("");
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const bg          = isLight ? "#F8FAFC" : "#0A0D0E";
+  const bg          = isLight ? "#F3F7FB" : "#0A0D0E";
   const cardBg      = isLight ? "#FFFFFF" : "#101415";
-  const cardBorder  = isLight ? "#E2E8F0" : "#222829";
+  const cardBorder  = isLight ? "#CBD5E1" : "#222829";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
   const textSub     = isLight ? "#64748B" : "#6B7479";
   const accent      = isLight ? "#00D26A" : "#00E676";
   const raisedBg    = isLight ? "#F1F5F9" : "#181D1F";
-  const inputBg     = isLight ? "#F8FAFC" : "#0A0D0E";
-  const inputBorder = isLight ? "#CBD5E1" : "#2E3638";
+  const inputBg     = isLight ? "#F3F7FB" : "#0A0D0E";
+  const inputBorder = isLight ? "#94A3B8" : "#2E3638";
 
   async function lookupBooking() {
     if (!bookingId.trim()) return;
     setLoading(true); setMessage(""); setIsError(false);
     try {
-      const token = getToken();
-      const res = await fetch(`/api/v1/bookings/${bookingId.trim()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(`/api/v1/bookings/${bookingId.trim()}`);
       if (!res.ok) { setIsError(true); setMessage("Booking not found."); setBooking(null); return; }
       setBooking(await res.json());
     } finally {
@@ -74,9 +63,9 @@ function SessionManagerInner() {
     if (!qrToken.trim()) return;
     setActing(true); setMessage(""); setIsError(false);
     try {
-      const res = await fetch(`/api/v1/qr/verify`, {
+      const res = await authFetch("/api/v1/qr/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: qrToken.trim() }),
       });
       const data = await res.json().catch(() => ({}));
@@ -123,7 +112,7 @@ function SessionManagerInner() {
   };
 
   return (
-    <div style={{ padding: "28px 32px", maxWidth: 640 }}>
+    <div className="owner-pad" style={{ padding: "28px 32px", maxWidth: 640 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: textPrimary, marginBottom: 6 }}>Session Manager</h1>
         <p style={{ fontSize: 13, color: textSub, marginBottom: 24 }}>Verify QR codes, start and complete charging sessions.</p>
 
