@@ -144,9 +144,21 @@ function FAQItem({
   const catBg    = isLight ? cm.bg    : cm.darkBg;
 
   useEffect(() => {
-    if (!bodyRef.current) return;
-    setH(isOpen ? bodyRef.current.scrollHeight : 0);
-  }, [isOpen]);
+    const el = bodyRef.current;
+    if (!el) return;
+
+    const updateHeight = () => setH(isOpen ? el.scrollHeight : 0);
+    updateHeight();
+
+    if (!isOpen) return;
+    const ro = new ResizeObserver(updateHeight);
+    ro.observe(el);
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, [isOpen, a]);
 
   return (
     <div style={{
@@ -219,9 +231,9 @@ function FAQItem({
 
       {/* Animated answer */}
       <div style={{ height: h, overflow: "hidden", transition: "height .38s cubic-bezier(.4,0,.2,1)" }}>
-        <div ref={bodyRef}>
+        <div ref={bodyRef} style={{ padding: "0 16px 14px 62px", boxSizing: "border-box" }}>
           <div style={{
-            margin: "0 16px 14px 62px",
+            margin: 0,
             padding: "12px 16px", borderRadius: 10,
             background: isLight ? "rgba(0,0,0,.025)" : "rgba(255,255,255,.04)",
             border: `1px solid ${isLight ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.06)"}`,

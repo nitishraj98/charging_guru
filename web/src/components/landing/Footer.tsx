@@ -441,7 +441,7 @@ function FooterLink({ label, href, isLight, accent }: {
       style={{
         fontSize: 13.5, textDecoration: "none", display: "inline-block",
         lineHeight: 1.4, transition: "color .15s, transform .15s",
-        color: isLight ? "#1E3A4A" : "#C0CDD8",
+        color: isLight ? "#153244" : "#C0CDD8",
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLAnchorElement;
@@ -449,7 +449,7 @@ function FooterLink({ label, href, isLight, accent }: {
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLAnchorElement;
-        el.style.color = isLight ? "#1E3A4A" : "#C0CDD8"; el.style.transform = "none";
+        el.style.color = isLight ? "#153244" : "#C0CDD8"; el.style.transform = "none";
       }}
     >{label}</Link>
   );
@@ -482,25 +482,25 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
   const footerBg = isLight ? "#C4DCED" : "#0D1B4A";
 
   /* Glassmorphism panel tokens */
-  const glassBg  = isLight ? "rgba(255,255,255,0.76)" : "rgba(8,16,42,0.84)";
-  const glassBdr = isLight ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.10)";
+  const glassBg  = isLight ? "rgba(248,252,255,0.92)" : "rgba(8,16,42,0.84)";
+  const glassBdr = isLight ? "rgba(15,23,42,0.10)" : "rgba(255,255,255,0.10)";
   const glassSdw = isLight
-    ? "0 4px 40px rgba(0,0,0,0.10), inset 0 1px 0 #fff"
+    ? "0 18px 54px rgba(15,23,42,0.16), inset 0 1px 0 #fff"
     : "0 4px 40px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.06)";
 
   /* Text tokens */
   const txt      = isLight ? "#0D1624" : "#E8ECEF";
-  const txtSub   = isLight ? "#374151" : "#B8C4CE";
-  const txtMuted = isLight ? "#4A5869" : "#8A97A5";
+  const txtSub   = isLight ? "#26384A" : "#B8C4CE";
+  const txtMuted = isLight ? "#4B6074" : "#8A97A5";
 
   const STATS = [
     { v: "1,240+", l: "Stations", c: accent    },
     { v: "50K+",   l: "Drivers",  c: "#22D3EE" },
     { v: "99.8%",  l: "Uptime",   c: "#FFC043" },
-    { v: "₹340",   l: "Avg saved",c: "#C4B5FD" },
+    { v: "Rs 340", l: "Avg saved",c: "#8B5CF6" },
   ];
 
-  const colHead = isLight ? "#1E3A4A" : "#A0B0C0";
+  const colHead = isLight ? "#123447" : "#A0B0C0";
 
   return (
     <footer style={{
@@ -515,7 +515,7 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
         background: isLight
-          ? "linear-gradient(180deg, transparent 40%, rgba(248,246,241,0.34) 100%)"
+          ? "linear-gradient(180deg, rgba(241,250,255,0.18) 0%, rgba(241,250,255,0.42) 48%, rgba(30,64,95,0.20) 100%)"
           : "linear-gradient(180deg, transparent 35%, rgba(5,10,28,0.22) 100%)",
       }}/>
 
@@ -653,9 +653,15 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
       <div style={{ position: "relative", zIndex: 2, padding: `52px clamp(16px,5vw,64px) 0` }}>
         {/* Single frosted strip behind the whole grid — scene shows above & below */}
         <div style={{
-          background: isLight ? "rgba(255,255,255,0.30)" : "rgba(5,10,28,0.58)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
+          background: isLight
+            ? "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(232,248,246,0.84))"
+            : "rgba(5,10,28,0.58)",
+          backdropFilter: "blur(22px)",
+          WebkitBackdropFilter: "blur(22px)",
+          border: `1px solid ${isLight ? "rgba(15,23,42,0.11)" : "rgba(255,255,255,0.08)"}`,
+          boxShadow: isLight
+            ? "0 22px 70px rgba(15,23,42,0.18), inset 0 1px 0 rgba(255,255,255,0.95)"
+            : "0 20px 58px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)",
           borderRadius: 20,
           padding: "36px 36px 36px",
           marginBottom: 48,
@@ -670,11 +676,11 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
           <div>
             <div style={{
               marginBottom: 20,
-              filter: isLight ? "none" : `drop-shadow(0 0 18px rgba(0,230,118,0.25))`,
+              filter: isLight ? "drop-shadow(0 10px 22px rgba(0,200,90,0.18))" : `drop-shadow(0 0 18px rgba(0,230,118,0.25))`,
             }}>
               <Logo size="lg" href="/" theme={isLight ? "light" : "dark"} />
             </div>
-            <p style={{ color: txtSub, fontSize: 13.5, lineHeight: 1.82 }}>
+            <p style={{ color: txtSub, fontSize: 13.5, lineHeight: 1.82, fontWeight: 500 }}>
               India&apos;s most reliable EV charging platform. Plan every stop,
               reserve guaranteed slots, and charge with confidence.
             </p>
@@ -734,8 +740,8 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
                   width: "100%",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
                   padding: "8px 12px", borderRadius: 10, cursor: "pointer",
-                  background: isLight ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.06)",
-                  border: `1.5px solid ${isLight ? "rgba(0,0,0,0.11)" : "rgba(255,255,255,0.12)"}`,
+                  background: isLight ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0.06)",
+                  border: `1.5px solid ${isLight ? "rgba(15,23,42,0.14)" : "rgba(255,255,255,0.12)"}`,
                   boxShadow: isLight
                     ? "0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 #fff"
                     : "0 2px 10px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07)",
@@ -752,8 +758,8 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
                 }}
                 onMouseLeave={e => {
                   const el = e.currentTarget;
-                  el.style.borderColor = isLight ? "rgba(0,0,0,0.11)" : "rgba(255,255,255,0.12)";
-                  el.style.background = isLight ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.06)";
+                  el.style.borderColor = isLight ? "rgba(15,23,42,0.14)" : "rgba(255,255,255,0.12)";
+                  el.style.background = isLight ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0.06)";
                   el.style.transform = "none";
                   el.style.boxShadow = isLight
                     ? "0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 #fff"
@@ -773,9 +779,9 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
                 <a key={s.name} href={s.href} title={s.name} style={{
                   width: 32, height: 32, borderRadius: 9,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  background: isLight ? "rgba(255,255,255,0.68)" : "rgba(255,255,255,0.06)",
-                  border: `1px solid ${isLight ? "rgba(0,0,0,0.09)" : "rgba(255,255,255,0.09)"}`,
-                  color: isLight ? "#1E3A4A" : "#C0CDD8",
+                  background: isLight ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.06)",
+                  border: `1px solid ${isLight ? "rgba(15,23,42,0.12)" : "rgba(255,255,255,0.09)"}`,
+                  color: isLight ? "#153244" : "#C0CDD8",
                   textDecoration: "none", transition: "all .2s", backdropFilter: "blur(8px)",
                 }}
                   onMouseEnter={e => {
@@ -786,9 +792,9 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
                   }}
                   onMouseLeave={e => {
                     const el = e.currentTarget as HTMLAnchorElement;
-                    el.style.background = isLight ? "rgba(255,255,255,0.68)" : "rgba(255,255,255,0.06)";
-                    el.style.borderColor = isLight ? "rgba(0,0,0,0.09)" : "rgba(255,255,255,0.09)";
-                    el.style.color = isLight ? "#1E3A4A" : "#C0CDD8";
+                    el.style.background = isLight ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.06)";
+                    el.style.borderColor = isLight ? "rgba(15,23,42,0.12)" : "rgba(255,255,255,0.09)";
+                    el.style.color = isLight ? "#153244" : "#C0CDD8";
                     el.style.transform = "none"; el.style.boxShadow = "none";
                   }}
                 >{s.icon}</a>
@@ -800,28 +806,32 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
 
         {/* ── Bottom bar ── */}
         <div style={{
-          borderTop: `1px solid ${isLight ? "rgba(0,0,0,0.07)" : "rgba(255,255,255,0.06)"}`,
-          padding: "22px 0 30px",
+          border: `1px solid ${isLight ? "rgba(15,23,42,0.11)" : "rgba(255,255,255,0.06)"}`,
+          background: isLight ? "rgba(255,255,255,0.84)" : "rgba(5,10,28,0.28)",
+          boxShadow: isLight ? "0 12px 38px rgba(15,23,42,0.12)" : "none",
+          borderRadius: 16,
+          padding: "16px 18px",
+          marginBottom: 28,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           flexWrap: "wrap", gap: 16,
         }}>
           <div style={{ fontSize: 12.5, color: txtMuted }}>
-            © 2026 Charging Guru Technologies Pvt. Ltd. · Made in India 🇮🇳
+            (c) 2026 Charging Guru Technologies Pvt. Ltd. - Made in India
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
             {[
-              { icon: "🔒", label: "PCI-DSS L1" },
-              { icon: "⚡", label: "Razorpay"   },
-              { icon: "🛡️", label: "ISO 27001"  },
+              { icon: "SEC", label: "PCI-DSS L1" },
+              { icon: "PAY", label: "Razorpay"   },
+              { icon: "ISO", label: "ISO 27001"  },
             ].map(b => (
               <div key={b.label} style={{
                 display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: txtMuted,
                 padding: "4px 10px", borderRadius: 7,
-                background: isLight ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${isLight ? "rgba(0,0,0,0.07)" : "rgba(255,255,255,0.06)"}`,
+                background: isLight ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${isLight ? "rgba(15,23,42,0.10)" : "rgba(255,255,255,0.06)"}`,
               }}>
-                <span>{b.icon}</span>
+                <span style={{ color: accent, fontWeight: 800, fontSize: 9.5, letterSpacing: ".06em" }}>{b.icon}</span>
                 <span style={{ fontWeight: 600 }}>{b.label}</span>
               </div>
             ))}
@@ -838,7 +848,7 @@ export default function Footer({ isLight }: { isLight: boolean; t: Tok }) {
               <span style={{ fontWeight: 600, fontFamily: "'JetBrains Mono',monospace", color: "#00E676" }}>
                 {online.toLocaleString()} online
               </span>
-              <span style={{ color: isLight ? "#94A3B8" : "#2D3748" }}>·</span>
+              <span style={{ color: isLight ? "#64748B" : "#2D3748" }}>-</span>
               <span style={{ color: txtMuted, fontFamily: "'JetBrains Mono',monospace" }}>
                 {liveChargers.toLocaleString()} chargers live
               </span>

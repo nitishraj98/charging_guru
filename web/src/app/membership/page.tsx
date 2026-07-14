@@ -136,17 +136,55 @@ function MembershipPageInner() {
         <div className="membership-tiers" style={{ marginBottom: 52 }}>
           {tiers.map(tier => {
             const isNavigating = navigating === tier.id;
+            const isPremium = tier.id !== "FREE";
+            const tierBg = isLight
+              ? tier.id === "SILVER"
+                ? "linear-gradient(145deg,#FFFFFF 0%,#EEF4FB 52%,#E0E9F4 100%)"
+                : tier.id === "GOLD"
+                  ? "linear-gradient(145deg,#FFFDF4 0%,#FFF4C7 52%,#FDE68A 100%)"
+                  : "#FFFFFF"
+              : tier.gradient ?? "#101415";
+            const tierText = isLight ? "#0F172A" : isPremium ? "#F8FAFC" : textPrimary;
+            const tierSub = isLight ? "#475569" : isPremium ? "#CBD5E1" : textSub;
+            const tierMuted = isLight ? "#64748B" : isPremium ? "#94A3B8" : textSub;
+            const tierBorder = tier.current
+              ? `1.5px solid ${isLight ? "#CBD5E1" : "#2E3638"}`
+              : `1.5px solid ${tier.id === "GOLD" && isLight ? "rgba(217,119,6,.42)" : `${tier.color}40`}`;
+            const tierShadow = tier.id === "GOLD"
+              ? isLight
+                ? "0 22px 54px rgba(217,119,6,.18), 0 0 0 1px rgba(217,119,6,.18)"
+                : `0 0 0 1px ${tier.color}30,0 4px 40px ${tier.color}14`
+              : tier.id === "SILVER" && isLight
+                ? "0 18px 46px rgba(71,85,105,.16), 0 0 0 1px rgba(148,163,184,.16)"
+                : isLight ? "0 2px 8px rgba(0,0,0,.06)" : "none";
+            const hoverShadow = tier.id === "GOLD"
+              ? isLight
+                ? "0 28px 70px rgba(217,119,6,.24), 0 0 0 1px rgba(217,119,6,.30)"
+                : `0 0 0 1px ${tier.color}50,0 12px 48px ${tier.color}20`
+              : tier.id === "SILVER" && isLight
+                ? "0 24px 60px rgba(71,85,105,.22), 0 0 0 1px rgba(100,116,139,.24)"
+                : "0 8px 32px rgba(0,0,0,.2)";
+            const iconBg = isLight
+              ? tier.id === "GOLD" ? "rgba(245,158,11,.16)" : tier.id === "SILVER" ? "rgba(100,116,139,.12)" : `${tier.color}12`
+              : `${tier.color}18`;
+            const ctaBg = tier.current
+              ? raisedBg
+              : tier.id === "GOLD"
+                ? `linear-gradient(135deg,${tier.color},#E6A000)`
+                : tier.id === "SILVER"
+                  ? isLight ? "linear-gradient(135deg,#334155,#64748B)" : "linear-gradient(135deg,#64748B,#64748B)"
+                  : raisedBg;
             return (
             <div key={tier.id} style={{
               borderRadius: 24, padding: "24px 20px",
-              background: tier.gradient ?? (isLight ? "#FFFFFF" : "#101415"),
-              border: tier.current ? `1.5px solid ${isLight ? "#CBD5E1" : "#2E3638"}` : `1.5px solid ${tier.color}40`,
-              boxShadow: tier.id === "GOLD" ? `0 0 0 1px ${tier.color}30,0 4px 40px ${tier.color}14` : isLight ? "0 2px 8px rgba(0,0,0,.06)" : "none",
+              background: tierBg,
+              border: tierBorder,
+              boxShadow: tierShadow,
               position: "relative", display: "flex", flexDirection: "column",
               cursor: tier.current ? "default" : "pointer", transition: "transform .15s,box-shadow .15s",
             }}
-              onMouseEnter={e => { if (!tier.current) { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = tier.id === "GOLD" ? `0 0 0 1px ${tier.color}50,0 12px 48px ${tier.color}20` : "0 8px 32px rgba(0,0,0,.2)"; } }}
-              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "none"; (e.currentTarget as HTMLDivElement).style.boxShadow = tier.id === "GOLD" ? `0 0 0 1px ${tier.color}30,0 4px 40px ${tier.color}14` : isLight ? "0 2px 8px rgba(0,0,0,.06)" : "none"; }}
+              onMouseEnter={e => { if (!tier.current) { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = hoverShadow; } }}
+              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "none"; (e.currentTarget as HTMLDivElement).style.boxShadow = tierShadow; }}
               onClick={() => handleUpgrade(tier)}
             >
               {tier.badge && (
@@ -156,26 +194,26 @@ function MembershipPageInner() {
               )}
 
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, background: `${tier.color}18`, border: `1px solid ${tier.color}35`, display: "grid", placeItems: "center", flexShrink: 0, color: tier.color }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: iconBg, border: `1px solid ${tier.color}35`, display: "grid", placeItems: "center", flexShrink: 0, color: tier.color }}>
                   {tier.id === "GOLD" ? <Star size={16} strokeWidth={2} fill={tier.color} /> : tier.id === "SILVER" ? <Star size={16} strokeWidth={2} /> : <Shield size={16} strokeWidth={2} />}
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 17, color: tier.color }}>{tier.name}</span>
+                <span style={{ fontWeight: 800, fontSize: 17, color: tier.id === "SILVER" && isLight ? "#334155" : tier.color }}>{tier.name}</span>
               </div>
 
               <div style={{ marginBottom: 22 }}>
                 {tier.price ? (
                   <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 34, fontWeight: 800, color: textPrimary, letterSpacing: "-.02em" }}>₹{tier.price}</span>
-                    <span style={{ fontSize: 13, color: textSub }}>/mo</span>
+                    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 34, fontWeight: 800, color: tierText, letterSpacing: "-.02em" }}>₹{tier.price}</span>
+                    <span style={{ fontSize: 13, color: tierMuted }}>/mo</span>
                   </div>
                 ) : (
-                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 34, fontWeight: 800, color: textPrimary }}>Free</div>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 34, fontWeight: 800, color: tierText }}>Free</div>
                 )}
               </div>
 
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 9, marginBottom: 24 }}>
                 {tier.features.map(f => (
-                  <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: textSub }}>
+                  <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: tierSub }}>
                     <Check size={13} strokeWidth={2.5} color={tier.color} style={{ marginTop: 1, flexShrink: 0 }} />
                     <span>{f}</span>
                   </div>
@@ -186,8 +224,8 @@ function MembershipPageInner() {
                 width: "100%", padding: "13px", borderRadius: 13, fontSize: 13, fontWeight: 700,
                 cursor: tier.current || isNavigating ? "not-allowed" : "pointer",
                 border: tier.current ? `1px solid ${cardBorder}` : "none",
-                background: tier.current ? raisedBg : tier.id === "GOLD" ? `linear-gradient(135deg,${tier.color},#E6A000)` : tier.id === "SILVER" ? "linear-gradient(135deg,#64748B,#64748B)" : raisedBg,
-                color: tier.current ? textMuted : "#050708",
+                background: ctaBg,
+                color: tier.current ? textMuted : tier.id === "SILVER" ? "#FFFFFF" : "#050708",
                 opacity: tier.current ? 0.7 : isNavigating ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}>
                 {isNavigating
