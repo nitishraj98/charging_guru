@@ -18,6 +18,7 @@ from app.models.user import User
 from app.schemas.admin import PagedResult
 from app.schemas.bookings import BookingOut
 from app.schemas.stations import (
+    ChargerCreateIn,
     ChargerOut,
     ChargerStatusIn,
     ReviewCreateIn,
@@ -115,6 +116,27 @@ async def create_station(
     svc: StationService = Depends(get_station_service),
 ):
     return await svc.create(user.id, payload)
+
+
+@router.get("/owner/stations/{station_id}", response_model=StationDetailOut)
+async def get_owner_station(
+    station_id: uuid.UUID,
+    user: User = Depends(require_roles("ROLE_STATION_OWNER", "ROLE_ADMIN")),
+    svc: StationService = Depends(get_station_service),
+):
+    is_admin = "ROLE_ADMIN" in user.role_names
+    return await svc.ensure_owner(station_id, user.id, is_admin)
+
+
+@router.post("/owner/stations/{station_id}/chargers", response_model=ChargerOut, status_code=201)
+async def add_station_charger(
+    station_id: uuid.UUID,
+    payload: ChargerCreateIn,
+    user: User = Depends(require_roles("ROLE_STATION_OWNER", "ROLE_ADMIN")),
+    svc: StationService = Depends(get_station_service),
+):
+    is_admin = "ROLE_ADMIN" in user.role_names
+    return await svc.add_charger(station_id, user.id, is_admin, payload)
 
 
 @router.patch("/chargers/{charger_id}/status", response_model=ChargerOut)

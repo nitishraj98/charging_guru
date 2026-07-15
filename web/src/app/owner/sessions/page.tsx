@@ -1,8 +1,11 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Camera, X } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { authFetch } from "@/lib/admin-ui";
+
+const SCAN_REGION_ID = "qr-camera-scan-region";
 
 interface Booking {
   id: string; status: string; slot_start: string; amount: number;
@@ -30,6 +33,10 @@ function SessionManagerInner() {
   const [message, setMessage]       = useState("");
   const [isError, setIsError]       = useState(false);
   const [qrToken, setQrToken]       = useState("");
+  const [scanning, setScanning]     = useState(false);
+  const [scanError, setScanError]   = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const scannerRef = useRef<any>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const bg          = isLight ? "#F3F7FB" : "#0A0D0E";
@@ -38,6 +45,7 @@ function SessionManagerInner() {
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
   const textSub     = isLight ? "#64748B" : "#6B7479";
   const accent      = isLight ? "#00D26A" : "#00E676";
+  const accentDark  = isLight ? "#00A855" : "#00C258";
   const raisedBg    = isLight ? "#F1F5F9" : "#181D1F";
   const inputBg     = isLight ? "#F3F7FB" : "#0A0D0E";
   const inputBorder = isLight ? "#94A3B8" : "#2E3638";
@@ -59,24 +67,76 @@ function SessionManagerInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function verifyQR() {
-    if (!qrToken.trim()) return;
+  async function verifyQR(tokenOverride?: string) {
+    const token = (tokenOverride ?? qrToken).trim();
+    if (!token) return;
+    if (!token.includes(".")) {
+      const preview = token.length > 60 ? `${token.slice(0, 60)}…` : token;
+      setIsError(true);
+      setMessage(`That doesn't look like a valid Charging Pass QR — scanned text was: "${preview}". A real pass token always contains a "." — this looks like a booking ID or something else was on screen instead.`);
+      return;
+    }
     setActing(true); setMessage(""); setIsError(false);
     try {
       const res = await authFetch("/api/v1/qr/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: qrToken.trim() }),
+        body: JSON.stringify({ qr_token: token }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setIsError(true); setMessage(data.detail ?? "QR verification failed"); return; }
       setMessage("QR verified! Booking is now CHECKED_IN.");
+      setQrToken(token);
       setBookingId(data.booking_id ?? bookingId);
       await lookupBooking();
     } finally {
       setActing(false);
     }
   }
+
+  // Live camera QR scanning — works in any modern mobile/desktop browser,
+  // no native app required. Loaded dynamically since html5-qrcode touches
+  // `navigator.mediaDevices` at import time and must never run on the server.
+  useEffect(() => {
+    if (!scanning) return;
+    let cancelled = false;
+    // Html5Qrcode keeps decoding frames (at `fps`) until .stop() actually
+    // resolves — which only happens in this effect's cleanup, itself gated
+    // behind a React re-render. Without this guard, a static/easy-to-read
+    // QR can fire the success callback several times before teardown
+    // completes, each one racing to call verifyQR().
+    let handled = false;
+    setScanError("");
+
+    import("html5-qrcode").then(({ Html5Qrcode }) => {
+      if (cancelled) return;
+      const scanner = new Html5Qrcode(SCAN_REGION_ID);
+      scannerRef.current = scanner;
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        (decodedText: string) => {
+          if (cancelled || handled) return;
+          handled = true;
+          setScanning(false);
+          verifyQR(decodedText);
+        },
+        () => { /* per-frame scan miss — expected while aiming, ignore */ },
+      ).catch((err: unknown) => {
+        if (!cancelled) setScanError(err instanceof Error ? err.message : "Could not access camera. Check permissions.");
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      const scanner = scannerRef.current;
+      scannerRef.current = null;
+      if (scanner) {
+        scanner.stop().then(() => scanner.clear()).catch(() => {});
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanning]);
 
   async function startSession() {
     if (!booking) return;
@@ -113,23 +173,63 @@ function SessionManagerInner() {
 
   return (
     <div className="owner-pad" style={{ padding: "28px 32px", maxWidth: 640 }}>
+        <style suppressHydrationWarning>{`
+          @keyframes scan-glow-pulse { 0%,100% { box-shadow: 0 4px 20px ${isLight?"rgba(0,200,98,.35)":"rgba(0,230,118,.22)"} } 50% { box-shadow: 0 4px 32px ${isLight?"rgba(0,200,98,.55)":"rgba(0,230,118,.4)"} } }
+          @keyframes scan-frame-pulse { 0%,100% { opacity: .55 } 50% { opacity: 1 } }
+          .scan-cta { transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s; animation: scan-glow-pulse 2.4s ease-in-out infinite; }
+          .scan-cta:hover { transform: translateY(-2px); }
+          .scan-cta:active { transform: translateY(0); }
+          .scan-frame-corner { position: absolute; width: 22px; height: 22px; border-color: ${accent}; animation: scan-frame-pulse 1.8s ease-in-out infinite; }
+        `}</style>
+
         <h1 style={{ fontSize: 22, fontWeight: 700, color: textPrimary, marginBottom: 6 }}>Session Manager</h1>
         <p style={{ fontSize: 13, color: textSub, marginBottom: 24 }}>Verify QR codes, start and complete charging sessions.</p>
 
         {/* QR verify */}
         <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "22px", marginBottom: 16, boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: textPrimary, marginBottom: 14 }}>Verify Customer QR</h2>
+
+          {scanning ? (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ position: "relative", width: "100%", maxWidth: 360, margin: "0 auto", borderRadius: 18, overflow: "hidden", background: "#000", boxShadow: "0 12px 40px rgba(0,0,0,.35)" }}>
+                <div id={SCAN_REGION_ID} style={{ width: "100%" }} />
+                {/* Decorative viewfinder corners */}
+                <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+                  <div className="scan-frame-corner" style={{ top: 16, left: 16, borderTop: "3px solid", borderLeft: "3px solid", borderRadius: "6px 0 0 0" }}/>
+                  <div className="scan-frame-corner" style={{ top: 16, right: 16, borderTop: "3px solid", borderRight: "3px solid", borderRadius: "0 6px 0 0" }}/>
+                  <div className="scan-frame-corner" style={{ bottom: 16, left: 16, borderBottom: "3px solid", borderLeft: "3px solid", borderRadius: "0 0 0 6px" }}/>
+                  <div className="scan-frame-corner" style={{ bottom: 16, right: 16, borderBottom: "3px solid", borderRight: "3px solid", borderRadius: "0 0 6px 0" }}/>
+                </div>
+              </div>
+              {scanError && (
+                <div style={{ marginTop: 10, padding: "10px 14px", borderRadius: 10, background: "rgba(255,90,95,.08)", border: "1px solid rgba(255,90,95,.25)", color: "#FF5A5F", fontSize: 12 }}>{scanError}</div>
+              )}
+              <button onClick={() => setScanning(false)} style={{
+                marginTop: 12, width: "100%", padding: "11px", borderRadius: 12, background: raisedBg,
+                border: `1px solid ${cardBorder}`, color: textPrimary, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}><X size={14}/> Cancel scan</button>
+            </div>
+          ) : (
+            <button onClick={() => setScanning(true)} className="scan-cta" style={{
+              width: "100%", marginBottom: 14, padding: "15px", borderRadius: 14,
+              background: `linear-gradient(135deg, ${accent}, ${accentDark})`, color: "#050708",
+              fontSize: 14, fontWeight: 800, letterSpacing: "-.01em",
+              border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 9,
+            }}><Camera size={17} strokeWidth={2.3}/> Scan with Camera</button>
+          )}
+
           <div style={{ display: "flex", gap: 10 }}>
             <input
               value={qrToken} onChange={e => setQrToken(e.target.value)}
-              placeholder="Paste QR token or scan…"
+              placeholder="…or paste QR token"
               style={{
                 flex: 1, background: inputBg, border: `1px solid ${inputBorder}`,
                 borderRadius: 10, padding: "11px 14px", color: textPrimary, fontSize: 13,
                 outline: "none", fontFamily: "inherit",
               }}
             />
-            <button onClick={verifyQR} disabled={acting || !qrToken} style={{
+            <button onClick={() => verifyQR()} disabled={acting || !qrToken} style={{
               padding: "11px 18px", borderRadius: 10, background: accent, color: "#050708",
               fontSize: 13, fontWeight: 700, border: "none", cursor: acting ? "not-allowed" : "pointer", flexShrink: 0,
             }}>Verify QR</button>

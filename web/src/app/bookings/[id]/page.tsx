@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { QRCodeSVG } from "qrcode.react";
 import { bookings, payments, Booking, PaymentRecord } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
@@ -16,32 +17,6 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string; ic
   CANCELLED:       { label: "Cancelled",        color: "#FF5A5F", bg: "rgba(255,90,95,.1)",   icon: "✕" },
   EXPIRED:         { label: "Expired",          color: "#495154", bg: "rgba(73,81,84,.1)",    icon: "⌛" },
 };
-
-// Minimal inline QR-code-like visual (SVG grid pattern)
-function QRDisplay({ value, size = 160 }: { value: string; size?: number }) {
-  const cells = 9;
-  const cell = size / cells;
-  // Deterministic fill from value hash
-  const bits = Array.from({ length: cells * cells }, (_, i) => {
-    const c = value.charCodeAt(i % value.length);
-    return (c + i * 13 + i * i * 7) % 3 !== 0;
-  });
-  // Force finder patterns (top-left, top-right, bottom-left corners)
-  const corners = [
-    0,1,2,3,4,5,6, 7,14,21,28,35,42, 8,9,10,11,12,13,
-    56,57,58,59,60,61,62, 63,70, 72,73,74,75,76,77,78,
-  ];
-  corners.forEach(i => { if (i < bits.length) bits[i] = true; });
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block", borderRadius: 8 }}>
-      <rect width={size} height={size} fill="#FFFFFF" rx="8"/>
-      {bits.map((on, i) => on ? (
-        <rect key={i} x={(i % cells) * cell + 2} y={Math.floor(i / cells) * cell + 2} width={cell - 2} height={cell - 2} rx="1.5" fill="#050708"/>
-      ) : null)}
-    </svg>
-  );
-}
 
 function Timeline({ status }: { status: string }) {
   const STEPS = [
@@ -93,6 +68,7 @@ export default function BookingDetailPage() {
   const [error, setError]       = useState("");
   const [cancelling, setCancelling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
+  const [qrToken, setQrToken]       = useState("");
 
   const cardBg      = isLight ? "#FFFFFF" : "#101415";
   const cardBorder  = isLight ? "#CBD5E1" : "#222829";
@@ -122,6 +98,17 @@ export default function BookingDetailPage() {
     // load is stable (defined outside effect); router/id are the real deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, router]);
+
+  // Re-issue a fresh, real signed QR token whenever this becomes a
+  // scannable CONFIRMED-with-pass booking — the token itself is never
+  // persisted, so it must be fetched fresh rather than derived client-side.
+  useEffect(() => {
+    if (booking?.status === "CONFIRMED" && booking.qr_jti) {
+      bookings.getQr(booking.id).then(r => setQrToken(r.qr_token)).catch(() => setQrToken(""));
+    } else {
+      setQrToken("");
+    }
+  }, [booking?.status, booking?.qr_jti, booking?.id]);
 
   function downloadInvoice() {
     if (!booking) return;
@@ -262,8 +249,14 @@ export default function BookingDetailPage() {
         {showQR && (
           <div style={{ background: isLight ? "linear-gradient(135deg,#F0FDF4,#ECFDF5)" : "linear-gradient(135deg,#0C2319,#101415)", border: `1px solid ${accentBrd}`, borderRadius: 20, padding: "24px", marginBottom: 16, textAlign: "center" }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: accent, marginBottom: 16, textTransform: "uppercase" }}>Journey Pass · QR Code</div>
-            <div style={{ display: "inline-block", padding: 16, background: "#FFFFFF", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,.15)", marginBottom: 16 }}>
-              <QRDisplay value={booking.id} size={160} />
+            <div style={{ display: "inline-block", padding: 16, background: "#FFFFFF", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,.15)", marginBottom: 16, width: 160, height: 160 }}>
+              {qrToken ? (
+                <QRCodeSVG value={qrToken} size={160} bgColor="#FFFFFF" fgColor="#050708" level="M" />
+              ) : (
+                <div style={{ width: 160, height: 160, display: "grid", placeItems: "center" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", border: "3px solid #E5E7EB", borderTopColor: accent, animation: "spin .8s linear infinite" }}/>
+                </div>
+              )}
             </div>
             <p style={{ fontSize: 13, color: isLight ? "#059669" : "#4DFFA6", marginBottom: 6 }}>Show this QR at the charging station</p>
             <p style={{ fontSize: 12, color: textSub }}>Single-use · Valid for this booking only</p>

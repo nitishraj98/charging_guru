@@ -19,6 +19,7 @@ from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 
 from app.core.errors import ConflictError, NotFoundError
+from app.core.qr import issue_qr
 from app.core.redis import lock
 from app.core.time import ensure_aware, utcnow
 from app.domain.policies import HOLD_TTL_SECONDS, SLOT_LOCK_TTL_MS, quote_booking
@@ -114,6 +115,30 @@ class BookingService:
         if b is None or b.user_id != user_id:
             raise NotFoundError("Booking not found.", code="BOOKING_NOT_FOUND")
         return b
+
+    async def get_any(self, booking_id: uuid.UUID) -> Booking | None:
+        """Unscoped fetch — caller is responsible for authorizing access."""
+        return await self.bookings.get(booking_id)
+
+    async def get_qr_token(self, booking_id: uuid.UUID, user_id: uuid.UUID) -> str:
+        """Re-issue a fresh, valid QR token string for an unredeemed pass.
+
+        The original signed token is only ever returned once, right after
+        payment (it's never persisted). Revisiting the QR later — a page
+        refresh, a bookmark, "view booking" then back — needs a way to get
+        a scannable token again, bound to the same jti so it's still only
+        usable once in total.
+        """
+        booking = await self.get_owned(booking_id, user_id)
+        if booking.status != BookingStatus.CONFIRMED:
+            raise ConflictError(
+                "QR pass is only available for confirmed bookings awaiting check-in.",
+                code="QR_NOT_AVAILABLE",
+            )
+        if booking.qr_jti is None:
+            raise ConflictError("No QR pass has been issued for this booking.", code="QR_NOT_ISSUED")
+        token, _ = issue_qr(booking.id, jti=booking.qr_jti)
+        return token
 
     async def expire_stale_holds(self) -> int:
         """Transition PENDING_PAYMENT bookings past hold_expires_at → EXPIRED.

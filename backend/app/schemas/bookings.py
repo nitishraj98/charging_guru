@@ -28,5 +28,10 @@ class BookingOut(ORMModel):
     energy_kwh_est: float | None
     hold_expires_at: datetime | None
     created_at: datetime
+    qr_jti: uuid.UUID | None = None
     charger: ChargerOut | None = None
     station: StationOut | None = None
+
+
+class QRTokenOut(StrictModel):
+    qr_token: str

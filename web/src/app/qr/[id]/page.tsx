@@ -1,38 +1,20 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { QRCodeSVG } from "qrcode.react";
 import { bookings, Booking } from "@/lib/api";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
-
-function QRSvg({ token, accent }: { token: string; accent: string }) {
-  const seed = token.length > 0 ? token : "fallback-token-for-display-only";
-  const size = 9;
-  const bits = Array.from({ length: size * size }, (_, i) => {
-    const r = Math.floor(i / size), c = i % size;
-    const v = seed.charCodeAt(i % seed.length);
-    // finder patterns at corners
-    if ((r < 3 && c < 3) || (r < 3 && c > size - 4) || (r > size - 4 && c < 3)) return true;
-    return (v + i * 13 + i * i * 7) % 3 !== 0;
-  });
-  const cell = 180 / size;
-  return (
-    <svg width="180" height="180" viewBox={`0 0 180 180`} style={{ display: "block" }}>
-      <rect width="180" height="180" fill="#050708" rx="10"/>
-      {bits.map((on, i) => on ? (
-        <rect key={i} x={(i % size) * cell + 1} y={Math.floor(i / size) * cell + 1} width={cell - 1.5} height={cell - 1.5} rx="1.5" fill={accent}/>
-      ) : null)}
-    </svg>
-  );
-}
 
 function QrInner() {
   const router = useRouter();
   const { id: bookingId } = useParams<{ id: string }>();
   const sp = useSearchParams();
-  const qrToken = sp.get("token") ?? "";
+  const urlToken = sp.get("token") ?? "";
   const { isLight } = useTheme();
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [qrToken, setQrToken] = useState(urlToken);
+  const [qrError, setQrError] = useState("");
 
   const accent      = isLight ? "#00D26A" : "#00E676";
   const textPrimary = isLight ? "#0F172A" : "#E6EBED";
@@ -44,6 +26,18 @@ function QrInner() {
   useEffect(() => {
     bookings.get(bookingId).then(setBooking).catch(() => {});
   }, [bookingId]);
+
+  // The signed token is only ever handed back once, right after payment
+  // (it's never persisted server-side). If we land here without one on the
+  // URL — a refresh, a bookmark, "View booking" then back — fetch a fresh
+  // re-issued token instead of ever falling back to the bare booking id,
+  // which the backend would reject as a malformed QR token.
+  useEffect(() => {
+    if (urlToken) return;
+    bookings.getQr(bookingId)
+      .then(r => setQrToken(r.qr_token))
+      .catch(e => setQrError(e instanceof Error ? e.message : "QR pass is not available."));
+  }, [bookingId, urlToken]);
 
   const slot = booking?.slot_start ? new Date(booking.slot_start) : null;
   const slotDate = slot?.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" }) ?? "";
@@ -58,6 +52,7 @@ function QrInner() {
       <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         @keyframes fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+        @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes check-pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
         @keyframes glow-ring{0%,100%{box-shadow:0 0 0 0 ${accentBrd},0 0 30px ${accentBrd}}50%{box-shadow:0 0 0 6px rgba(0,230,118,.05),0 0 50px rgba(0,230,118,.2)}}
         .qr-fade{animation:fade-up .5s cubic-bezier(.16,1,.3,1) both}
@@ -106,9 +101,19 @@ function QrInner() {
 
           {/* QR code */}
           <div style={{ padding: "24px 20px", background: "#050708", display: "flex", justifyContent: "center" }}>
-            <div style={{ padding: 12, background: "#050708", borderRadius: 14, border: `1px solid rgba(0,230,118,.12)`, boxShadow: `0 0 30px rgba(0,230,118,.12)` }}>
-              <QRSvg token={qrToken} accent={accent}/>
-            </div>
+            {qrToken ? (
+              <div style={{ padding: 14, background: "#FFFFFF", borderRadius: 14, boxShadow: `0 0 30px rgba(0,230,118,.12)` }}>
+                <QRCodeSVG value={qrToken} size={172} bgColor="#FFFFFF" fgColor="#050708" level="M"/>
+              </div>
+            ) : qrError ? (
+              <div style={{ width: 172, height: 172, borderRadius: 14, background: "#151a17", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, textAlign: "center" }}>
+                <p style={{ fontSize: 12, color: "#98A1A6", lineHeight: 1.5 }}>{qrError}</p>
+              </div>
+            ) : (
+              <div style={{ width: 172, height: 172, borderRadius: 14, background: "#151a17", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 30, height: 30, borderRadius: "50%", border: "3px solid rgba(255,255,255,.15)", borderTopColor: accent, animation: "spin .8s linear infinite" }}/>
+              </div>
+            )}
           </div>
 
           {/* Perforation */}

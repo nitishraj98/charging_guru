@@ -109,6 +109,7 @@ export const bookings = {
     }),
   list: () => request<Booking[]>("/api/v1/bookings"),
   get: (id: string) => request<Booking>(`/api/v1/bookings/${id}`),
+  getQr: (id: string) => request<{ qr_token: string }>(`/api/v1/bookings/${id}/qr`),
 };
 
 // ── Vehicles ──────────────────────────────────────────────────────────────────

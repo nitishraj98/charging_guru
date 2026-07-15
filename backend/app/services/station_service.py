@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy.exc import IntegrityError
+
 from app.core.errors import ConflictError, ForbiddenError, NotFoundError
 from app.domain.geo import haversine_km
 from app.domain.policies import MAX_DISCOVERY_RADIUS_KM
@@ -12,8 +14,9 @@ from app.models.enums import BookingStatus, ChargerStatus, StationStatus
 from app.models.review import Review
 from app.models.station import Station
 from app.repositories.booking_repo import BookingRepo
-from app.repositories.station_repo import ReviewRepo, StationRepo
+from app.repositories.station_repo import ChargerRepo, ReviewRepo, StationRepo
 from app.schemas.stations import (
+    ChargerCreateIn,
     ReviewCreateIn,
     StationCreateIn,
     StationNearbyOut,
@@ -22,10 +25,17 @@ from app.schemas.stations import (
 
 
 class StationService:
-    def __init__(self, stations: StationRepo, reviews: ReviewRepo | None = None, bookings: BookingRepo | None = None):
+    def __init__(
+        self,
+        stations: StationRepo,
+        reviews: ReviewRepo | None = None,
+        bookings: BookingRepo | None = None,
+        chargers: ChargerRepo | None = None,
+    ):
         self.stations = stations
         self.reviews = reviews
         self.bookings = bookings
+        self.chargers = chargers
 
     async def create(self, owner_id: uuid.UUID, payload: StationCreateIn) -> Station:
         station = Station(
@@ -90,6 +100,28 @@ class StationService:
         if not is_admin and station.owner_id != user_id:
             raise ForbiddenError("You do not own this station.", code="NOT_STATION_OWNER")
         return station
+
+    async def add_charger(
+        self, station_id: uuid.UUID, owner_id: uuid.UUID, is_admin: bool, payload: ChargerCreateIn
+    ) -> Charger:
+        assert self.chargers is not None
+        station = await self.ensure_owner(station_id, owner_id, is_admin)
+        charger = Charger(
+            station_id=station.id,
+            label=payload.label,
+            charger_type=payload.charger_type,
+            power_kw=payload.power_kw,
+            connector_type=payload.connector_type,
+            price_per_kwh=payload.price_per_kwh,
+            status=ChargerStatus.AVAILABLE,
+        )
+        try:
+            return await self.chargers.add(charger)
+        except IntegrityError as exc:
+            raise ConflictError(
+                f"A charger labeled '{payload.label}' already exists at this station.",
+                code="CHARGER_LABEL_TAKEN",
+            ) from exc
 
     async def get_stats(self, station_id: uuid.UUID) -> StationStatsOut:
         station = await self.get_detail(station_id)

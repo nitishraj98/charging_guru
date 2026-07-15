@@ -28,13 +28,17 @@ def _sign(payload_bytes: bytes) -> str:
     return _hmac.new(settings.jwt_secret.encode(), payload_bytes, hashlib.sha256).hexdigest()
 
 
-def issue_qr(booking_id: uuid.UUID) -> tuple[str, uuid.UUID]:
+def issue_qr(booking_id: uuid.UUID, jti: uuid.UUID | None = None) -> tuple[str, uuid.UUID]:
     """Create a signed QR token for a confirmed booking.
 
     Returns (token_string, jti).  Caller must persist jti → booking.qr_jti
     so that the verify endpoint can cross-check the database.
+
+    Pass an existing `jti` (e.g. `booking.qr_jti`) to re-issue a fresh token
+    string for an already-issued, not-yet-redeemed pass — the jti is what
+    Redis tracks for single-use, so re-issuing doesn't grant extra uses.
     """
-    jti = uuid7()
+    jti = jti or uuid7()
     payload = {
         "booking_id": str(booking_id),
         "jti": str(jti),

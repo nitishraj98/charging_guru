@@ -57,7 +57,7 @@ def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
 
 
 def get_station_service(db: AsyncSession = Depends(get_db)) -> StationService:
-    return StationService(StationRepo(db), ReviewRepo(db), BookingRepo(db))
+    return StationService(StationRepo(db), ReviewRepo(db), BookingRepo(db), ChargerRepo(db))
 
 
 def get_availability_service(db: AsyncSession = Depends(get_db)) -> AvailabilityService:

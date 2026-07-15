@@ -6,7 +6,9 @@ Single reference file. Read this at the start of every session to understand wha
 
 ## What is this?
 
-Production-grade EV charging platform. Backend-first. FastAPI + Python 3.11.
+Production-grade EV charging platform. FastAPI backend + a unified Next.js 15 web app covering the user, station-owner, and admin surfaces.
+
+**Original plan vs. actual build:** `docs/` (written 2026-06-16) specified 4 separate clients — RN User App, Next.js User Website, RN Station Owner App, Next.js Admin Panel. What actually got built is the backend (matches plan) plus **one** Next.js app (`web/`) that covers user + owner + admin in a single codebase (`/`, `/owner/*`, `/admin/*` routes). The two React Native mobile apps were never started. CI/CD and Terraform IaC (planned as part of the Day-30 MVP exit criteria) were never started either — see "What's pending" below.
 
 ---
 
@@ -39,11 +41,19 @@ Production-grade EV charging platform. Backend-first. FastAPI + Python 3.11.
 ```
 charging_guru/
 ├── CLAUDE.md                        ← this file
+├── README.md                        ← public-facing overview (describes an aspirational monorepo
+│                                        layout with web-user/web-admin/mobile-user/mobile-owner —
+│                                        those split dirs do NOT exist; actual web code is in web/)
 ├── Makefile                         ← make up / down / test / migrate / psql / redis
 ├── docker-compose.yml               ← db + redis + migrate + api (4 services)
+├── docs/                            ← original planning docs (PRD, architecture, roadmap),
+│                                        written 2026-06-16, not kept in sync with actual build
+├── design/                          ← design tokens + Figma-ready screen specs (brand, user/owner/admin)
+├── infra/compose/                   ← duplicate/older docker-compose.yml (no Terraform exists anywhere)
 ├── postman/
 │   ├── charging-guru.postman_collection.json     ← 30 endpoints, 9 folders, auto-chaining scripts
 │   └── charging-guru-local.postman_environment.json
+├── web/                             ← Next.js 15 app: user + owner + admin in one codebase (see below)
 └── backend/
     ├── .env.example                 ← all CG_* env vars (Razorpay keys, DB URL, etc.)
     ├── .dockerignore
@@ -114,6 +124,24 @@ charging_guru/
             ├── test_admin.py                ← 12 tests: RBAC, analytics, station approval
             └── test_lifecycle.py            ← 7 tests: cancel, refund, hold expiry
 ```
+
+---
+
+## Web app (`web/`)
+
+Next.js 15 App Router, TypeScript, Tailwind. Single app serving three role-based route trees, all talking to the FastAPI backend via `src/lib/`:
+
+- **User routes** — `/`, `/login`, `/discover` (Leaflet map + geolocation), `/plan` + `/plan/results` (route planning), `/station/[id]`, `/booking/[id]` + `/bookings/*`, `/pay/[id]`, `/qr/[id]`, `/journey/*`, `/trips`, `/vehicles`, `/profile`, `/rewards`, `/membership` + `/membership/checkout/[tier]`, `/become-owner`
+- **Owner routes** — `/owner`, `/owner/stations` + `/owner/stations/new`, `/owner/bookings`, `/owner/sessions` (QR scan/check-in)
+- **Admin routes** — `/admin`, `/admin/users`, `/admin/owners`, `/admin/applications` (approve/reject), `/admin/stations`, `/admin/chargers`, `/admin/bookings`, `/admin/sessions`, `/admin/revenue`, `/admin/settings`
+
+Role gating (`ROLE_STATION_OWNER` / `ROLE_ADMIN`) is enforced client-side in `owner/layout.tsx` and `admin/layout.tsx` — see "What's pending" for the known weakness here.
+
+**External services** (see `web/THIRD_PARTY_SERVICES.md`): Google Maps (Places/Directions/Geocoding, `NEXT_PUBLIC_GOOGLE_MAPS_KEY`) with Haversine fallback if unset; Open Charge Map as a station-data fallback when the backend is unavailable; Razorpay client SDK; CARTO tiles for Leaflet (no key needed).
+
+**Responsive:** all 32 pages audited and passing across 14 breakpoints (`web/RESPONSIVE_TEST_REPORT.md`).
+
+**Perf history:** a 20s navigation freeze (dead fetch to a nonexistent `/api/v1/routes/plan` backend endpoint) and several sequential-auth-fetch waterfalls were fixed — see `web/PERFORMANCE_REPORT.md`.
 
 ---
 
@@ -222,8 +250,9 @@ CG_RAZORPAY_WEBHOOK_SECRET=...
 
 ---
 
-## What's done (52 tests passing)
+## What's done
 
+**Backend (52 tests passing):**
 - [x] Auth: OTP request/verify, JWT refresh, logout
 - [x] Users: profile get/update
 - [x] Stations: create, discover (PostGIS radius), detail
@@ -239,37 +268,33 @@ CG_RAZORPAY_WEBHOOK_SECRET=...
 - [x] Makefile: up/down/test/migrate/psql/redis/shell/lint targets
 - [x] Postman collection: 30 endpoints, auto-chaining test scripts
 
+**Web app (`web/`)** — ahead of the original MVP scope, which had deferred these to Phase 2:
+- [x] Full user flow: discovery, route planning, booking, payment, QR, trips, vehicles, profile
+- [x] Owner portal: stations, bookings, sessions/QR scan
+- [x] Admin panel: users, owners, applications, stations, chargers, bookings, sessions, revenue, settings
+- [x] Membership/subscriptions wired to real Razorpay checkout (was planned as Month-2 Phase 2 work)
+- [x] Rewards page wired to real backend (was planned as Phase 2/GA)
+- [x] Responsive audit complete: 32/32 pages, 14 breakpoints
+- [x] Perf fixes: killed 20s nav freeze, parallelized auth waterfalls
+
 ---
 
-## What can be built next
+## What's pending
 
-Suggested options (pick one per session):
+Real gaps against `docs/` (the original plan), in rough priority order:
 
-**B — Next.js web app** (user-facing: discovery map, booking flow, payment)
-- React + Next.js 14 App Router
-- Connects to the existing FastAPI backend
+**1. Mobile apps — not started.** The RN User App and RN Station Owner App from the original plan don't exist. Everything mobile-shaped today is just the responsive web app.
 
-**C — Admin dashboard** (React SPA for station approval, analytics charts)
-- Could be a separate Next.js app or added to option B
+**2. CI/CD — not started.** No `.github/workflows`. No lint/test-on-PR, no build-on-merge.
 
-**D — React Native mobile app** (EV driver app with QR display)
-- Expo, connects to FastAPI, shows QR code after payment
+**3. IaC / staging-prod infra — not started.** `infra/` only has a local docker-compose file (duplicate of the root one). No Terraform, no ECS/RDS/ElastiCache, despite being an M3 (Day-30) exit criterion in `docs/18-development-milestones.md`.
 
-**E — Celery workers** (background tasks)
-- Scheduled hold-expiry sweep (instead of manual admin trigger)
-- Post-session invoice emails
-- Station analytics aggregation
+**4. Observability — not started.** No Grafana, Sentry, or Prometheus wired up anywhere, despite being planned MVP scope.
 
-**F — CI/CD pipeline**
-- GitHub Actions: lint + test on PR, Docker build on merge to main
-- Optional: deploy to Railway / Render / Fly.io
+**5. `web/` auth is client-side only.** `owner/layout.tsx` / `admin/layout.tsx` gate on role by fetching `/users/me` after mount and showing a spinner — a determined user briefly sees the shell before the redirect. Should move to Next.js middleware validating the JWT cookie server-side before render (see `web/PERFORMANCE_REPORT.md` "Remaining Issues").
 
-**G — Invoicing**
-- Generate PDF invoice after COMPLETED booking
-- Store in S3/Cloudflare R2, email to user
+**6. No real route-planning backend endpoint.** The web app's `/plan` flow calls a local Haversine-based fallback because `/api/v1/routes/plan` was never implemented on the backend — this was the actual differentiator feature in the PRD.
 
-**H — Notifications**
-- SMS via Twilio/MSG91 for booking confirmed, session started, session complete
-- Push notifications (FCM) for mobile
+**7. Minor:** `web/IMPLEMENTATION_PROGRESS.md` still says "pending: progress tracking for mobile/admin" — stale now that admin is done and mobile doesn't exist as a concept in this codebase; should be deleted or rewritten if kept.
 
-Last session ended after writing the Postman collection. No pending code tasks.
+Last session: read through `docs/` and `web/*.md` reports and reconciled this file with actual repo state. No code changes made.

@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     razorpay_key_id: str = "rzp_test_placeholder"
     razorpay_key_secret: str = "placeholder_secret_min_32_chars_____"
     razorpay_webhook_secret: str = "placeholder_webhook_secret__________"
+    razorpay_debug: bool = False  # skip live Razorpay API calls; accept "valid_sig" (dev only)
 
     # CORS (CSV string in env → parsed to list; NoDecode skips JSON parsing)
     cors_origins: Annotated[list[str], NoDecode] = Field(
