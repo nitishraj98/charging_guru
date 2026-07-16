@@ -7,11 +7,14 @@ import { checkAuth, bffLogout } from "@/lib/auth";
 import { getTheme, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 import Logo from "@/components/Logo";
+import { AdminDataProvider } from "@/components/admin/AdminData";
+import { OwnerToastProvider } from "@/components/owner/Toast";
+import { CommandPalette } from "@/components/admin/CommandPalette";
 import {
   LayoutDashboard, Zap, BookOpen, Users, MapPin,
   IndianRupee, Settings, ChevronRight,
   Building2, PlugZap, LogOut, Sun, Moon, ClipboardCheck,
-  Activity, BatteryCharging, ShieldCheck, Smartphone,
+  Activity, BatteryCharging, ShieldCheck, Smartphone, Award,
 } from "lucide-react";
 
 const NAV = [
@@ -41,7 +44,8 @@ const NAV = [
   {
     section: "FINANCE",
     items: [
-      { href: "/admin/revenue",  label: "Revenue",            Icon: IndianRupee },
+      { href: "/admin/revenue",    label: "Revenue",     Icon: IndianRupee },
+      { href: "/admin/membership", label: "Membership",  Icon: Award       },
     ],
   },
   {
@@ -462,6 +466,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // ── Admin panel ───────────────────────────────────────────────────────────────
   return (
+    <AdminDataProvider>
+    <OwnerToastProvider>
     <div style={{ display: "flex", height: "100vh", marginTop: -BODY_NAV_OFFSET, overflow: "hidden", background: th.bg, fontFamily: C.sans }}>
       <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
@@ -491,6 +497,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             textTransform: "uppercase" as const,
             fontFamily: "'Space Grotesk',system-ui,sans-serif",
           }}>OPS CENTER</div>
+        </div>
+
+        {/* Global search */}
+        <div style={{ padding: "12px 12px 4px" }}>
+          <CommandPalette />
         </div>
 
         {/* Nav */}
@@ -613,5 +624,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {children}
       </main>
     </div>
+    </OwnerToastProvider>
+    </AdminDataProvider>
   );
 }

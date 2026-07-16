@@ -74,7 +74,7 @@ export default function TripsPage() {
   return (
     <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
-      <div className="fade-up" style={{ maxWidth: 800, margin: "0 auto", padding: "36px 24px 100px" }}>
+      <div className="fade-up" style={{ maxWidth: 960, margin: "0 auto", padding: "36px 24px 100px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>

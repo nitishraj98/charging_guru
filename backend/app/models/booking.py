@@ -21,6 +21,7 @@ from app.models.enums import BookingStatus, ChargerStatus
 
 if TYPE_CHECKING:
     from app.models.charger import Charger
+    from app.models.slot import BookingSlot
     from app.models.station import Station
 
 # Partial-unique guard: at most one *active* booking per slot. Works on both
@@ -62,6 +63,15 @@ class Booking(Base, UUIDPkMixin, TimestampMixin):
 
     charger: Mapped["Charger"] = relationship(lazy="selectin")
     station: Mapped["Station"] = relationship(lazy="selectin")
+    slot: Mapped["BookingSlot"] = relationship(lazy="selectin")
+
+    @property
+    def slot_start(self) -> datetime:
+        return self.slot.slot_start
+
+    @property
+    def slot_end(self) -> datetime:
+        return self.slot.slot_end
 
 
 class ChargerStatusHistory(Base, UUIDPkMixin, TimestampMixin):

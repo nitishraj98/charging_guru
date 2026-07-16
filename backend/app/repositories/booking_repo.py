@@ -68,7 +68,7 @@ class BookingRepo:
     async def add(self, booking: Booking) -> Booking:
         self.session.add(booking)
         await self.session.flush()
-        await self.session.refresh(booking, attribute_names=["charger", "station"])
+        await self.session.refresh(booking, attribute_names=["charger", "station", "slot"])
         return booking
 
     async def get(self, booking_id: uuid.UUID) -> Booking | None:

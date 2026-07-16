@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { IndianRupee, TrendingUp, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { IndianRupee, TrendingUp, RefreshCw, Award, ArrowUpRight } from "lucide-react";
 import { getTheme, authFetch, fmtRupee, fmtDateTime, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAdminData } from "@/components/admin/AdminData";
 
 interface DayTrend { date: string; bookings: number; revenue_paise: number; }
 interface TopStation { id: string; name: string; city: string; revenue_paise: number; bookings: number; }
@@ -19,20 +21,13 @@ interface PaymentRow {
 }
 interface PagedResult { items: PaymentRow[]; total: number; page: number; per_page: number; pages: number; }
 
-interface MembershipPaymentRow {
-  id: string; user_id: string; tier: string;
-  amount: number; status: string; razorpay_order_id: string;
-  razorpay_payment_id: string | null; created_at: string;
-}
-interface MembershipPagedResult { items: MembershipPaymentRow[]; total: number; page: number; per_page: number; pages: number; }
-
 const PMT_COLOR: Record<string, string> = { PENDING: C.amber, CAPTURED: C.green, FAILED: C.red, REFUNDED: C.purple };
 const PMT_TABS = ["ALL", "CAPTURED", "PENDING", "FAILED", "REFUNDED"];
-const TIER_COLOR: Record<string, string> = { SILVER: C.blue, GOLD: C.amber };
 
 export default function AdminRevenuePage() {
   const { isLight } = useTheme();
   const th = getTheme(isLight);
+  const { userById } = useAdminData();
 
   const [overview,  setOverview]  = useState<Overview | null>(null);
   const [payments,  setPayments]  = useState<PagedResult | null>(null);
@@ -41,11 +36,6 @@ export default function AdminRevenuePage() {
   const [loading,   setLoading]   = useState(true);
   const [pmtLoad,   setPmtLoad]   = useState(false);
   const [error,     setError]     = useState("");
-
-  const [memPayments, setMemPayments] = useState<MembershipPagedResult | null>(null);
-  const [memRevenue,  setMemRevenue]  = useState<number | null>(null);
-  const [memPage,     setMemPage]     = useState(1);
-  const [memLoad,     setMemLoad]     = useState(false);
 
   const loadOverview = useCallback(async () => {
     setLoading(true); setError("");
@@ -68,30 +58,9 @@ export default function AdminRevenuePage() {
     finally { setPmtLoad(false); }
   }, [pmtStatus]);
 
-  const loadMembershipPayments = useCallback(async (p = 1) => {
-    setMemLoad(true);
-    try {
-      const res = await authFetch(`/api/v1/admin/membership-payments?page=${p}&per_page=15`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setMemPayments(await res.json());
-    } catch { setMemPayments(null); }
-    finally { setMemLoad(false); }
-  }, []);
-
-  const loadMembershipRevenue = useCallback(async () => {
-    try {
-      const res = await authFetch("/api/v1/admin/membership-payments/revenue");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const body = await res.json();
-      setMemRevenue(body.total_paise);
-    } catch { setMemRevenue(null); }
-  }, []);
-
   useEffect(() => { loadOverview(); }, [loadOverview]);
   useEffect(() => { setPmtPage(1); loadPayments(1, pmtStatus); }, [pmtStatus]); // eslint-disable-line
   useEffect(() => { loadPayments(pmtPage); }, [pmtPage, loadPayments]);
-  useEffect(() => { loadMembershipRevenue(); }, [loadMembershipRevenue]);
-  useEffect(() => { loadMembershipPayments(memPage); }, [memPage, loadMembershipPayments]);
 
   const topSt  = overview?.top_stations ?? [];
   const maxRev = topSt.length > 0 ? Math.max(...topSt.map(s => s.revenue_paise)) || 1 : 1;
@@ -153,13 +122,19 @@ export default function AdminRevenuePage() {
           <IndianRupee size={18} color={C.green} strokeWidth={2} />
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: th.text, letterSpacing: "-0.02em" }}>Revenue</h1>
-            <p style={{ fontSize: 12, color: th.sub, marginTop: 2 }}>Financial overview from the operations backend</p>
+            <p style={{ fontSize: 12, color: th.sub, marginTop: 2 }}>Charging &amp; booking payments — see <Link href="/admin/membership" style={{ color: C.purple }}>Membership</Link> for subscription revenue</p>
           </div>
         </div>
-        <button onClick={() => { loadOverview(); loadPayments(pmtPage); loadMembershipRevenue(); loadMembershipPayments(memPage); }}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, background: "transparent", border: `1px solid ${th.border}`, color: th.sub, fontSize: 12, cursor: "pointer", fontFamily: C.sans }}>
-          <RefreshCw size={12} /> Refresh
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Link href="/admin/membership"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, background: `${C.purple}10`, border: `1px solid ${C.purple}30`, color: C.purple, fontSize: 12, textDecoration: "none", fontFamily: C.sans }}>
+            <Award size={12} /> Membership Revenue <ArrowUpRight size={11} />
+          </Link>
+          <button onClick={() => { loadOverview(); loadPayments(pmtPage); }}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, background: "transparent", border: `1px solid ${th.border}`, color: th.sub, fontSize: 12, cursor: "pointer", fontFamily: C.sans }}>
+            <RefreshCw size={12} /> Refresh
+          </button>
+        </div>
       </div>
 
       {error && <div style={{ padding: "12px 16px", borderRadius: 10, background: `${C.red}10`, border: `1px solid ${C.red}30`, color: C.red, marginBottom: 24, fontSize: 13 }}>{error}</div>}
@@ -243,11 +218,12 @@ export default function AdminRevenuePage() {
               <div style={{ padding: "40px", textAlign: "center", color: th.sub, fontSize: 13 }}>Loading…</div>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr>{["Payment ID", "Amount", "Status", "Razorpay Order", "Time"].map(h => <th key={h} style={tH}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Payment ID", "User", "Amount", "Status", "Razorpay Order", "Time"].map(h => <th key={h} style={tH}>{h}</th>)}</tr></thead>
                 <tbody>
-                  {payments?.items.length === 0 && <tr><td colSpan={5} style={{ ...tD, textAlign: "center", padding: "40px", color: th.sub }}>No payments found.</td></tr>}
+                  {payments?.items.length === 0 && <tr><td colSpan={6} style={{ ...tD, textAlign: "center", padding: "40px", color: th.sub }}>No payments found.</td></tr>}
                   {payments?.items.map(p => {
                     const color = PMT_COLOR[p.status] ?? th.sub;
+                    const user = userById.get(p.user_id);
                     return (
                       <tr key={p.id}
                         onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = th.raised; }}
@@ -256,6 +232,10 @@ export default function AdminRevenuePage() {
                         <td style={tD}>
                           <div style={{ fontFamily: C.mono, fontSize: 11 }}>{p.id.slice(0, 13)}…</div>
                           {p.razorpay_payment_id && <div style={{ fontFamily: C.mono, fontSize: 10, color: th.sub, marginTop: 1 }}>{p.razorpay_payment_id}</div>}
+                        </td>
+                        <td style={tD}>
+                          <div style={{ fontSize: 12, fontWeight: 500 }}>{user?.full_name ?? "—"}</div>
+                          <div style={{ fontSize: 10.5, color: th.sub, marginTop: 1 }}>{user?.phone ?? p.user_id.slice(0, 10) + "…"}</div>
                         </td>
                         <td style={{ ...tD, fontFamily: C.mono, fontWeight: 700, color: C.green }}>{fmtRupee(p.amount)}</td>
                         <td style={tD}><span style={{ padding: "2px 8px", borderRadius: 5, fontSize: 10, fontWeight: 600, background: `${color}14`, border: `1px solid ${color}35`, color }}>{p.status}</span></td>
@@ -272,54 +252,6 @@ export default function AdminRevenuePage() {
                 <button disabled={pmtPage === 1} onClick={() => setPmtPage(p => p - 1)} style={{ padding: "6px 12px", borderRadius: 7, fontSize: 11, cursor: pmtPage > 1 ? "pointer" : "default", background: th.raised, border: `1px solid ${th.border}`, color: pmtPage > 1 ? th.text : th.sub, fontFamily: C.sans }}>← Prev</button>
                 <span style={{ padding: "6px 10px", fontSize: 11, color: th.sub }}>{pmtPage} / {payments.pages}</span>
                 <button disabled={pmtPage === payments.pages} onClick={() => setPmtPage(p => p + 1)} style={{ padding: "6px 12px", borderRadius: 7, fontSize: 11, cursor: pmtPage < payments.pages ? "pointer" : "default", background: th.raised, border: `1px solid ${th.border}`, color: pmtPage < payments.pages ? th.text : th.sub, fontFamily: C.sans }}>Next →</button>
-              </div>
-            )}
-          </div>
-
-          {/* ── Membership payments ── */}
-          <div style={{ marginTop: 24 }}>
-            <RevCard label="Membership Revenue (All Time)" value={memRevenue != null ? fmtRupee(memRevenue) : "—"} sub={`${memPayments?.total ?? 0} total upgrade payments`} color={C.purple} />
-          </div>
-
-          <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden", marginTop: 16 }}>
-            <div style={{ padding: "14px 20px", borderBottom: `1px solid ${th.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: th.text }}>Membership Payments</span>
-            </div>
-            {memLoad ? (
-              <div style={{ padding: "40px", textAlign: "center", color: th.sub, fontSize: 13 }}>Loading…</div>
-            ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr>{["Payment ID", "Tier", "Amount", "Status", "Razorpay Order", "Time"].map(h => <th key={h} style={tH}>{h}</th>)}</tr></thead>
-                <tbody>
-                  {memPayments?.items.length === 0 && <tr><td colSpan={6} style={{ ...tD, textAlign: "center", padding: "40px", color: th.sub }}>No membership payments found.</td></tr>}
-                  {memPayments?.items.map(p => {
-                    const color = PMT_COLOR[p.status] ?? th.sub;
-                    const tierColor = TIER_COLOR[p.tier] ?? th.sub;
-                    return (
-                      <tr key={p.id}
-                        onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = th.raised; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}
-                        style={{ transition: "background 0.1s" }}>
-                        <td style={tD}>
-                          <div style={{ fontFamily: C.mono, fontSize: 11 }}>{p.id.slice(0, 13)}…</div>
-                          {p.razorpay_payment_id && <div style={{ fontFamily: C.mono, fontSize: 10, color: th.sub, marginTop: 1 }}>{p.razorpay_payment_id}</div>}
-                        </td>
-                        <td style={tD}><span style={{ padding: "2px 8px", borderRadius: 5, fontSize: 10, fontWeight: 600, background: `${tierColor}14`, border: `1px solid ${tierColor}35`, color: tierColor }}>{p.tier}</span></td>
-                        <td style={{ ...tD, fontFamily: C.mono, fontWeight: 700, color: C.green }}>{fmtRupee(p.amount)}</td>
-                        <td style={tD}><span style={{ padding: "2px 8px", borderRadius: 5, fontSize: 10, fontWeight: 600, background: `${color}14`, border: `1px solid ${color}35`, color }}>{p.status}</span></td>
-                        <td style={{ ...tD, fontFamily: C.mono, fontSize: 10, color: th.sub }}>{p.razorpay_order_id.slice(0, 20)}…</td>
-                        <td style={{ ...tD, color: th.sub }}>{fmtDateTime(p.created_at)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-            {memPayments && memPayments.pages > 1 && (
-              <div style={{ display: "flex", gap: 6, justifyContent: "center", padding: "14px" }}>
-                <button disabled={memPage === 1} onClick={() => setMemPage(p => p - 1)} style={{ padding: "6px 12px", borderRadius: 7, fontSize: 11, cursor: memPage > 1 ? "pointer" : "default", background: th.raised, border: `1px solid ${th.border}`, color: memPage > 1 ? th.text : th.sub, fontFamily: C.sans }}>← Prev</button>
-                <span style={{ padding: "6px 10px", fontSize: 11, color: th.sub }}>{memPage} / {memPayments.pages}</span>
-                <button disabled={memPage === memPayments.pages} onClick={() => setMemPage(p => p + 1)} style={{ padding: "6px 12px", borderRadius: 7, fontSize: 11, cursor: memPage < memPayments.pages ? "pointer" : "default", background: th.raised, border: `1px solid ${th.border}`, color: memPage < memPayments.pages ? th.text : th.sub, fontFamily: C.sans }}>Next →</button>
               </div>
             )}
           </div>

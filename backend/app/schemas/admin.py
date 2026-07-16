@@ -95,6 +95,8 @@ class AdminBookingOut(ORMModel):
     amount: int
     hold_expires_at: datetime | None
     created_at: datetime
+    slot_start: datetime
+    slot_end: datetime
 
 
 class ChargerAdminOut(ORMModel):

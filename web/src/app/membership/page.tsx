@@ -119,7 +119,7 @@ function MembershipPageInner() {
         </div>
       )}
 
-      <div className="fade-up" style={{ maxWidth: 740, margin: "0 auto", padding: "36px 24px 100px" }}>
+      <div className="fade-up" style={{ maxWidth: 920, margin: "0 auto", padding: "36px 24px 100px" }}>
 
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 44 }}>

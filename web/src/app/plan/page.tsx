@@ -76,7 +76,7 @@ export default function PlanPage() {
   const inputBorder = isLight ? "rgba(15,23,42,0.12)"    : "rgba(255,255,255,0.09)";
   const textPrimary = isLight ? "#0F172A"                 : "#E2E8F0";
   const textSub     = isLight ? "#64748B"                 : "#8896A4";
-  const textMuted   = isLight ? "#64748B"                 : "#4A5568";
+  const textMuted   = isLight ? "#64748B"                 : "#6B7A8C";
   const accent      = isLight ? "#00D26A"                 : "#00E676";
   const accentDim   = isLight ? "rgba(0,210,106,0.08)"   : "rgba(0,230,118,0.07)";
   const accentBorder= isLight ? "rgba(0,210,106,0.30)"   : "rgba(0,230,118,0.22)";
@@ -112,7 +112,19 @@ export default function PlanPage() {
   }
 
   return (
-    <div style={{ background: "transparent", minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
+    <div style={{ background: "transparent", minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif", position: "relative" }}>
+      {/* Decorative full-bleed background — dot grid + glow, fills the wide side margins instead of leaving dead space */}
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: `radial-gradient(${isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.06)"} 1px, transparent 1px)`,
+          backgroundSize: "26px 26px",
+          WebkitMaskImage: "radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 92%)",
+          maskImage: "radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 92%)",
+        }}/>
+        <div style={{ position: "absolute", top: -140, right: "6%", width: 560, height: 560, borderRadius: "50%", background: `radial-gradient(circle, ${accent}${isLight ? "16" : "10"} 0%, transparent 70%)` }}/>
+        <div style={{ position: "absolute", bottom: -180, left: "3%", width: 480, height: 480, borderRadius: "50%", background: `radial-gradient(circle, ${isLight ? "rgba(34,211,238,0.10)" : "rgba(34,211,238,0.06)"} 0%, transparent 70%)` }}/>
+      </div>
       <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         @keyframes ping-green  { 75%,100%{transform:scale(2);opacity:0} }
@@ -146,17 +158,17 @@ export default function PlanPage() {
         .battery-range::-webkit-slider-thumb:hover { transform:scale(1.25);box-shadow:0 0 22px ${batteryColor}A0; }
         .battery-range::-moz-range-thumb { width:22px;height:22px;border-radius:50%;background:${batteryColor};border:3px solid ${isLight ? "#fff" : "#0B1410"};box-shadow:0 0 14px ${batteryColor}80;cursor:pointer; }
 
-        @media(max-width:900px){.plan-two-col{grid-template-columns:1fr !important;}.plan-left-panel{display:none !important;}}
+        @media(max-width:1050px){.plan-two-col{grid-template-columns:1fr !important;}.plan-left-panel{display:none !important;}}
         @media(max-width:600px){.plan-vgrid{grid-template-columns:repeat(2,1fr) !important;}.plan-pgrid{grid-template-columns:repeat(2,1fr) !important;}}
       `}</style>
 
       <NavBar />
 
       <div className="plan-two-col" style={{
-        display: "grid", gridTemplateColumns: "1fr 540px",
-        minHeight: "calc(100vh - 68px)", maxWidth: 1180, margin: "0 auto",
-        padding: "48px 24px 80px", gap: 52, alignItems: "start",
-        position: "relative", zIndex: 1,
+        display: "grid", gridTemplateColumns: "minmax(360px,480px) minmax(560px,680px)", justifyContent: "center",
+        minHeight: "calc(100vh - 68px)", width: "100%",
+        padding: "48px clamp(24px,4vw,56px) 80px", gap: 48, alignItems: "start",
+        position: "relative", zIndex: 1, boxSizing: "border-box",
       }}>
 
         {/* ─────────────── LEFT panel ─────────────── */}
@@ -174,7 +186,7 @@ export default function PlanPage() {
             Plan smarter.<br/>
             <span style={{ color:accent,textShadow:isLight?"none":`0 0 32px ${accent}80` }}>Charge faster.</span>
           </h1>
-          <p style={{ fontSize:16,lineHeight:1.8,color:textSub,maxWidth:380,marginBottom:40 }}>
+          <p style={{ fontSize:16,lineHeight:1.8,color:textSub,maxWidth:480,marginBottom:40 }}>
             Enter your route and we instantly find optimal charging stops, show live availability, and let you reserve every slot in one go.
           </p>
 
@@ -222,7 +234,7 @@ export default function PlanPage() {
 
             {/* ── Header ── */}
             <div style={{
-              padding: "22px 32px",
+              padding: "26px 38px",
               background: isLight
                 ? "linear-gradient(135deg,rgba(0,210,106,0.07),rgba(34,211,238,0.04))"
                 : "linear-gradient(135deg,rgba(0,210,106,0.08),rgba(34,211,238,0.04))",
@@ -230,15 +242,15 @@ export default function PlanPage() {
               display: "flex", alignItems: "center", justifyContent: "space-between",
             }}>
               <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <div style={{ width:42,height:42,borderRadius:13,background:isLight?"rgba(0,210,106,0.12)":"rgba(0,210,106,0.10)",border:`1px solid ${accentBorder}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                <div style={{ width:48,height:48,borderRadius:14,background:isLight?"rgba(0,210,106,0.12)":"rgba(0,210,106,0.10)",border:`1px solid ${accentBorder}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
                   {/* lightning bolt */}
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M13 2L4.5 13.5H11.5L11 22L19.5 10.5H12.5L13 2Z" fill={accent} strokeLinejoin="round"/>
                   </svg>
                 </div>
                 <div>
-                  <div style={{ fontSize:15,fontWeight:700,color:textPrimary,letterSpacing:"-.02em" }}>Journey Planner</div>
-                  <div style={{ fontSize:11,color:textSub,marginTop:2 }}>AI-powered route optimisation</div>
+                  <div style={{ fontSize:17,fontWeight:700,color:textPrimary,letterSpacing:"-.02em" }}>Journey Planner</div>
+                  <div style={{ fontSize:12,color:textSub,marginTop:2 }}>AI-powered route optimisation</div>
                 </div>
               </div>
               {/* LIVE pill */}
@@ -248,7 +260,7 @@ export default function PlanPage() {
               </div>
             </div>
 
-            <div style={{ padding:"28px 32px 0" }}>
+            <div style={{ padding:"32px 38px 0" }}>
 
               {/* ══ § 1 — ROUTE ══ */}
               <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:16 }}>
@@ -261,11 +273,11 @@ export default function PlanPage() {
               {/* Route inputs + connector */}
               <div style={{ position:"relative",marginBottom:22 }}>
                 {/* vertical connector */}
-                <div style={{ position:"absolute",left:19,top:56,height:56,width:2,background:`linear-gradient(to bottom,#22D3EE,${accent})`,borderRadius:2,opacity:.4,zIndex:0,pointerEvents:"none" }}/>
+                <div style={{ position:"absolute",left:23,top:64,height:62,width:2,background:`linear-gradient(to bottom,#22D3EE,${accent})`,borderRadius:2,opacity:.4,zIndex:0,pointerEvents:"none" }}/>
 
                 {/* FROM */}
                 <div style={{ position:"relative",marginBottom:8 }}>
-                  <div style={{ position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",zIndex:2 }}>
+                  <div style={{ position:"absolute",left:17,top:"50%",transform:"translateY(-50%)",zIndex:2 }}>
                     <div style={{ width:14,height:14,borderRadius:"50%",background:"#22D3EE",boxShadow:"0 0 12px rgba(34,211,238,.80),0 0 0 3px rgba(34,211,238,.20)" }}/>
                   </div>
                   <PlacesAutocomplete
@@ -277,7 +289,7 @@ export default function PlanPage() {
                     onKeyDown={e => e.key==="Enter" && document.getElementById("plan-dest")?.focus()}
                     placeholder="From — Delhi, Mumbai, Noida…"
                     className="plan-input"
-                    inputStyle={{ width:"100%",padding:"16px 16px 16px 42px",background:inputBg,border:`1.5px solid ${inputBorder}`,borderRadius:14,fontSize:14,color:textPrimary,outline:"none",boxSizing:"border-box",fontFamily:"inherit" }}
+                    inputStyle={{ width:"100%",padding:"19px 18px 19px 48px",background:inputBg,border:`1.5px solid ${inputBorder}`,borderRadius:15,fontSize:15.5,color:textPrimary,outline:"none",boxSizing:"border-box",fontFamily:"inherit" }}
                     accentColor={accent} dropdownBg={cardBg} dropdownBorder={cardBorder} textPrimary={textPrimary} textSub={textSub}
                   />
                 </div>
@@ -298,7 +310,7 @@ export default function PlanPage() {
 
                 {/* TO */}
                 <div style={{ position:"relative" }}>
-                  <div style={{ position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",zIndex:2 }}>
+                  <div style={{ position:"absolute",left:17,top:"50%",transform:"translateY(-50%)",zIndex:2 }}>
                     <div style={{ width:14,height:14,borderRadius:"50%",background:accent,boxShadow:`0 0 12px ${accent}90,0 0 0 3px ${accent}25` }}/>
                   </div>
                   <PlacesAutocomplete
@@ -311,14 +323,14 @@ export default function PlanPage() {
                     onKeyDown={e => e.key==="Enter" && handlePlan()}
                     placeholder="To — Agra, Pune, Patna…"
                     className="plan-input"
-                    inputStyle={{ width:"100%",padding:"16px 16px 16px 42px",background:inputBg,border:`1.5px solid ${inputBorder}`,borderRadius:14,fontSize:14,color:textPrimary,outline:"none",boxSizing:"border-box",fontFamily:"inherit" }}
+                    inputStyle={{ width:"100%",padding:"19px 18px 19px 48px",background:inputBg,border:`1.5px solid ${inputBorder}`,borderRadius:15,fontSize:15.5,color:textPrimary,outline:"none",boxSizing:"border-box",fontFamily:"inherit" }}
                     accentColor={accent} dropdownBg={cardBg} dropdownBorder={cardBorder} textPrimary={textPrimary} textSub={textSub}
                   />
                 </div>
               </div>
 
               {/* divider */}
-              <div style={{ height:1,background:cardBorder,margin:"0 -32px 24px" }}/>
+              <div style={{ height:1,background:cardBorder,margin:"0 -38px 26px" }}/>
 
               {/* ══ § 2 — VEHICLE ══ */}
               <div style={{ marginBottom:24 }}>
@@ -340,7 +352,7 @@ export default function PlanPage() {
                         onClick={() => setVehicleId(v.id)}
                         className={`plan-vchip${active ? " active-chip" : ""}`}
                         style={{
-                          padding:"14px 8px 12px",borderRadius:14,cursor:"pointer",
+                          padding:"17px 10px 15px",borderRadius:15,cursor:"pointer",
                           background: active ? accentDim : raisedBg,
                           border: `1.5px solid ${active ? accentBorder : cardBorder}`,
                           textAlign:"center",lineHeight:1.3,
@@ -370,7 +382,7 @@ export default function PlanPage() {
               </div>
 
               {/* divider */}
-              <div style={{ height:1,background:cardBorder,margin:"0 -32px 24px" }}/>
+              <div style={{ height:1,background:cardBorder,margin:"0 -38px 26px" }}/>
 
               {/* ══ § 3 — CHARGING PREFERENCES ══ */}
               <div style={{ marginBottom:24 }}>
@@ -421,7 +433,7 @@ export default function PlanPage() {
               </div>
 
               {/* divider */}
-              <div style={{ height:1,background:cardBorder,margin:"0 -32px 24px" }}/>
+              <div style={{ height:1,background:cardBorder,margin:"0 -38px 26px" }}/>
 
               {/* ══ § 4 — TRIP SUMMARY ══ */}
               <div style={{ marginBottom:24 }}>
@@ -464,25 +476,25 @@ export default function PlanPage() {
 
             {/* Error */}
             {error && (
-              <div style={{ margin:"0 32px 16px",padding:"12px 16px",borderRadius:12,background:"rgba(255,90,95,.08)",border:"1px solid rgba(255,90,95,.22)",color:"#FF5A5F",fontSize:13,display:"flex",alignItems:"center",gap:8 }}>
+              <div style={{ margin:"0 38px 16px",padding:"12px 16px",borderRadius:12,background:"rgba(255,90,95,.08)",border:"1px solid rgba(255,90,95,.22)",color:"#FF5A5F",fontSize:13,display:"flex",alignItems:"center",gap:8 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#FF5A5F" strokeWidth="2"/><path d="M12 8v4M12 16h.01" stroke="#FF5A5F" strokeWidth="2" strokeLinecap="round"/></svg>
                 {error}
               </div>
             )}
 
             {/* ══ § 5 — ACTION ══ */}
-            <div style={{ padding:"0 32px 28px" }}>
+            <div style={{ padding:"0 38px 32px" }}>
               <button
                 className="plan-cta"
                 onClick={handlePlan}
                 disabled={planning}
                 style={{
-                  width:"100%", padding:"19px 24px", borderRadius:16,
+                  width:"100%", padding:"22px 24px", borderRadius:16,
                   background: planning
                     ? (isLight?"#CBD5E1":"#1A2218")
                     : `linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C862"})`,
                   color: planning ? textSub : "#050708",
-                  fontSize:15.5, fontWeight:800, border:"none",
+                  fontSize:16.5, fontWeight:800, border:"none",
                   cursor: planning ? "not-allowed" : "pointer",
                   display:"flex", alignItems:"center", justifyContent:"center", gap:10,
                   boxShadow: planning ? "none"

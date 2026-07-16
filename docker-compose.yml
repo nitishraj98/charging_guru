@@ -57,7 +57,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     command: alembic upgrade head
-    env_file: ./backend/.env.example
+    env_file: ./backend/.env
     environment:
       CG_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/chargingguru
       CG_REDIS_URL: redis://redis:6379/0
@@ -79,7 +79,7 @@ services:
         --reload
         --reload-dir /app/app
         --log-level info
-    env_file: ./backend/.env.example
+    env_file: ./backend/.env
     environment:
       # Override env_file values with docker-internal service hostnames.
       CG_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/chargingguru

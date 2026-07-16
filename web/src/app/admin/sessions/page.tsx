@@ -1,127 +1,125 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { Zap, Clock } from "lucide-react";
-import { getTheme, authFetch, fmtRupee, STATUS_BOOKING, fmtDateTime, C } from "@/lib/admin-ui";
+import { useRouter } from "next/navigation";
+import { Zap, User, MapPin, PlugZap } from "lucide-react";
+import { authFetch, fmtRupee, fmtDateTime } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
+import {
+  getAdminTheme, Card, DataTable, Column, StatusBadge, PageHeader,
+  Drawer, DrawerRow, Button, useAdminData,
+} from "@/components/admin";
 
 interface Booking {
-  id: string; user_id: string; charger_id: string; slot_id: string;
-  status: string; amount: number; hold_expires_at: string | null; created_at: string;
+  id: string; user_id: string; station_id: string; charger_id: string;
+  status: string; amount: number; created_at: string; slot_start: string; slot_end: string;
 }
 interface PagedResult { items: Booking[]; total: number; page: number; per_page: number; pages: number; }
 
-const SESSION_STATUSES = ["CHECKED_IN", "IN_PROGRESS"];
+const SESSION_STATUSES = ["CHECKED_IN", "IN_PROGRESS"] as const;
 
 export default function AdminSessionsPage() {
+  const router = useRouter();
   const { isLight } = useTheme();
-  const th = getTheme(isLight);
+  const th = getAdminTheme(isLight);
+  const { userById, stationById, chargerById } = useAdminData();
 
-  const [data,    setData]    = useState<PagedResult | null>(null);
-  const [page,    setPage]    = useState(1);
-  const [status,  setStatus]  = useState("IN_PROGRESS");
+  const [data, setData] = useState<PagedResult | null>(null);
+  const [status, setStatus] = useState<typeof SESSION_STATUSES[number]>("IN_PROGRESS");
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
+  const [drawerId, setDrawerId] = useState<string | null>(null);
 
-  const load = useCallback(async (p = 1) => {
-    setLoading(true); setError("");
+  const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await authFetch(`/api/v1/admin/bookings?page=${p}&per_page=20&status=${status}`);
+      const res = await authFetch(`/api/v1/admin/bookings?page=1&per_page=50&status=${status}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setData(await res.json());
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }
+    } catch { /* handled via empty state */ }
     finally { setLoading(false); }
   }, [status]);
 
-  useEffect(() => { setPage(1); load(1); }, [status]); // eslint-disable-line
-  useEffect(() => { load(page); }, [page, load]);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const t = setInterval(load, 20000); // real polling refresh, not a fake ticker
+    return () => clearInterval(t);
+  }, [load]);
 
-  const tH: React.CSSProperties = { padding: "10px 18px", fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: th.sub, textAlign: "left", borderBottom: `1px solid ${th.border}`, background: th.raised, whiteSpace: "nowrap" };
-  const tD: React.CSSProperties = { padding: "12px 18px", fontSize: 13, color: th.text, borderBottom: `1px solid ${th.border}`, verticalAlign: "middle" };
+  const drawerBooking = drawerId ? (data?.items.find(b => b.id === drawerId) ?? null) : null;
+  const drawerUser = drawerBooking ? userById.get(drawerBooking.user_id) : null;
+  const drawerStation = drawerBooking ? stationById.get(drawerBooking.station_id) : null;
+  const drawerCharger = drawerBooking ? chargerById.get(drawerBooking.charger_id) : null;
+
+  const columns: Column<Booking>[] = [
+    { key: "user", header: "User", render: b => {
+      const u = userById.get(b.user_id);
+      return u ? (
+        <div><div style={{ fontSize: 12.5, fontWeight: 500, color: th.text }}>{u.full_name ?? u.phone}</div><div style={{ fontSize: 11, color: th.textSub }}>{u.phone}</div></div>
+      ) : <span style={{ color: th.textMuted }}>—</span>;
+    } },
+    { key: "station", header: "Station / Charger", render: b => {
+      const st = stationById.get(b.station_id); const ch = chargerById.get(b.charger_id);
+      return <div><div style={{ fontSize: 12.5, color: th.text }}>{st?.name ?? "—"}</div><div style={{ fontSize: 11, color: th.textSub }}>{ch?.label ?? ""} {ch?.power_kw ? `· ${ch.power_kw}kW` : ""}</div></div>;
+    } },
+    { key: "status", header: "Status", render: b => (
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <div style={{ width: 6, height: 6, borderRadius: "50%", background: th.info, animation: "pulse 1.5s ease-in-out infinite" }} />
+        <StatusBadge status={b.status} th={th} dot={false} />
+      </div>
+    ) },
+    { key: "amount", header: "Amount", align: "right", render: b => <span style={{ fontFamily: th.mono, fontWeight: 700, color: th.success }}>{fmtRupee(b.amount)}</span> },
+    { key: "started", header: "Started", render: b => <span style={{ fontSize: 12, color: th.textSub }}>{fmtDateTime(b.slot_start ?? b.created_at)}</span> },
+  ];
 
   return (
-    <div style={{ padding: "24px 28px", background: th.bg, minHeight: "100%", fontFamily: C.sans }}>
+    <div style={{ padding: "24px 28px", background: th.bg, minHeight: "100%", fontFamily: th.sans }}>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
-
-      <div style={{ paddingBottom: 20, borderBottom: `1px solid ${th.border}`, marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-          <Zap size={18} color={C.blue} strokeWidth={2} />
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: th.text, letterSpacing: "-0.02em" }}>Charging Sessions</h1>
-          {data && data.total > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 999, background: `${C.blue}12`, border: `1px solid ${C.blue}35`, fontSize: 11, color: C.blue, fontWeight: 600, marginLeft: 4 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.blue, animation: "pulse 1.5s ease-in-out infinite" }} />
-              {data.total} active
-            </div>
-          )}
-        </div>
-        <p style={{ fontSize: 12, color: th.sub }}>Live view of bookings currently in session</p>
-      </div>
+      <PageHeader th={th} title="Charging Sessions" subtitle="Live view of bookings currently in session — auto-refreshes every 20s" />
 
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {SESSION_STATUSES.map(s => {
-          const meta  = STATUS_BOOKING[s];
-          const active = status === s;
-          return (
-            <button key={s} onClick={() => setStatus(s)} style={{
-              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: active ? 600 : 400,
-              cursor: "pointer", fontFamily: C.sans, transition: "all 0.1s",
-              background: active ? `${meta.color}15` : th.card,
-              border: `1px solid ${active ? meta.color + "40" : th.border}`,
-              color: active ? meta.color : th.sub,
-            }}>{meta.label}</button>
-          );
-        })}
+        {SESSION_STATUSES.map(s => (
+          <button key={s} onClick={() => setStatus(s)} style={{
+            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: status === s ? 600 : 400,
+            cursor: "pointer", fontFamily: th.sans,
+            background: status === s ? th.accentDim : th.card,
+            border: `1px solid ${status === s ? th.accentBorder : th.border}`,
+            color: status === s ? th.accent : th.textSub,
+          }}>{s.replace(/_/g, " ")}{data && status === s ? ` (${data.total})` : ""}</button>
+        ))}
       </div>
 
-      {error && <div style={{ padding: "12px 16px", borderRadius: 10, background: `${C.red}10`, border: `1px solid ${C.red}30`, color: C.red, marginBottom: 16, fontSize: 13 }}>{error}</div>}
+      <Card th={th} padding={16}>
+        <DataTable
+          th={th} columns={columns} rows={data?.items ?? []} rowKey={b => b.id}
+          searchPlaceholder="Search by user, station…"
+          searchFn={(b, q) => {
+            const u = userById.get(b.user_id); const st = stationById.get(b.station_id);
+            return (u?.full_name ?? "").toLowerCase().includes(q) || (st?.name ?? "").toLowerCase().includes(q);
+          }}
+          onRowClick={b => setDrawerId(b.id)}
+          pageSize={50}
+          emptyState={
+            <div style={{ textAlign: "center", padding: "60px" }}>
+              <Zap size={28} color={th.textMuted} style={{ marginBottom: 12 }} />
+              <div style={{ color: th.textSub, fontSize: 14 }}>{loading ? "Loading…" : "No active sessions right now"}</div>
+            </div>
+          }
+        />
+      </Card>
 
-      <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>{["Booking ID", "User ID", "Status", "Amount", "Started"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>
-          </thead>
-          <tbody>
-            {loading && !data && <tr><td colSpan={5} style={{ ...tD, textAlign: "center", padding: "48px", color: th.sub }}>Loading…</td></tr>}
-            {!loading && data?.items.length === 0 && (
-              <tr>
-                <td colSpan={5} style={{ ...tD, textAlign: "center", padding: "60px" }}>
-                  <Clock size={28} color={th.muted} style={{ marginBottom: 12 }} />
-                  <div style={{ color: th.sub, fontSize: 14 }}>No active sessions right now</div>
-                </td>
-              </tr>
-            )}
-            {data?.items.map(b => {
-              const meta = STATUS_BOOKING[b.status] ?? { label: b.status, color: th.sub };
-              return (
-                <tr key={b.id}
-                  onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = th.raised; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}
-                  style={{ transition: "background 0.1s" }}>
-                  <td style={tD}><span style={{ fontFamily: C.mono, fontSize: 12 }}>{b.id.slice(0, 16)}…</span></td>
-                  <td style={{ ...tD, fontFamily: C.mono, fontSize: 11, color: th.sub }}>{b.user_id.slice(0, 16)}…</td>
-                  <td style={tD}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: meta.color, animation: "pulse 1.5s ease-in-out infinite" }} />
-                      <span style={{ fontSize: 11, fontWeight: 600, color: meta.color }}>{meta.label}</span>
-                    </div>
-                  </td>
-                  <td style={{ ...tD, fontFamily: C.mono, fontWeight: 600, color: C.green }}>{fmtRupee(b.amount)}</td>
-                  <td style={{ ...tD, fontSize: 12, color: th.sub }}>{fmtDateTime(b.created_at)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {data && data.pages > 1 && (
-        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 20 }}>
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
-            style={{ padding: "7px 14px", borderRadius: 8, fontSize: 12, cursor: page > 1 ? "pointer" : "default", background: th.card, border: `1px solid ${th.border}`, color: page > 1 ? th.text : th.sub, fontFamily: C.sans }}>← Prev</button>
-          <span style={{ padding: "7px 12px", fontSize: 12, color: th.sub }}>{page} / {data.pages}</span>
-          <button disabled={page === data.pages} onClick={() => setPage(p => p + 1)}
-            style={{ padding: "7px 14px", borderRadius: 8, fontSize: 12, cursor: page < data.pages ? "pointer" : "default", background: th.card, border: `1px solid ${th.border}`, color: page < data.pages ? th.text : th.sub, fontFamily: C.sans }}>Next →</button>
-        </div>
-      )}
+      <Drawer th={th} open={!!drawerBooking} onClose={() => setDrawerId(null)} title="Session Detail" subtitle={drawerBooking?.id} icon={<Zap size={18} color={th.accent} />}>
+        {drawerBooking && (
+          <div>
+            <div style={{ marginBottom: 16 }}><StatusBadge status={drawerBooking.status} th={th} /></div>
+            <DrawerRow th={th} label="Amount" value={fmtRupee(drawerBooking.amount)} />
+            <DrawerRow th={th} label="Slot" value={drawerBooking.slot_start ? fmtDateTime(drawerBooking.slot_start) : "—"} />
+            <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+              {drawerUser && <Button th={th} variant="secondary" icon={<User size={13} color={th.accent} />} fullWidth onClick={() => router.push(`/admin/users?focus=${drawerUser.id}`)}>{drawerUser.full_name ?? drawerUser.phone}</Button>}
+              {drawerStation && <Button th={th} variant="secondary" icon={<MapPin size={13} color={th.accent} />} fullWidth onClick={() => router.push(`/admin/stations?focus=${drawerStation.id}`)}>{drawerStation.name}</Button>}
+              {drawerCharger && <Button th={th} variant="secondary" icon={<PlugZap size={13} color={th.accent} />} fullWidth onClick={() => router.push(`/admin/chargers?focus=${drawerCharger.id}`)}>{drawerCharger.label}</Button>}
+            </div>
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }

@@ -125,7 +125,7 @@ export default function ProfilePage() {
     <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
 
-      <div className="fade-up" style={{ maxWidth: 580, margin: "0 auto", padding: "36px 24px 100px" }}>
+      <div className="fade-up" style={{ maxWidth: 700, margin: "0 auto", padding: "36px 24px 100px" }}>
 
         {/* ── Profile Hero ── */}
         <div style={{

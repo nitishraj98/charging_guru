@@ -5,15 +5,8 @@ import { stations, bookings as bookingsApi, Station, Charger, Review, StationSta
 import { useUser } from "@/contexts/UserContext";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Zap, Navigation, Share2, Check, MapPin, Star, Wifi, Coffee, ParkingCircle, ShoppingCart, Clock, ChevronRight, Shield } from "lucide-react";
-
-const AMENITY_META: Record<string, { icon: React.ReactNode; label: string }> = {
-  cafe:     { icon: <Coffee size={13}/>,       label: "Café nearby"      },
-  coffee:   { icon: <Coffee size={13}/>,       label: "Coffee"           },
-  wifi:     { icon: <Wifi size={13}/>,         label: "Free Wi-Fi"       },
-  parking:  { icon: <ParkingCircle size={13}/>, label: "Free Parking"    },
-  store:    { icon: <ShoppingCart size={13}/>, label: "Convenience store"},
-};
+import { Zap, Navigation, Share2, Check, MapPin, Star, Clock, ChevronRight, Shield, ArrowLeft, Plug, CheckCircle2, Lock, RotateCcw } from "lucide-react";
+import { AMENITY_META } from "@/lib/amenities";
 
 const STATUS_STYLE: Record<string, { color: string; bg: string; border: string; dot: string; label: string }> = {
   AVAILABLE:   { color: "#4DFFA6", bg: "rgba(0,230,118,.10)", border: "rgba(0,230,118,.25)",   dot: "#00E676", label: "Available"    },
@@ -32,7 +25,7 @@ function estChargeTime(kw: number) {
   return m ? `~${h}h ${m}m` : `~${h}h`;
 }
 
-function HeroBanner() {
+function HeroBanner({ isLight }: { isLight: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef    = useRef<number>(0);
 
@@ -199,12 +192,12 @@ function HeroBanner() {
     // ── Grid of dots (static, drawn once as part of clear) ───────────────
     function drawGrid() {
       ctx.save();
-      ctx.globalAlpha = 0.09;
+      ctx.globalAlpha = isLight ? 0.16 : 0.09;
       for (let r = 0; r < H; r += 28) {
         for (let c = 0; c < W; c += 28) {
           ctx.beginPath();
           ctx.arc(c + 4, r + 4, 1, 0, Math.PI * 2);
-          ctx.fillStyle = "#00E676";
+          ctx.fillStyle = isLight ? "#00A855" : "#00E676";
           ctx.fill();
         }
       }
@@ -236,12 +229,18 @@ function HeroBanner() {
       t++;
       ringAngle += 0.008;
 
-      // Clear with dark green bg
+      // Clear with theme-matched bg — dark green for dark mode, soft mint for light mode
       ctx.clearRect(0, 0, W, H);
       const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-      bgGrad.addColorStop(0, "#040A06");
-      bgGrad.addColorStop(0.5, "#071510");
-      bgGrad.addColorStop(1, "#050C07");
+      if (isLight) {
+        bgGrad.addColorStop(0, "#F6FCF8");
+        bgGrad.addColorStop(0.5, "#EAFBF1");
+        bgGrad.addColorStop(1, "#F1FAF5");
+      } else {
+        bgGrad.addColorStop(0, "#040A06");
+        bgGrad.addColorStop(0.5, "#071510");
+        bgGrad.addColorStop(1, "#050C07");
+      }
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, W, H);
 
@@ -308,7 +307,7 @@ function HeroBanner() {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", onResize);
     };
-  }, []);
+  }, [isLight]);
 
   return (
     <canvas
@@ -392,6 +391,26 @@ export default function StationDetailPage() {
   const accentDim   = isLight ? "rgba(0,200,98,.07)"  : "rgba(0,230,118,.06)";
   const accentBrd   = isLight ? "rgba(0,200,98,.28)"  : "rgba(0,230,118,.20)";
 
+  // Hero banner tokens — theme-matched instead of always-dark
+  const heroBg          = isLight ? "#F1FAF5" : "#040A06";
+  const heroScrim        = isLight
+    ? "linear-gradient(0deg,rgba(246,252,248,.97) 0%,rgba(246,252,248,.78) 70%,transparent 100%)"
+    : "linear-gradient(0deg,rgba(4,8,6,.96) 0%,rgba(4,8,6,.7) 70%,transparent 100%)";
+  const heroBtnBg        = isLight ? "rgba(255,255,255,.75)" : "rgba(4,6,5,.65)";
+  const heroBtnBorder    = isLight ? "rgba(0,164,85,.25)"    : "rgba(0,230,118,.15)";
+  const heroBtnText      = isLight ? "#0F2A1B"                : "#E8ECEE";
+  const heroTitle        = isLight ? "#0A2016"                : "#F0F4F2";
+  const heroMetaSub      = isLight ? "#3F5B4B"                : "#C0C8CC";
+  const heroMetaMuted    = isLight ? "#5C7566"                : "#6B7479";
+  const heroMetaFaint    = isLight ? "#6B8578"                : "#98A1A6";
+  const heroPillBg       = isLight ? "rgba(255,255,255,.75)" : "rgba(4,8,6,.7)";
+  const heroPillBorder   = isLight ? "rgba(15,23,42,.10)"    : "rgba(255,255,255,.12)";
+  const heroStatBarBg    = isLight ? "rgba(255,255,255,.72)" : "rgba(10,14,12,.75)";
+  const heroStatBarBrd   = isLight ? "rgba(0,164,85,.18)"    : "rgba(0,230,118,.12)";
+  const heroStatDivider  = isLight ? "rgba(15,23,42,.08)"    : "rgba(255,255,255,.06)";
+  const heroStatLabel    = isLight ? "#5C7566"                : "#495154";
+  const heroStatVal      = isLight ? "#0F2A1B"                : "#D0D8DC";
+
   useEffect(() => {
     stations.get(id).then(s => { setStation(s); setSelCharger(s.chargers?.find(c => c.status === "AVAILABLE") ?? s.chargers?.[0] ?? null); })
       .catch(console.error).finally(() => setLoading(false));
@@ -445,9 +464,13 @@ export default function StationDetailPage() {
     <div style={{ background: bg, minHeight: "100vh" }}>
       <NavBar />
       <div style={{ padding: "80px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 52, marginBottom: 16 }}>⚡</div>
+        <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(255,90,95,.10)", border: "1px solid rgba(255,90,95,.25)", display: "grid", placeItems: "center", margin: "0 auto 18px" }}>
+          <Zap size={28} color="#FF5A5F"/>
+        </div>
         <p style={{ color: "#FF5A5F", fontSize: 16, marginBottom: 20 }}>Station not found.</p>
-        <button onClick={() => router.back()} style={{ padding: "12px 26px", borderRadius: 12, background: cardBg, border: `1px solid ${cardBorder}`, color: textPrimary, cursor: "pointer", fontSize: 14 }}>← Go back</button>
+        <button onClick={() => router.back()} style={{ padding: "12px 26px", borderRadius: 12, background: cardBg, border: `1px solid ${cardBorder}`, color: textPrimary, cursor: "pointer", fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <ArrowLeft size={14}/> Go back
+        </button>
       </div>
     </div>
   );
@@ -482,13 +505,10 @@ export default function StationDetailPage() {
     } else { copyFallback(); }
   }
 
-  // Fake review distribution seeded from rating
+  // Real star distribution from loaded reviews (not a fabricated split)
   const avg = station.rating_avg ?? 0;
   const total = station.rating_count ?? 0;
-  const reviewDist = avg > 0 ? [
-    Math.round(total * 0.55), Math.round(total * 0.25),
-    Math.round(total * 0.11), Math.round(total * 0.06), Math.round(total * 0.03),
-  ] : [0,0,0,0,0];
+  const reviewDist = [5, 4, 3, 2, 1].map(star => reviews.filter(r => r.rating === star).length);
 
   return (
     <div style={{ background: bg, minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
@@ -516,7 +536,8 @@ export default function StationDetailPage() {
         .book-cta { transition: all .22s cubic-bezier(.16,1,.3,1) }
         .book-cta:hover:not(:disabled) { transform: translateY(-3px); box-shadow: ${isLight?"0 10px 36px rgba(0,200,98,.5)":"0 0 50px rgba(0,230,118,.32)"} !important }
 
-        .station-layout { display:grid; grid-template-columns:1fr 360px; gap:28px; align-items:start }
+        .station-layout { display:grid; grid-template-columns:minmax(0,920px) minmax(340px,460px); gap:32px; align-items:start; justify-content:center }
+        @media(max-width:1400px) { .station-layout { grid-template-columns:1fr 380px } }
         @media(max-width:900px) { .station-layout { grid-template-columns:1fr } }
 
         .pulse-dot { animation: pulse-dot 2s infinite }
@@ -525,61 +546,61 @@ export default function StationDetailPage() {
       <NavBar />
 
       {/* ═══ HERO ═══ */}
-      <div style={{ position: "relative", height: 340, overflow: "hidden", background: "#040A06" }}>
+      <div style={{ position: "relative", height: 340, overflow: "hidden", background: heroBg }}>
 
-        {/* Canvas animation — always dark for best visual impact */}
-        <HeroBanner />
+        {/* Canvas animation — theme-matched background */}
+        <HeroBanner isLight={isLight} />
 
         {/* Back + share buttons */}
         <div style={{ position: "absolute", top: 22, left: 24, right: 24, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 2 }}>
-          <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(4,6,5,.65)", border: "1px solid rgba(0,230,118,.15)", color: "#E8ECEE", cursor: "pointer", display: "grid", placeItems: "center", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transition: "all .15s" }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 12, background: heroBtnBg, border: `1px solid ${heroBtnBorder}`, color: heroBtnText, cursor: "pointer", display: "grid", placeItems: "center", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transition: "all .15s" }}>
+            <ArrowLeft size={16} strokeWidth={2.3}/>
           </button>
-          <button onClick={handleShare} style={{ width: 40, height: 40, borderRadius: 12, background: copied?"rgba(0,230,118,.18)":"rgba(4,6,5,.65)", border: `1px solid ${copied?"rgba(0,230,118,.5)":"rgba(0,230,118,.15)"}`, color: copied?"#00E676":"#E8ECEE", cursor: "pointer", display: "grid", placeItems: "center", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transition: "all .2s" }}>
+          <button onClick={handleShare} style={{ width: 40, height: 40, borderRadius: 12, background: copied?(isLight?"rgba(0,200,98,.16)":"rgba(0,230,118,.18)"):heroBtnBg, border: `1px solid ${copied?(isLight?"rgba(0,164,85,.4)":"rgba(0,230,118,.5)"):heroBtnBorder}`, color: copied?accent:heroBtnText, cursor: "pointer", display: "grid", placeItems: "center", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transition: "all .2s" }}>
             {copied ? <Check size={15}/> : <Share2 size={15}/>}
           </button>
         </div>
 
         {/* Hero content */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "28px 28px 24px", background: "linear-gradient(0deg,rgba(4,8,6,.96) 0%,rgba(4,8,6,.7) 70%,transparent 100%)" }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "28px 28px 24px", background: heroScrim }}>
           {/* Badges row */}
           <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
             {hasDC && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: "rgba(0,83,43,.9)", border: "1px solid rgba(0,164,85,.6)", color: "#4DFFA6", backdropFilter: "blur(8px)" }}>
-                <Zap size={9} fill="#4DFFA6" color="#4DFFA6"/> {maxPower >= 50 ? "Fast DC" : "DC"} · {maxPower} kW
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: isLight?"rgba(0,164,85,.14)":"rgba(0,83,43,.9)", border: `1px solid ${isLight?"rgba(0,164,85,.4)":"rgba(0,164,85,.6)"}`, color: isLight?"#0A7A3F":"#4DFFA6", backdropFilter: "blur(8px)" }}>
+                <Zap size={9} fill={isLight?"#0A7A3F":"#4DFFA6"} color={isLight?"#0A7A3F":"#4DFFA6"}/> {maxPower >= 50 ? "Fast DC" : "DC"} · {maxPower} kW
               </span>
             )}
             {chargers.some(c => c.charger_type === "AC") && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(34,211,238,.12)", border: "1px solid rgba(34,211,238,.35)", color: "#22D3EE", backdropFilter: "blur(8px)" }}>
-                ⚡ AC · {chargers.filter(c=>c.charger_type==="AC").reduce((m,c)=>Math.max(m,c.power_kw),0)} kW
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: isLight?"rgba(8,145,178,.10)":"rgba(34,211,238,.12)", border: `1px solid ${isLight?"rgba(8,145,178,.3)":"rgba(34,211,238,.35)"}`, color: isLight?"#0891B2":"#22D3EE", backdropFilter: "blur(8px)" }}>
+                <Plug size={10} color={isLight?"#0891B2":"#22D3EE"}/> AC · {chargers.filter(c=>c.charger_type==="AC").reduce((m,c)=>Math.max(m,c.power_kw),0)} kW
               </span>
             )}
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(4,8,6,.7)", border: "1px solid rgba(255,255,255,.12)", color: "#98A1A6", backdropFilter: "blur(8px)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: heroPillBg, border: `1px solid ${heroPillBorder}`, color: heroMetaFaint, backdropFilter: "blur(8px)" }}>
               From ₹{(minPrice/100).toFixed(0)}/kWh
             </span>
           </div>
 
           {/* Station name */}
-          <h1 style={{ fontSize: "clamp(20px,3.5vw,34px)", fontWeight: 800, letterSpacing: "-.04em", color: "#F0F4F2", marginBottom: 10, lineHeight: 1.1 }}>{station.name}</h1>
+          <h1 style={{ fontSize: "clamp(20px,3.5vw,34px)", fontWeight: 800, letterSpacing: "-.04em", color: heroTitle, marginBottom: 10, lineHeight: 1.1 }}>{station.name}</h1>
 
           {/* Meta row */}
           <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             {avg > 0 && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "#C0C8CC" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: heroMetaSub }}>
                 <Star size={12} fill="#FFC043" color="#FFC043"/>
-                <strong style={{ color: "#F0F4F2", fontWeight: 700 }}>{avg.toFixed(1)}</strong>
-                <span style={{ color: "#6B7479" }}>({total} reviews)</span>
+                <strong style={{ color: heroTitle, fontWeight: 700 }}>{avg.toFixed(1)}</strong>
+                <span style={{ color: heroMetaMuted }}>({total} reviews)</span>
               </span>
             )}
             {(station.city || station.address) && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "#98A1A6" }}>
-                <MapPin size={11} color="#6B7479"/> {station.city}{station.city && station.address ? " · " : ""}{station.address?.slice(0,50)}{(station.address?.length??0)>50?"…":""}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: heroMetaFaint }}>
+                <MapPin size={11} color={heroMetaMuted}/> {station.city}{station.city && station.address ? " · " : ""}{station.address?.slice(0,50)}{(station.address?.length??0)>50?"…":""}
               </span>
             )}
           </div>
 
           {/* Glass stats bar */}
-          <div style={{ display: "flex", gap: 0, marginTop: 20, background: "rgba(10,14,12,.75)", border: "1px solid rgba(0,230,118,.12)", borderRadius: 16, overflow: "hidden", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", gap: 0, marginTop: 20, background: heroStatBarBg, border: `1px solid ${heroStatBarBrd}`, borderRadius: 16, overflow: "hidden", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
             {[
               { label: "CHARGERS", val: `${chargers.length}` },
               { label: "AVAILABLE", val: `${available.length}`, green: available.length > 0 },
@@ -588,9 +609,9 @@ export default function StationDetailPage() {
               { label: "SESSIONS TODAY", val: stats ? `${stats.sessions_today}` : "—", mono: true },
               { label: "UPTIME", val: stats ? `${stats.uptime_pct}%` : "—", mono: true, green: (stats?.uptime_pct ?? 0) >= 95 },
             ].map((item, i, arr) => (
-              <div key={item.label} style={{ flex: 1, padding: "12px 14px", textAlign: "center", borderRight: i < arr.length-1 ? "1px solid rgba(255,255,255,.06)" : "none" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: ".1em", color: "#495154", marginBottom: 5, textTransform: "uppercase" }}>{item.label}</div>
-                <div style={{ fontFamily: item.mono?"'JetBrains Mono',monospace":undefined, fontWeight: 800, fontSize: 16, color: item.green?"#00E676":"#D0D8DC", lineHeight: 1 }}>{item.val}</div>
+              <div key={item.label} style={{ flex: 1, padding: "12px 14px", textAlign: "center", borderRight: i < arr.length-1 ? `1px solid ${heroStatDivider}` : "none" }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: ".1em", color: heroStatLabel, marginBottom: 5, textTransform: "uppercase" }}>{item.label}</div>
+                <div style={{ fontFamily: item.mono?"'JetBrains Mono',monospace":undefined, fontWeight: 800, fontSize: 16, color: item.green?accent:heroStatVal, lineHeight: 1 }}>{item.val}</div>
               </div>
             ))}
           </div>
@@ -598,7 +619,7 @@ export default function StationDetailPage() {
       </div>
 
       {/* ═══ BODY ═══ */}
-      <div className="st-fade" style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 120px" }}>
+      <div className="st-fade" style={{ width: "100%", padding: "28px clamp(20px,4vw,56px) 120px", boxSizing: "border-box" }}>
         <div className="station-layout">
 
           {/* ══ LEFT ══ */}
@@ -627,7 +648,9 @@ export default function StationDetailPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {chargers.length === 0 && (
                   <div style={{ padding: "40px 24px", textAlign: "center", background: cardBg, borderRadius: 18, border: `1px solid ${cardBorder}` }}>
-                    <div style={{ fontSize: 32, marginBottom: 10 }}>🔌</div>
+                    <div style={{ width: 52, height: 52, borderRadius: 16, background: raisedBg, border: `1px solid ${cardBorder}`, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>
+                      <Plug size={22} color={textMuted}/>
+                    </div>
                     <p style={{ color: textSub, fontSize: 14 }}>No chargers registered yet.</p>
                   </div>
                 )}
@@ -646,7 +669,7 @@ export default function StationDetailPage() {
                         <div style={{ width: 50, height: 50, borderRadius: 15, flexShrink: 0, background: isAv?accentDim:raisedBg, border: `1.5px solid ${isAv?accentBrd:cardBorder}`, display: "grid", placeItems: "center", position: "relative" }}>
                           {c.charger_type === "DC"
                             ? <Zap size={22} color={isAv?accent:textSub} fill={isAv?accent:"none"}/>
-                            : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={isAv?accent:textSub} strokeWidth="2" strokeLinecap="round"><path d="M12 2v7m0 13v-7m0 0H7a2 2 0 010-4h10a2 2 0 010 4h-5z"/></svg>
+                            : <Plug size={22} color={isAv?accent:textSub} strokeWidth={2}/>
                           }
                           {isSel && <div style={{ position: "absolute", top: -4, right: -4, width: 12, height: 12, borderRadius: "50%", background: accent, border: `2px solid ${cardBg}` }}/>}
                         </div>
@@ -749,9 +772,10 @@ export default function StationDetailPage() {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                       {station.amenities.map((a: string) => {
                         const meta = AMENITY_META[a.toLowerCase()];
+                        const AIcon = meta?.Icon;
                         return (
                           <div key={a} style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 14px", borderRadius: 12, background: raisedBg, border: `1px solid ${cardBorder}` }}>
-                            <span style={{ color: accent }}>{meta?.icon ?? "•"}</span>
+                            <span style={{ color: accent, display: "flex" }}>{AIcon ? <AIcon size={13} /> : "•"}</span>
                             <span style={{ fontSize: 12, fontWeight: 600, color: textSub }}>{meta?.label ?? a}</span>
                           </div>
                         );
@@ -830,7 +854,9 @@ export default function StationDetailPage() {
                   ))
                 ) : (
                   <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "48px 24px", textAlign: "center" }}>
-                    <div style={{ fontSize: 40, marginBottom: 14 }}>⭐</div>
+                    <div style={{ width: 56, height: 56, borderRadius: 18, background: "rgba(255,192,67,.12)", border: "1px solid rgba(255,192,67,.28)", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
+                      <Star size={24} color="#FFC043"/>
+                    </div>
                     <p style={{ fontWeight: 700, color: textPrimary, marginBottom: 6 }}>No reviews yet</p>
                     <p style={{ color: textSub, fontSize: 13 }}>Be the first to charge here and leave a review.</p>
                   </div>
@@ -841,13 +867,15 @@ export default function StationDetailPage() {
             {/* Trust strip */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginTop: 24 }}>
               {[
-                { icon: "✓", text: "Instant confirmation", color: accent },
-                { icon: "🔒",text: "Hold guaranteed",     color: accent },
-                { icon: "↩", text: "Cancel anytime",      color: accent },
+                { Icon: CheckCircle2, text: "Instant confirmation" },
+                { Icon: Lock,         text: "Hold guaranteed"      },
+                { Icon: RotateCcw,    text: "Cancel anytime"       },
               ].map(r => (
                 <div key={r.text} style={{ padding: "12px 10px", borderRadius: 14, background: accentDim, border: `1px solid ${accentBrd}`, textAlign: "center" }}>
-                  <div style={{ fontSize: 15, marginBottom: 4 }}>{r.icon}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: isLight?"#16A34A":r.color, letterSpacing: ".04em", lineHeight: 1.4 }}>{r.text}</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+                    <r.Icon size={16} color={isLight?"#16A34A":accent} strokeWidth={2.2}/>
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: isLight?"#16A34A":accent, letterSpacing: ".04em", lineHeight: 1.4 }}>{r.text}</div>
                 </div>
               ))}
             </div>
@@ -916,7 +944,9 @@ export default function StationDetailPage() {
                 </>
               ) : (
                 <div style={{ textAlign: "center", padding: "10px 0" }}>
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>🔌</div>
+                  <div style={{ width: 48, height: 48, borderRadius: 15, background: raisedBg, border: `1px solid ${cardBorder}`, display: "grid", placeItems: "center", margin: "0 auto 12px" }}>
+                    <Plug size={20} color={textMuted}/>
+                  </div>
                   <div style={{ fontWeight: 700, color: textPrimary, marginBottom: 6 }}>No chargers available</div>
                   <div style={{ fontSize: 13, color: textSub }}>Check back soon.</div>
                 </div>
@@ -956,9 +986,10 @@ export default function StationDetailPage() {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {station.amenities.map((a: string) => {
                     const meta = AMENITY_META[a.toLowerCase()];
+                    const AIcon = meta?.Icon;
                     return (
                       <span key={a} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, background: raisedBg, border: `1px solid ${cardBorder}`, color: textSub }}>
-                        <span style={{ color: accent }}>{meta?.icon ?? "•"}</span> {meta?.label ?? a}
+                        <span style={{ color: accent, display: "flex" }}>{AIcon ? <AIcon size={13} /> : "•"}</span> {meta?.label ?? a}
                       </span>
                     );
                   })}

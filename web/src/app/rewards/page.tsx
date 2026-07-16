@@ -90,7 +90,7 @@ export default function RewardsPage() {
   return (
     <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
-      <div className="fade-up" style={{ maxWidth: 620, margin: "0 auto", padding: "36px 24px 100px" }}>
+      <div className="fade-up" style={{ maxWidth: 760, margin: "0 auto", padding: "36px 24px 100px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>

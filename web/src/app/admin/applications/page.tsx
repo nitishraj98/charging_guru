@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Building2, CheckCircle, XCircle, MapPin, User } from "lucide-react";
 import { getTheme, authFetch, fmtDate, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAdminData } from "@/components/admin/AdminData";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ interface Paged<T> { items: T[]; total: number; page: number; per_page: number; 
 export default function AdminApplicationsPage() {
   const { isLight } = useTheme();
   const th = getTheme(isLight);
+  const { userById } = useAdminData();
 
   const [tab, setTab] = useState<"owner" | "station">("owner");
 
@@ -217,12 +219,13 @@ export default function AdminApplicationsPage() {
             <div className="admin-table-wrap" style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr>{["Business", "Location", "Planned Stations", "Message", "Submitted", "Actions"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>
+                  <tr>{["Business", "Applicant", "Location", "Planned Stations", "Message", "Submitted", "Actions"].map(h => <th key={h} style={tH}>{h}</th>)}</tr>
                 </thead>
                 <tbody>
-                  {loading && !ownerData && <tr><td colSpan={6} style={{ ...tD, textAlign: "center", padding: "48px", color: th.sub }}>Loading…</td></tr>}
+                  {loading && !ownerData && <tr><td colSpan={7} style={{ ...tD, textAlign: "center", padding: "48px", color: th.sub }}>Loading…</td></tr>}
                   {ownerData?.items.map(app => {
                     const busy = acting === app.id;
+                    const applicant = userById.get(app.user_id);
                     return (
                       <tr key={app.id}
                         onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = th.raised; }}
@@ -231,6 +234,10 @@ export default function AdminApplicationsPage() {
                         <td style={tD}>
                           <div style={{ fontWeight: 700, fontSize: 14 }}>{app.business_name}</div>
                           {app.gst_number && <div style={{ fontFamily: C.mono, fontSize: 10, color: th.sub, marginTop: 2 }}>GST: {app.gst_number}</div>}
+                        </td>
+                        <td style={tD}>
+                          <div style={{ fontSize: 12.5, fontWeight: 500 }}>{applicant?.full_name ?? "—"}</div>
+                          <div style={{ fontSize: 11, color: th.sub, marginTop: 2 }}>{applicant?.phone ?? app.user_id.slice(0, 12) + "…"}</div>
                         </td>
                         <td style={tD}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, color: th.sub, fontSize: 12 }}>
@@ -310,7 +317,14 @@ export default function AdminApplicationsPage() {
                           </div>
                           <div style={{ fontSize: 11, color: th.sub, marginTop: 3, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.address}</div>
                         </td>
-                        <td style={{ ...tD, fontFamily: C.mono, fontSize: 11, color: th.sub }}>{s.owner_id.slice(0, 14)}…</td>
+                        <td style={tD}>
+                          {(() => { const owner = userById.get(s.owner_id); return owner ? (
+                            <>
+                              <div style={{ fontSize: 12.5, fontWeight: 500 }}>{owner.full_name ?? "—"}</div>
+                              <div style={{ fontSize: 11, color: th.sub, marginTop: 2 }}>{owner.phone}</div>
+                            </>
+                          ) : <span style={{ fontFamily: C.mono, fontSize: 11, color: th.sub }}>{s.owner_id.slice(0, 14)}…</span>; })()}
+                        </td>
                         <td style={{ ...tD, fontSize: 12, color: th.sub }}>{fmtDate(s.created_at)}</td>
                         <td style={tD}>
                           <div style={{ display: "flex", gap: 8 }}>

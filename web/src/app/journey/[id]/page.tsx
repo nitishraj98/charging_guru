@@ -79,7 +79,7 @@ export default function JourneyDetailPage() {
     <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
 
-      <div className="fade-up" style={{ maxWidth: 760, margin: "0 auto", padding: "36px 24px 80px" }}>
+      <div className="fade-up" style={{ maxWidth: 880, margin: "0 auto", padding: "36px 24px 80px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>

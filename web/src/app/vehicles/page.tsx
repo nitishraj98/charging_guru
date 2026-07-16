@@ -142,7 +142,7 @@ export default function VehiclesPage() {
   return (
     <div style={{ background: "transparent", minHeight: "100vh" }}>
       <NavBar />
-      <div className="fade-up" style={{ maxWidth: 700, margin: "0 auto", padding: "36px 24px 100px" }}>
+      <div className="fade-up" style={{ maxWidth: 840, margin: "0 auto", padding: "36px 24px 100px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32, gap: 12, flexWrap: "wrap" }}>

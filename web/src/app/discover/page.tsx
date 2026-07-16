@@ -1,14 +1,22 @@
 "use client";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { Star, ArrowUpDown, SearchX } from "lucide-react";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
 import { fetchNearbyStations, StationSummary } from "@/lib/services/chargingStations";
 import { checkAuth } from "@/lib/auth";
 import PlacesAutocomplete from "@/components/PlacesAutocomplete";
 import type { PlaceDetail } from "@/lib/services/googleMaps";
+import { AMENITY_META } from "@/lib/amenities";
 
 const FILTERS = ["Near me", "⚡ Fast DC", "CCS2", "Type 2", "≥50kW", "★4.5+"];
+const SORTS = [
+  { key: "distance",  label: "Nearest"        },
+  { key: "rating",    label: "Top rated"      },
+  { key: "available", label: "Most available" },
+] as const;
+type SortKey = typeof SORTS[number]["key"];
 
 const STATUS_COLOR: Record<string, string> = {
   AVAILABLE: "#00E676", BOOKED: "#FFC043", OCCUPIED: "#22D3EE",
@@ -375,6 +383,8 @@ export default function DiscoverPage() {
   const [userLng, setUserLng]         = useState(DEFAULT_LNG);
   const [geoGranted, setGeoGranted]   = useState(false);
   const [dataSource, setDataSource]   = useState<"backend" | "ocm" | "">("");
+  const [sortBy, setSortBy]           = useState<SortKey>("distance");
+  const [sortOpen, setSortOpen]       = useState(false);
 
   const panelBg   = isLight ? "#FFFFFF"  : "#0A0D0E";
   const border    = isLight ? "#CBD5E1"  : "#1a1f20";
@@ -443,18 +453,34 @@ export default function DiscoverPage() {
     return s.chargers?.length ?? 0;
   }
 
-  const filtered = list.filter(s => {
-    if (search.length >= 2) {
-      const q = search.toLowerCase();
-      return s.name.toLowerCase().includes(q) || (s.city ?? "").toLowerCase().includes(q);
-    }
-    if (s.source === "backend") return true;
-    if (activeFilter === "⚡ Fast DC") return s.chargers.some(c => c.power_kw >= 50 && c.connector_type.includes("CCS"));
-    if (activeFilter === "CCS2")       return s.chargers.some(c => c.connector_type.includes("CCS"));
-    if (activeFilter === "Type 2")     return s.chargers.some(c => c.connector_type.includes("Type 2") || c.connector_type.includes("AC"));
-    if (activeFilter === "≥50kW")      return s.chargers.some(c => c.power_kw >= 50);
-    return true;
-  });
+  const filtered = useMemo(() => {
+    const base = list.filter(s => {
+      if (search.length >= 2) {
+        const q = search.toLowerCase();
+        return s.name.toLowerCase().includes(q) || (s.city ?? "").toLowerCase().includes(q);
+      }
+      if (activeFilter === "★4.5+") return s.rating_avg >= 4.5;
+      if (s.source === "backend") return true;
+      if (activeFilter === "⚡ Fast DC") return s.chargers.some(c => c.power_kw >= 50 && c.connector_type.includes("CCS"));
+      if (activeFilter === "CCS2")       return s.chargers.some(c => c.connector_type.includes("CCS"));
+      if (activeFilter === "Type 2")     return s.chargers.some(c => c.connector_type.includes("Type 2") || c.connector_type.includes("AC"));
+      if (activeFilter === "≥50kW")      return s.chargers.some(c => c.power_kw >= 50);
+      return true;
+    });
+
+    const withCounts = base.map(s => ({
+      s,
+      free: s.available_chargers ?? s.chargers?.filter(c => c.status === "AVAILABLE").length ?? 0,
+    }));
+
+    withCounts.sort((a, b) => {
+      if (sortBy === "rating")    return b.s.rating_avg - a.s.rating_avg;
+      if (sortBy === "available") return b.free - a.free;
+      return (a.s.distance_km ?? Infinity) - (b.s.distance_km ?? Infinity);
+    });
+
+    return withCounts.map(x => x.s);
+  }, [list, search, activeFilter, sortBy]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 68px)", boxSizing: "border-box", background: "transparent" }}>
@@ -535,12 +561,12 @@ export default function DiscoverPage() {
             ))}
           </div>
 
-          {/* Results count */}
-          <div style={{ padding: "4px 16px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          {/* Results count + sort */}
+          <div style={{ padding: "4px 16px 10px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "relative" }}>
             <span style={{ fontSize: 12, color: textSub }}>
-              {loading ? "Loading…" : apiError ? "Error loading" : `${filtered.length} stations`}
+              {loading ? "Loading…" : apiError ? "Error loading" : `${filtered.length} station${filtered.length === 1 ? "" : "s"}`}
             </span>
-            <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               {dataSource === "ocm" && !loading && (
                 <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 999, background: "rgba(255,192,67,.1)", color: "#FFC043", border: "1px solid rgba(255,192,67,.2)" }}>
                   Open Charge Map
@@ -551,6 +577,34 @@ export default function DiscoverPage() {
                   ● Your location
                 </span>
               )}
+              {!loading && !apiError && filtered.length > 0 && (
+                <button onClick={() => setSortOpen(o => !o)} style={{
+                  display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 999,
+                  fontSize: 11, fontWeight: 600, cursor: "pointer", background: inputBg,
+                  border: `1px solid ${sortOpen ? accentBrd : inputBorder}`, color: sortOpen ? accent : textSub,
+                }}>
+                  <ArrowUpDown size={11} /> {SORTS.find(s => s.key === sortBy)?.label}
+                </button>
+              )}
+              {sortOpen && (
+                <>
+                  <div onClick={() => setSortOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 39 }} />
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 40,
+                    background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 12,
+                    boxShadow: "0 8px 28px rgba(0,0,0,.18)", padding: 5, minWidth: 150,
+                  }}>
+                    {SORTS.map(opt => (
+                      <button key={opt.key} onClick={() => { setSortBy(opt.key); setSortOpen(false); }} style={{
+                        display: "block", width: "100%", textAlign: "left", padding: "7px 10px", borderRadius: 8,
+                        fontSize: 12.5, fontWeight: sortBy === opt.key ? 700 : 500, cursor: "pointer", border: "none",
+                        background: sortBy === opt.key ? accentDim : "transparent",
+                        color: sortBy === opt.key ? (isLight ? "#16A34A" : accent) : textPrimary,
+                      }}>{opt.label}</button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -558,8 +612,12 @@ export default function DiscoverPage() {
           <div style={{ flex: 1, overflowY: "auto", padding: "0 12px 16px" }}>
 
             {/* Loading skeletons */}
-            {loading && [1, 2, 3].map(i => (
-              <div key={i} style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 16, padding: "14px 16px", marginBottom: 8, height: 96, opacity: 1 - i * 0.2 }} />
+            {loading && [1, 2, 3, 4].map(i => (
+              <div key={i} style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 16, padding: "14px 16px", marginBottom: 8, opacity: 1 - i * 0.12 }}>
+                <div className="skeleton" style={{ width: "60%", height: 14, borderRadius: 6, marginBottom: 8 }} />
+                <div className="skeleton" style={{ width: "40%", height: 11, borderRadius: 6, marginBottom: 14 }} />
+                <div className="skeleton" style={{ width: "100%", height: 10, borderRadius: 6 }} />
+              </div>
             ))}
 
             {/* Error */}
@@ -596,15 +654,35 @@ export default function DiscoverPage() {
                         {s.name}
                         {s.source === "ocm" && <span style={{ fontSize: 10, color: "#FFC043", marginLeft: 6 }}>OCM</span>}
                       </div>
-                      <div style={{ fontSize: 11, color: textSub }}>
+                      <div style={{ fontSize: 11, color: textSub, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                         {s.distance_km != null && <span style={{ fontFamily: "'JetBrains Mono',monospace" }}>{s.distance_km.toFixed(1)} km away</span>}
-                        {s.address && <span style={{ marginLeft: 4 }}>· {s.address.slice(0, 30)}{s.address.length > 30 ? "…" : ""}</span>}
+                        {s.rating_avg > 0 && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 2, color: "#FFC043", fontWeight: 600 }}>
+                            · <Star size={10} fill="#FFC043" color="#FFC043" /> {s.rating_avg.toFixed(1)}
+                          </span>
+                        )}
+                        {s.address && <span>· {s.address.slice(0, 28)}{s.address.length > 28 ? "…" : ""}</span>}
                       </div>
                     </div>
                     <button onClick={e => { e.stopPropagation(); router.push(`/station/${s.id}`); }} style={{ padding: "6px 14px", borderRadius: 9, background: accent, color: "#050708", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer", flexShrink: 0 }}>
                       Book
                     </button>
                   </div>
+
+                  {s.amenities.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, marginBottom: 9, flexWrap: "wrap" }}>
+                      {s.amenities.slice(0, 3).map(a => {
+                        const meta = AMENITY_META[a.toLowerCase()];
+                        if (!meta) return null;
+                        const AIcon = meta.Icon;
+                        return (
+                          <span key={a} title={meta.label} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 999, fontSize: 10, fontWeight: 500, background: inputBg, border: `1px solid ${inputBorder}`, color: textSub }}>
+                            <AIcon size={10} /> {meta.label}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     {Array.from({ length: Math.min(total, 5) }, (_, i) => (
@@ -622,9 +700,17 @@ export default function DiscoverPage() {
 
             {/* Empty */}
             {!loading && !apiError && filtered.length === 0 && (
-              <div style={{ padding: "40px 0", textAlign: "center", color: textSub }}>
+              <div style={{ padding: "48px 16px", textAlign: "center", color: textSub }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: inputBg, border: `1px solid ${inputBorder}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                  <SearchX size={22} color={textSub} />
+                </div>
                 <p style={{ fontSize: 14, fontWeight: 600, color: textPrimary, marginBottom: 6 }}>No stations found</p>
-                <p style={{ fontSize: 12 }}>Try a different search or adjust your filters.</p>
+                <p style={{ fontSize: 12, marginBottom: 16 }}>Try a different search or adjust your filters.</p>
+                {(search || activeFilter !== "Near me") && (
+                  <button onClick={() => { setSearch(""); setActiveFilter("Near me"); }} style={{ padding: "8px 18px", borderRadius: 10, fontSize: 12.5, fontWeight: 600, background: accentDim, color: isLight ? "#16A34A" : accent, border: `1px solid ${accentBrd}`, cursor: "pointer" }}>
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
           </div>

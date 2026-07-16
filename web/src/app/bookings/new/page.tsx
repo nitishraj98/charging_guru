@@ -5,7 +5,7 @@ import { stations, bookings, Station, Charger, Slot } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Zap, Clock, ChevronRight, Calendar } from "lucide-react";
+import { Zap, Clock, ChevronRight, Calendar, ArrowLeft, SearchX, IndianRupee } from "lucide-react";
 
 const DURATIONS = [
   { mins: 30,  label: "30 min" },
@@ -90,7 +90,11 @@ function BookingNewInner() {
   );
 
   return (
-    <div style={{ background: isLight?"#F3F7FB":"#080B0C", minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
+    <div style={{ background: isLight?"#F3F7FB":"#080B0C", minHeight: "100vh", fontFamily: "'Space Grotesk',system-ui,sans-serif", position: "relative" }}>
+      {/* Decorative glow — matches the premium background language used across Plan/Station pages */}
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+        <div style={{ position: "absolute", top: -160, left: "50%", transform: "translateX(-50%)", width: 640, height: 420, borderRadius: "50%", background: `radial-gradient(circle, ${accent}${isLight?"14":"09"} 0%, transparent 70%)` }}/>
+      </div>
       <style suppressHydrationWarning>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -101,16 +105,23 @@ function BookingNewInner() {
         .dur-btn{transition:all .15s}
         .bk-cta{transition:all .22s cubic-bezier(.16,1,.3,1)}
         .bk-cta:hover:not(:disabled){transform:translateY(-2px);box-shadow:${isLight?"0 8px 32px rgba(0,210,106,.45)":"0 0 40px rgba(0,230,118,.28)"} !important}
+        .bk-back{transition:all .15s}
+        .bk-back:hover{border-color:${accentBrd} !important;color:${accent} !important;background:${accentDim} !important}
       `}</style>
       <NavBar />
 
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 24px 100px" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 24px 100px", position: "relative", zIndex: 1 }}>
 
         {/* Back */}
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: textSub, fontSize: 13, cursor: "pointer", marginBottom: 20, display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          Back to station
+        <button onClick={() => router.back()} className="bk-back" style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 10, color: textSub, fontSize: 12.5, fontWeight: 600, cursor: "pointer", marginBottom: 22, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "inherit" }}>
+          <ArrowLeft size={13}/> Back to station
         </button>
+
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: textPrimary, letterSpacing: "-.02em", marginBottom: 4 }}>Book Your Slot</h1>
+          <p style={{ fontSize: 13, color: textSub }}>Pick a time, choose your duration, and reserve — pay on the next step.</p>
+        </div>
 
         {/* Station + charger info */}
         {station && charger && (
@@ -140,10 +151,14 @@ function BookingNewInner() {
 
             {slots.length === 0 ? (
               <div style={{ padding: "28px 0", textAlign: "center" }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>😔</div>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: raisedBg, border: `1px solid ${cardBorder}`, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>
+                  <SearchX size={22} color={textMuted}/>
+                </div>
                 <div style={{ fontWeight: 700, color: textPrimary, marginBottom: 6 }}>No slots available</div>
                 <div style={{ fontSize: 13, color: textSub }}>All slots are taken. Try another charger.</div>
-                <button onClick={() => router.back()} style={{ marginTop: 16, padding: "10px 20px", borderRadius: 10, background: raisedBg, border: `1px solid ${cardBorder}`, color: textPrimary, fontSize: 13, cursor: "pointer" }}>← Go back</button>
+                <button onClick={() => router.back()} style={{ marginTop: 16, padding: "10px 20px", borderRadius: 10, background: raisedBg, border: `1px solid ${cardBorder}`, color: textPrimary, fontSize: 13, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>
+                  <ArrowLeft size={13}/> Go back
+                </button>
               </div>
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
@@ -183,19 +198,26 @@ function BookingNewInner() {
           {/* Compact summary + CTA */}
           {slots.length > 0 && (
             <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderRadius: 16, background: isLight?"#F0FDF4":"rgba(0,230,118,.04)", border: `1px solid ${accentBrd}`, marginBottom: 16 }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary }}>{selected ? `${fmt(selected)} · ${duration} min` : "—"}</div>
-                  <div style={{ fontSize: 11, color: textSub, marginTop: 2 }}>Slot held for 10 min · pay to confirm</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderRadius: 18, background: isLight?"#F0FDF4":"rgba(0,230,118,.04)", border: `1px solid ${accentBrd}`, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 11, background: accentDim, border: `1px solid ${accentBrd}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                    <Clock size={16} color={accent}/>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary }}>{selected ? `${fmt(selected)} · ${duration} min` : "—"}</div>
+                    <div style={{ fontSize: 11, color: textSub, marginTop: 2 }}>Slot held for 10 min · pay to confirm</div>
+                  </div>
                 </div>
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 22, fontWeight: 800, color: accent }}>₹{estCost.toFixed(0)}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", fontFamily: "'JetBrains Mono',monospace", fontSize: 24, fontWeight: 800, color: accent }}>
+                  <IndianRupee size={18} strokeWidth={2.5}/>{estCost.toFixed(0)}
+                </span>
               </div>
 
               {error && (
                 <div style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(255,90,95,.08)", border: "1px solid rgba(255,90,95,.22)", color: "#FF5A5F", fontSize: 13, marginBottom: 16 }}>{error}</div>
               )}
 
-              <button onClick={handleBook} disabled={!selected || booking} className="bk-cta" style={{ width: "100%", padding: "17px", borderRadius: 16, background: (!selected||booking)?(isLight?"#CBD5E1":"#1A2218"):`linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C862"})`, color: (!selected||booking)?textSub:"#050708", fontSize: 15, fontWeight: 800, border: "none", cursor: (!selected||booking)?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: (!selected||booking)?"none":isLight?"0 6px 24px rgba(0,210,106,.40)":"0 0 32px rgba(0,230,118,.22)" }}>
+              <button onClick={handleBook} disabled={!selected || booking} className="bk-cta" style={{ width: "100%", padding: "19px", borderRadius: 16, background: (!selected||booking)?(isLight?"#CBD5E1":"#1A2218"):`linear-gradient(135deg,${accent},${isLight?"#00A855":"#00C862"})`, color: (!selected||booking)?textSub:"#050708", fontSize: 16, fontWeight: 800, border: "none", cursor: (!selected||booking)?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: (!selected||booking)?"none":isLight?"0 6px 24px rgba(0,210,106,.40)":"0 0 32px rgba(0,230,118,.22)" }}>
                 {booking ? (
                   <><span style={{ width: 18, height: 18, borderRadius: "50%", border: `2.5px solid ${textSub}`, borderTopColor: "transparent", display: "inline-block", animation: "spin .7s linear infinite" }}/> Reserving slot…</>
                 ) : (

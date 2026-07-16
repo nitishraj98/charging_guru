@@ -29,6 +29,8 @@ class BookingOut(ORMModel):
     hold_expires_at: datetime | None
     created_at: datetime
     qr_jti: uuid.UUID | None = None
+    slot_start: datetime
+    slot_end: datetime
     charger: ChargerOut | None = None
     station: StationOut | None = None
 

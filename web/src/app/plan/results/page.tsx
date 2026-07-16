@@ -254,7 +254,7 @@ function ResultsInner() {
 
       {/* Header */}
       <div style={{ background: cardBg, borderBottom: `1px solid ${cardBorder}`, padding: "14px 24px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ maxWidth: 1440, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button onClick={() => router.push("/plan")} style={{ width: 34, height: 34, borderRadius: 9, display: "grid", placeItems: "center", background: raisedBg, border: `1px solid ${cardBorder}`, color: textSub, cursor: "pointer", fontSize: 15 }}>←</button>
             <div>
@@ -277,7 +277,7 @@ function ResultsInner() {
         </div>
       </div>
 
-      <div className="plan-results-layout" style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px 100px" }}>
+      <div className="plan-results-layout" style={{ maxWidth: 1440, margin: "0 auto", padding: "28px 24px 100px" }}>
 
         {/* Left: stops */}
         <div>

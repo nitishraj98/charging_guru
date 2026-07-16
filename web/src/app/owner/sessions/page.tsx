@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useState, useRef, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Camera, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Camera, X, ScanLine, Search, Zap, CheckCircle2 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { authFetch } from "@/lib/admin-ui";
+import { getOwnerTheme, Card, CardHeader, PageHeader, StatusBadge, Button } from "@/components/owner";
+import { useToast } from "@/components/owner/Toast";
 
 const SCAN_REGION_ID = "qr-camera-scan-region";
 
@@ -11,6 +13,7 @@ interface Booking {
   id: string; status: string; slot_start: string; amount: number;
   qr_jti?: string;
   charger?: { label: string; connector_type: string; power_kw: number };
+  station?: { name: string };
 }
 
 async function apiPost(path: string) {
@@ -21,10 +24,10 @@ async function apiPost(path: string) {
 }
 
 function SessionManagerInner() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const router = useRouter();
   const params = useSearchParams();
   const { isLight } = useTheme();
+  const th = getOwnerTheme(isLight);
+  const toast = useToast();
 
   const [bookingId, setBookingId]   = useState(params.get("booking") ?? "");
   const [booking, setBooking]       = useState<Booking | null>(null);
@@ -35,20 +38,31 @@ function SessionManagerInner() {
   const [qrToken, setQrToken]       = useState("");
   const [scanning, setScanning]     = useState(false);
   const [scanError, setScanError]   = useState("");
+  const [ownerBookings, setOwnerBookings] = useState<Booking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [bookingsError, setBookingsError] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const scannerRef = useRef<any>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const bg          = isLight ? "#F3F7FB" : "#0A0D0E";
-  const cardBg      = isLight ? "#FFFFFF" : "#101415";
-  const cardBorder  = isLight ? "#CBD5E1" : "#222829";
-  const textPrimary = isLight ? "#0F172A" : "#E6EBED";
-  const textSub     = isLight ? "#64748B" : "#6B7479";
-  const accent      = isLight ? "#00D26A" : "#00E676";
-  const accentDark  = isLight ? "#00A855" : "#00C258";
-  const raisedBg    = isLight ? "#F1F5F9" : "#181D1F";
-  const inputBg     = isLight ? "#F3F7FB" : "#0A0D0E";
-  const inputBorder = isLight ? "#94A3B8" : "#2E3638";
+  const inputStyle: React.CSSProperties = {
+    flex: 1, background: th.raised, border: `1px solid ${th.border}`,
+    borderRadius: 10, padding: "11px 14px", color: th.text, fontSize: 13,
+    outline: "none", fontFamily: th.sans,
+  };
+
+  async function loadOwnerBookings() {
+    setBookingsError("");
+    setBookingsLoading(true);
+    try {
+      const res = await authFetch("/api/v1/owner/bookings");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setOwnerBookings(await res.json());
+    } catch (e: unknown) {
+      setBookingsError(e instanceof Error ? e.message : "Failed to load sessions");
+    } finally {
+      setBookingsLoading(false);
+    }
+  }
 
   async function lookupBooking() {
     if (!bookingId.trim()) return;
@@ -63,6 +77,7 @@ function SessionManagerInner() {
   }
 
   useEffect(() => {
+    loadOwnerBookings();
     if (bookingId) lookupBooking();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -86,9 +101,11 @@ function SessionManagerInner() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setIsError(true); setMessage(data.detail ?? "QR verification failed"); return; }
       setMessage("QR verified! Booking is now CHECKED_IN.");
+      toast.show("success", "Customer checked in");
       setQrToken(token);
       setBookingId(data.booking_id ?? bookingId);
       await lookupBooking();
+      await loadOwnerBookings();
     } finally {
       setActing(false);
     }
@@ -144,7 +161,9 @@ function SessionManagerInner() {
     try {
       await apiPost(`/api/v1/sessions/${booking.id}/start`);
       setMessage("Session started! Charging is now IN_PROGRESS.");
+      toast.show("success", "Charging session started");
       await lookupBooking();
+      await loadOwnerBookings();
     } catch (e: unknown) {
       setIsError(true); setMessage(e instanceof Error ? e.message : "Failed");
     } finally { setActing(false); }
@@ -156,174 +175,208 @@ function SessionManagerInner() {
     try {
       await apiPost(`/api/v1/sessions/${booking.id}/complete`);
       setMessage("Session completed! Booking is now COMPLETED.");
+      toast.show("success", "Session completed");
       await lookupBooking();
+      await loadOwnerBookings();
     } catch (e: unknown) {
       setIsError(true); setMessage(e instanceof Error ? e.message : "Failed");
     } finally { setActing(false); }
   }
 
-  const STATUS_META: Record<string, { icon: string; color: string; label: string }> = {
-    PENDING_PAYMENT: { icon: "⏳", color: "#FFC043", label: "Pending Payment" },
-    CONFIRMED:       { icon: "✓",  color: "#4DFFA6", label: "Confirmed" },
-    CHECKED_IN:      { icon: "📍", color: "#22D3EE", label: "Checked In" },
-    IN_PROGRESS:     { icon: "⚡", color: "#22D3EE", label: "In Progress" },
-    COMPLETED:       { icon: "✅", color: "#6B7479", label: "Completed" },
-    CANCELLED:       { icon: "✕",  color: "#FF5A5F", label: "Cancelled" },
-  };
+  const activeSessions = ownerBookings.filter(b => ["CONFIRMED", "CHECKED_IN", "IN_PROGRESS"].includes(b.status));
+  const waitingCount = ownerBookings.filter(b => b.status === "CONFIRMED").length;
+  const checkedInCount = ownerBookings.filter(b => b.status === "CHECKED_IN").length;
+  const inProgressCount = ownerBookings.filter(b => b.status === "IN_PROGRESS").length;
 
   return (
-    <div className="owner-pad" style={{ padding: "28px 32px", maxWidth: 640 }}>
-        <style suppressHydrationWarning>{`
-          @keyframes scan-glow-pulse { 0%,100% { box-shadow: 0 4px 20px ${isLight?"rgba(0,200,98,.35)":"rgba(0,230,118,.22)"} } 50% { box-shadow: 0 4px 32px ${isLight?"rgba(0,200,98,.55)":"rgba(0,230,118,.4)"} } }
-          @keyframes scan-frame-pulse { 0%,100% { opacity: .55 } 50% { opacity: 1 } }
-          .scan-cta { transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s; animation: scan-glow-pulse 2.4s ease-in-out infinite; }
-          .scan-cta:hover { transform: translateY(-2px); }
-          .scan-cta:active { transform: translateY(0); }
-          .scan-frame-corner { position: absolute; width: 22px; height: 22px; border-color: ${accent}; animation: scan-frame-pulse 1.8s ease-in-out infinite; }
-        `}</style>
+    <div className="owner-pad owner-fade-up">
+      <style suppressHydrationWarning>{`
+        @keyframes scan-glow-pulse { 0%,100% { box-shadow: 0 4px 20px ${isLight?"rgba(0,184,94,.32)":"rgba(0,230,118,.22)"} } 50% { box-shadow: 0 4px 32px ${isLight?"rgba(0,184,94,.5)":"rgba(0,230,118,.4)"} } }
+        @keyframes scan-frame-pulse { 0%,100% { opacity: .55 } 50% { opacity: 1 } }
+        .scan-cta { transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s; animation: scan-glow-pulse 2.4s ease-in-out infinite; }
+        .scan-cta:hover { transform: translateY(-2px); }
+        .scan-cta:active { transform: translateY(0); }
+        .scan-frame-corner { position: absolute; width: 22px; height: 22px; border-color: ${th.accent}; animation: scan-frame-pulse 1.8s ease-in-out infinite; }
+        .owner-sessions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+        @media (max-width: 900px) { .owner-sessions-grid { grid-template-columns: 1fr; } }
+      `}</style>
 
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: textPrimary, marginBottom: 6 }}>Session Manager</h1>
-        <p style={{ fontSize: 13, color: textSub, marginBottom: 24 }}>Verify QR codes, start and complete charging sessions.</p>
+      <PageHeader th={th} title="Session Manager" subtitle="Verify QR codes, start and complete charging sessions." />
 
-        {/* QR verify */}
-        <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "22px", marginBottom: 16, boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: textPrimary, marginBottom: 14 }}>Verify Customer QR</h2>
-
-          {scanning ? (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ position: "relative", width: "100%", maxWidth: 360, margin: "0 auto", borderRadius: 18, overflow: "hidden", background: "#000", boxShadow: "0 12px 40px rgba(0,0,0,.35)" }}>
-                <div id={SCAN_REGION_ID} style={{ width: "100%" }} />
-                {/* Decorative viewfinder corners */}
-                <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-                  <div className="scan-frame-corner" style={{ top: 16, left: 16, borderTop: "3px solid", borderLeft: "3px solid", borderRadius: "6px 0 0 0" }}/>
-                  <div className="scan-frame-corner" style={{ top: 16, right: 16, borderTop: "3px solid", borderRight: "3px solid", borderRadius: "0 6px 0 0" }}/>
-                  <div className="scan-frame-corner" style={{ bottom: 16, left: 16, borderBottom: "3px solid", borderLeft: "3px solid", borderRadius: "0 0 0 6px" }}/>
-                  <div className="scan-frame-corner" style={{ bottom: 16, right: 16, borderBottom: "3px solid", borderRight: "3px solid", borderRadius: "0 0 6px 0" }}/>
-                </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14, marginBottom: 20 }}>
+        {[
+          { label: "Waiting to check in", value: waitingCount, color: th.accent, bg: th.accentDim },
+          { label: "Checked in", value: checkedInCount, color: th.info, bg: th.infoDim },
+          { label: "In progress", value: inProgressCount, color: th.success, bg: th.successDim },
+        ].map(card => (
+          <Card key={card.label} th={th} padding="18px 20px">
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", color: th.textSub, textTransform: "uppercase", marginBottom: 6 }}>{card.label}</div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: th.text }}>{card.value}</div>
               </div>
-              {scanError && (
-                <div style={{ marginTop: 10, padding: "10px 14px", borderRadius: 10, background: "rgba(255,90,95,.08)", border: "1px solid rgba(255,90,95,.25)", color: "#FF5A5F", fontSize: 12 }}>{scanError}</div>
-              )}
-              <button onClick={() => setScanning(false)} style={{
-                marginTop: 12, width: "100%", padding: "11px", borderRadius: 12, background: raisedBg,
-                border: `1px solid ${cardBorder}`, color: textPrimary, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              }}><X size={14}/> Cancel scan</button>
+              <div style={{ width: 40, height: 40, borderRadius: 12, display: "grid", placeItems: "center", background: card.bg, color: card.color, fontWeight: 800 }}>{card.value}</div>
             </div>
-          ) : (
-            <button onClick={() => setScanning(true)} className="scan-cta" style={{
-              width: "100%", marginBottom: 14, padding: "15px", borderRadius: 14,
-              background: `linear-gradient(135deg, ${accent}, ${accentDark})`, color: "#050708",
-              fontSize: 14, fontWeight: 800, letterSpacing: "-.01em",
-              border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 9,
-            }}><Camera size={17} strokeWidth={2.3}/> Scan with Camera</button>
-          )}
+          </Card>
+        ))}
+      </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <input
-              value={qrToken} onChange={e => setQrToken(e.target.value)}
-              placeholder="…or paste QR token"
-              style={{
-                flex: 1, background: inputBg, border: `1px solid ${inputBorder}`,
-                borderRadius: 10, padding: "11px 14px", color: textPrimary, fontSize: 13,
-                outline: "none", fontFamily: "inherit",
-              }}
-            />
-            <button onClick={() => verifyQR()} disabled={acting || !qrToken} style={{
-              padding: "11px 18px", borderRadius: 10, background: accent, color: "#050708",
-              fontSize: 13, fontWeight: 700, border: "none", cursor: acting ? "not-allowed" : "pointer", flexShrink: 0,
-            }}>Verify QR</button>
+      <div className="owner-sessions-grid" style={{ marginBottom: 16 }}>
+      {/* QR verify */}
+      <Card th={th}>
+        <CardHeader th={th} title="Verify Customer QR" icon={<ScanLine size={14} color={th.accent} />} />
+
+        {scanning ? (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ position: "relative", width: "100%", maxWidth: 360, margin: "0 auto", borderRadius: 18, overflow: "hidden", background: "#000", boxShadow: "0 12px 40px rgba(0,0,0,.35)" }}>
+              <div id={SCAN_REGION_ID} style={{ width: "100%" }} />
+              {/* Decorative viewfinder corners */}
+              <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+                <div className="scan-frame-corner" style={{ top: 16, left: 16, borderTop: "3px solid", borderLeft: "3px solid", borderRadius: "6px 0 0 0" }}/>
+                <div className="scan-frame-corner" style={{ top: 16, right: 16, borderTop: "3px solid", borderRight: "3px solid", borderRadius: "0 6px 0 0" }}/>
+                <div className="scan-frame-corner" style={{ bottom: 16, left: 16, borderBottom: "3px solid", borderLeft: "3px solid", borderRadius: "0 0 0 6px" }}/>
+                <div className="scan-frame-corner" style={{ bottom: 16, right: 16, borderBottom: "3px solid", borderRight: "3px solid", borderRadius: "0 0 6px 0" }}/>
+              </div>
+            </div>
+            {scanError && (
+              <div style={{ marginTop: 10, padding: "10px 14px", borderRadius: 10, background: th.dangerDim, border: `1px solid ${th.danger}30`, color: th.danger, fontSize: 12 }}>{scanError}</div>
+            )}
+            <Button th={th} variant="secondary" icon={<X size={14} />} fullWidth onClick={() => setScanning(false)} style={{ marginTop: 12 }}>Cancel scan</Button>
           </div>
-        </div>
-
-        {/* Booking lookup */}
-        <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "22px", marginBottom: 16, boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: textPrimary, marginBottom: 14 }}>Manage Session by Booking ID</h2>
-          <div style={{ display: "flex", gap: 10 }}>
-            <input
-              value={bookingId} onChange={e => setBookingId(e.target.value)}
-              placeholder="Booking UUID…"
-              style={{
-                flex: 1, background: inputBg, border: `1px solid ${inputBorder}`,
-                borderRadius: 10, padding: "11px 14px", color: textPrimary, fontSize: 13,
-                outline: "none", fontFamily: "'JetBrains Mono',monospace",
-              }}
-            />
-            <button onClick={lookupBooking} disabled={loading} style={{
-              padding: "11px 18px", borderRadius: 10, background: raisedBg,
-              border: `1px solid ${cardBorder}`, color: textPrimary,
-              fontSize: 13, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", flexShrink: 0, fontFamily: "inherit",
-            }}>Look up</button>
-          </div>
-        </div>
-
-        {/* Message */}
-        {message && (
-          <div style={{
-            padding: "12px 16px", borderRadius: 12, marginBottom: 16, fontSize: 13,
-            background: isError ? "rgba(255,90,95,.08)" : "rgba(0,230,118,.08)",
-            border: `1px solid ${isError ? "rgba(255,90,95,.25)" : "rgba(0,230,118,.25)"}`,
-            color: isError ? "#FF5A5F" : (isLight ? "#059669" : "#4DFFA6"),
-          }}>{message}</div>
+        ) : (
+          <button onClick={() => setScanning(true)} className="scan-cta" style={{
+            width: "100%", marginBottom: 14, padding: "15px", borderRadius: 14,
+            background: `linear-gradient(135deg, ${th.accent}, ${th.accentDark})`, color: "#04140A",
+            fontSize: 14, fontWeight: 800, letterSpacing: "-.01em",
+            border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 9,
+            fontFamily: th.sans,
+          }}><Camera size={17} strokeWidth={2.3}/> Scan with Camera</button>
         )}
 
-        {/* Booking card */}
-        {booking && (() => {
-          const meta = STATUS_META[booking.status] ?? { icon: "•", color: textSub, label: booking.status };
-          return (
-            <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, overflow: "hidden", boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
-              <div style={{ padding: "18px 20px", borderBottom: `1px solid ${cardBorder}`, display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 22 }}>{meta.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: textPrimary, marginBottom: 2 }}>
-                    {booking.charger?.label ?? "Charger"} · {booking.charger?.connector_type ?? ""} {booking.charger?.power_kw ?? ""}kW
+        <div style={{ display: "flex", gap: 10 }}>
+          <input
+            value={qrToken} onChange={e => setQrToken(e.target.value)}
+            placeholder="…or paste QR token"
+            style={inputStyle}
+          />
+          <Button th={th} variant="primary" onClick={() => verifyQR()} disabled={!qrToken} loading={acting}>Verify QR</Button>
+        </div>
+      </Card>
+
+      {/* Booking lookup */}
+      <Card th={th}>
+        <CardHeader th={th} title="Manage Session by Booking ID" icon={<Search size={14} color={th.accent} />} />
+        <div style={{ display: "flex", gap: 10 }}>
+          <input
+            value={bookingId} onChange={e => setBookingId(e.target.value)}
+            placeholder="Booking UUID…"
+            style={{ ...inputStyle, fontFamily: th.mono }}
+          />
+          <Button th={th} variant="secondary" onClick={lookupBooking} loading={loading}>Look up</Button>
+        </div>
+      </Card>
+      </div>
+
+      {/* Message */}
+      {message && (
+        <div style={{
+          padding: "12px 16px", borderRadius: 12, marginBottom: 16, fontSize: 13,
+          background: isError ? th.dangerDim : th.successDim,
+          border: `1px solid ${isError ? th.danger + "30" : th.accentBorder}`,
+          color: isError ? th.danger : th.success,
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          {!isError && <CheckCircle2 size={15} style={{ flexShrink: 0 }} />}
+          {message}
+        </div>
+      )}
+
+      {activeSessions.length > 0 && (
+        <Card th={th} style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, borderBottom: `1px solid ${th.border}`, paddingBottom: 14, marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: th.text }}>Live session queue</div>
+              <div style={{ fontSize: 12, color: th.textSub }}>Current bookings waiting for action.</div>
+            </div>
+            <div style={{ fontSize: 12, color: th.textSub }}>{activeSessions.length} active</div>
+          </div>
+
+          <div style={{ display: "grid", gap: 12 }}>
+            {bookingsLoading ? (
+              <div style={{ padding: "28px 0", textAlign: "center", color: th.textSub }}>Loading sessions…</div>
+            ) : bookingsError ? (
+              <div style={{ padding: "18px 16px", borderRadius: 12, background: th.dangerDim, border: `1px solid ${th.danger}30`, color: th.danger }}>{bookingsError}</div>
+            ) : (
+              activeSessions.map(b => (
+                <div key={b.id} style={{ display: "grid", gap: 10, padding: "16px 18px", borderRadius: 16, background: th.raised, border: `1px solid ${th.border}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: th.text, marginBottom: 4 }}>{b.charger?.label ?? "Charger"} · {b.charger?.connector_type ?? ""} {b.charger?.power_kw ?? ""}kW</div>
+                      <div style={{ fontSize: 12, color: th.textSub }}>{b.slot_start ? new Date(b.slot_start).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                    </div>
+                    <StatusBadge status={b.status} th={th} />
                   </div>
-                  <div style={{ fontSize: 12, color: textSub }}>
-                    {booking.slot_start ? new Date(booking.slot_start).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
-                    {" · ₹"}{(booking.amount / 100).toLocaleString("en-IN")}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+                    <div style={{ fontSize: 12, color: th.textSub, fontFamily: th.mono, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>ID: {b.id}</div>
+                    <Button th={th} variant="secondary" size="sm" onClick={() => { setBookingId(b.id); setBooking(b); }}>
+                      Load booking
+                    </Button>
                   </div>
                 </div>
-                <span style={{ padding: "4px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, color: meta.color, background: `${meta.color}18` }}>{meta.label}</span>
+              ))
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* Booking card */}
+      {booking && (
+        <Card th={th} padding={0}>
+          <div style={{ padding: "18px 20px", borderBottom: `1px solid ${th.border}`, display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: th.accentDim, border: `1px solid ${th.accentBorder}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <Zap size={18} color={th.accent} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: th.text, marginBottom: 2 }}>
+                {booking.charger?.label ?? "Charger"} · {booking.charger?.connector_type ?? ""} {booking.charger?.power_kw ?? ""}kW
               </div>
-
-              <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ fontSize: 11, color: textSub, fontFamily: "'JetBrains Mono',monospace" }}>ID: {booking.id}</div>
-
-                {booking.status === "CHECKED_IN" && (
-                  <button onClick={startSession} disabled={acting} style={{
-                    padding: "13px", borderRadius: 12, background: "#22D3EE", color: "#050708",
-                    fontSize: 14, fontWeight: 700, border: "none", cursor: acting ? "not-allowed" : "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  }}>
-                    {acting ? <><span className="spinner" />Starting…</> : "⚡ Start Charging Session"}
-                  </button>
-                )}
-
-                {booking.status === "IN_PROGRESS" && (
-                  <button onClick={completeSession} disabled={acting} style={{
-                    padding: "13px", borderRadius: 12, background: accent, color: "#050708",
-                    fontSize: 14, fontWeight: 700, border: "none", cursor: acting ? "not-allowed" : "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  }}>
-                    {acting ? <><span className="spinner" />Completing…</> : "✅ Complete Session"}
-                  </button>
-                )}
-
-                {booking.status === "CONFIRMED" && (
-                  <div style={{ padding: "12px 14px", borderRadius: 12, background: raisedBg, fontSize: 13, color: textSub }}>
-                    Waiting for customer to scan QR. Verify their QR code above to check them in.
-                  </div>
-                )}
-
-                {booking.status === "COMPLETED" && (
-                  <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(0,230,118,.06)", border: "1px solid rgba(0,230,118,.2)", fontSize: 13, color: isLight ? "#059669" : "#4DFFA6" }}>
-                    Session completed. Payment of ₹{(booking.amount / 100).toLocaleString("en-IN")} received.
-                  </div>
-                )}
+              <div style={{ fontSize: 12, color: th.textSub }}>
+                {booking.slot_start ? new Date(booking.slot_start).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+                {" · ₹"}{(booking.amount / 100).toLocaleString("en-IN")}
               </div>
             </div>
-          );
-        })()}
+            <StatusBadge status={booking.status} th={th} />
+          </div>
+
+          <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: 11, color: th.textSub, fontFamily: th.mono }}>ID: {booking.id}</div>
+
+            {booking.status === "CHECKED_IN" && (
+              <Button th={th} variant="primary" icon={<Zap size={15} />} loading={acting} fullWidth onClick={startSession} style={{ padding: "13px", fontSize: 14 }}>
+                {acting ? "Starting…" : "Start Charging Session"}
+              </Button>
+            )}
+
+            {booking.status === "IN_PROGRESS" && (
+              <Button th={th} variant="primary" icon={<CheckCircle2 size={15} />} loading={acting} fullWidth onClick={completeSession} style={{ padding: "13px", fontSize: 14 }}>
+                {acting ? "Completing…" : "Complete Session"}
+              </Button>
+            )}
+
+            {booking.status === "CONFIRMED" && (
+              <div style={{ padding: "12px 14px", borderRadius: 12, background: th.raised, fontSize: 13, color: th.textSub }}>
+                Waiting for customer to scan QR. Verify their QR code above to check them in.
+              </div>
+            )}
+
+            {booking.status === "COMPLETED" && (
+              <div style={{ padding: "12px 14px", borderRadius: 12, background: th.successDim, border: `1px solid ${th.accentBorder}`, fontSize: 13, color: th.success }}>
+                Session completed. Payment of ₹{(booking.amount / 100).toLocaleString("en-IN")} received.
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
