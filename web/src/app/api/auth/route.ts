@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const data = await r.json();
     if (!r.ok) return NextResponse.json(data, { status: r.status });
 
-    const res = NextResponse.json({ ok: true, debug_code: data.debug_code });
+    const res = NextResponse.json({ ok: true, is_new: data.is_new, debug_code: data.debug_code });
     res.cookies.set("cg_access",  data.access_token,  { ...ACCESS_OPTS,  maxAge: ACCESS_TTL });
     res.cookies.set("cg_refresh", data.refresh_token, { ...REFRESH_OPTS, maxAge: REFRESH_TTL });
     return res;

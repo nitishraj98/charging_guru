@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   User as UserIcon, Mail, Phone, Edit3, Check, X, LogOut,
-  Car, Zap, Map, Star, Building2, ChevronRight, ShieldCheck,
+  Car, Zap, Map, Star, Building2, ChevronRight, ShieldCheck, PartyPopper,
 } from "lucide-react";
 import { auth, User } from "@/lib/api";
 import { checkAuth, bffLogout } from "@/lib/auth";
@@ -40,8 +40,10 @@ function quickLinksFor(roles: string[] | undefined) {
   return [...BASE_QUICK_LINKS, isOwner ? OWNER_LINK : PARTNER_LINK];
 }
 
-export default function ProfilePage() {
+function ProfileInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const welcome = searchParams.get("welcome") === "1";
   const { isLight } = useTheme();
   const { clear: clearUser } = useUser();
   const [user, setUser]       = useState<User | null>(null);
@@ -70,11 +72,14 @@ export default function ProfilePage() {
     checkAuth().then(ok => {
       if (!ok) { router.push("/login"); return; }
       auth.me()
-        .then(u => { setUser(u); setName(u.full_name ?? ""); setEmail(u.email ?? ""); })
+        .then(u => {
+          setUser(u); setName(u.full_name ?? ""); setEmail(u.email ?? "");
+          if (welcome && !u.full_name) setEditing(true);
+        })
         .catch(() => router.push("/login"))
         .finally(() => setLoading(false));
     });
-  }, [router]);
+  }, [router, welcome]);
 
   async function save() {
     setSaving(true); setSaveErr(""); setSaved(false);
@@ -126,6 +131,19 @@ export default function ProfilePage() {
       <NavBar />
 
       <div className="fade-up" style={{ maxWidth: 700, margin: "0 auto", padding: "36px 24px 100px" }}>
+
+        {welcome && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", marginBottom: 16,
+            borderRadius: 16, background: accentDim, border: `1px solid ${accentBrd}`,
+          }}>
+            <PartyPopper size={18} strokeWidth={2} color={accent} style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: textPrimary }}>Welcome to Charging Guru!</div>
+              <div style={{ fontSize: 12.5, color: textSub, marginTop: 1 }}>Add your name and email to finish setting up your account.</div>
+            </div>
+          </div>
+        )}
 
         {/* ── Profile Hero ── */}
         <div style={{
@@ -300,5 +318,13 @@ export default function ProfilePage() {
 
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfileInner />
+    </Suspense>
   );
 }

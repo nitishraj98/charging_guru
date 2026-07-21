@@ -100,15 +100,14 @@ export default function LoginPage() {
     if (code.length < 6) return;
     setError(""); setLoading(true);
     try {
-      await auth.otpVerify(requestId, code);
+      const { is_new } = await auth.otpVerify(requestId, code);
       reloadUser();
       try {
         const me = await auth.me();
         const roles = me.roles ?? [];
-        if (roles.includes("ROLE_ADMIN")) { router.push("/admin"); return; }
         if (roles.includes("ROLE_STATION_OWNER")) { router.push("/owner"); return; }
       } catch { /* fall through */ }
-      router.push("/");
+      router.push(is_new ? "/profile?welcome=1" : "/");
     } catch {
       setError("Invalid OTP. Please try again.");
       setOtp(["", "", "", "", "", ""]);

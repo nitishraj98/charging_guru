@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { checkAuth, bffLogout } from "@/lib/auth";
+import { auth } from "@/lib/api";
 import { authFetch } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
@@ -52,10 +53,13 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
     // genuinely-owned account.
     checkAuth().then(ok => {
       if (!ok) { router.push("/login"); return; }
-      return authFetch("/api/v1/owner/stations").then(res => {
-        if (res.status === 403) { router.push("/become-owner"); return; }
-        if (res.ok) res.json().then(d => setStations(Array.isArray(d) ? d : [])).catch(() => {});
-        setReady(true);
+      return auth.me().then(me => {
+        if (!(me.roles ?? []).includes("ROLE_STATION_OWNER")) { router.push("/become-owner"); return; }
+        return authFetch("/api/v1/owner/stations").then(res => {
+          if (res.status === 403) { router.push("/become-owner"); return; }
+          if (res.ok) res.json().then(d => setStations(Array.isArray(d) ? d : [])).catch(() => {});
+          setReady(true);
+        });
       });
     }).catch(() => { router.push("/login"); });
   }, [router]);

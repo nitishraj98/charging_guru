@@ -74,7 +74,7 @@ export const auth = {
   otpRequest: (phone: string) =>
     bffPost<{ request_id: string; debug_code?: string }>("otp-request", { phone }),
   otpVerify: (request_id: string, code: string) =>
-    bffPost<{ ok: true }>("otp-verify", { request_id, code }),
+    bffPost<{ ok: true; is_new: boolean }>("otp-verify", { request_id, code }),
   logout: () => bffPost<{ ok: true }>("logout"),
   me: () => request<User>("/api/v1/users/me"),
 };
