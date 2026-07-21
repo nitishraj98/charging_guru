@@ -1,11 +1,14 @@
 // Route planning service.
-// 1. Uses Google Directions API for accurate distance + ETA
+// 1. Uses OSRM (road routing) + Nominatim (geocoding) for real distance + ETA —
+//    both free, no API key or billing account required
 // 2. Fetches real charging stops from backend or OCM along the route
-// 3. Falls back to local computation when Maps isn't available
+// 3. Falls back to local computation when routing isn't available
 
-import { getDirections, geocodeAddress, mapsReady } from "./googleMaps";
+import { decodePolyline } from "./googleMaps";
+import { getRoadRoute, geocodeFree } from "./osrmRouting";
 import { fetchNearbyStations } from "./chargingStations";
 import { UserVehicle } from "./vehicleService";
+import { stations as stationsApi } from "@/lib/api";
 
 export interface PlanInput {
   source: string;
@@ -48,14 +51,14 @@ export interface PlanResult {
   total_charging_cost_paise: number;
   total_charging_time_min: number;
   polyline?: string;           // encoded polyline for map rendering
-  data_source: "google+backend" | "google+ocm" | "offline";
+  data_source: "routed+backend" | "routed+ocm" | "offline";
 }
 
 export async function planRoute(input: PlanInput): Promise<PlanResult> {
   const { vehicle, batteryPercent, signal } = input;
   const startRange = Math.round(vehicle.range_km * (batteryPercent / 100));
 
-  // ── Step 1: Resolve coords + get route from Google Directions ──────────────
+  // ── Step 1: Resolve coords + get real road route (OSRM) ─────────────────────
   let totalDistKm = 0;
   let durationMin = 0;
   let durationTrafficMin: number | undefined;
@@ -73,32 +76,20 @@ export async function planRoute(input: PlanInput): Promise<PlanResult> {
   }
 
   try {
-    if (!mapsReady()) await import("./googleMaps").then(m => m.loadGoogleMaps());
-    if (mapsReady()) {
-      const route = await getDirections(origin, dest);
-      totalDistKm = Math.round(route.distance_m / 1000);
-      durationMin = Math.round(route.duration_s / 60);
-      durationTrafficMin = route.duration_traffic_s ? Math.round(route.duration_traffic_s / 60) : undefined;
-      polyline = route.polyline;
-      dataSource = "google+backend";
+    // OSRM needs coordinates, not free-text — geocode any string endpoint first.
+    const originCoords = typeof origin === "string" ? await geocodeFree(origin, signal) : origin;
+    const destCoords = typeof dest === "string" ? await geocodeFree(dest, signal) : dest;
+    origin = originCoords;
+    dest = destCoords;
 
-      // Resolve origin coords for stop searching
-      if (typeof origin === "string") {
-        try {
-          const gc = await geocodeAddress(origin);
-          origin = gc;
-        } catch { /* keep as string */ }
-      }
-      if (typeof dest === "string") {
-        try {
-          const gc = await geocodeAddress(dest);
-          dest = gc;
-        } catch { /* keep as string */ }
-      }
-    }
+    const route = await getRoadRoute(originCoords, destCoords, signal);
+    totalDistKm = Math.round(route.distance_m / 1000);
+    durationMin = Math.round(route.duration_s / 60);
+    polyline = route.polyline;
+    dataSource = "routed+backend";
   } catch (mapsErr) {
     if (isAbort(mapsErr)) throw mapsErr;
-    console.warn("[planner] Google Maps unavailable:", mapsErr);
+    console.warn("[planner] Road routing unavailable:", mapsErr);
   }
 
   // Offline fallback for distance
@@ -112,15 +103,20 @@ export async function planRoute(input: PlanInput): Promise<PlanResult> {
   const safeRange = Math.round(startRange * 0.85);  // keep 15% buffer
   const stopsNeeded = Math.max(0, Math.ceil((totalDistKm - safeRange) / (vehicle.range_km * 0.85)));
 
-  // ── Step 3: Fetch real charging stations along route midpoints ─────────────
+  // ── Step 3: Fetch real charging stations along the route ────────────────────
   const stops: ChargingStop[] = [];
 
   if (stopsNeeded > 0) {
-    const midpoints = computeMidpoints(
-      typeof origin === "string" ? null : origin,
-      typeof dest === "string" ? null : dest,
-      stopsNeeded,
-    );
+    // Prefer real points sampled along the actual road polyline (follows the
+    // route's curves) over a straight-line guess — only possible once Directions
+    // has returned a route.
+    const midpoints = polyline
+      ? waypointsAlongPolyline(decodePolyline(polyline), stopsNeeded)
+      : computeMidpoints(
+          typeof origin === "string" ? null : origin,
+          typeof dest === "string" ? null : dest,
+          stopsNeeded,
+        );
 
     for (let i = 0; i < stopsNeeded; i++) {
       const mid = midpoints[i];
@@ -138,7 +134,23 @@ export async function planRoute(input: PlanInput): Promise<PlanResult> {
           );
           if (available.length > 0) {
             const best = available[0];
-            const charger = best.chargers.find(c => c.status === "AVAILABLE") ?? best.chargers[0];
+            let charger = best.chargers.find(c => c.status === "AVAILABLE") ?? best.chargers[0];
+
+            // The nearby-list endpoint only returns charger counts, not real
+            // per-charger power/price/connector — fetchNearbyStations fills that
+            // gap with synthetic stubs. For a real backend station match, fetch
+            // the full station detail so the stop shows genuine charger data.
+            if (best.source !== "ocm") {
+              try {
+                const detail = await stationsApi.get(best.id);
+                const real = detail.chargers?.find(c => c.status === "AVAILABLE") ?? detail.chargers?.[0];
+                if (real) charger = real;
+              } catch (err) {
+                if (isAbort(err)) throw err;
+                console.warn("[planner] Station detail fetch failed, using estimated charger fields:", err);
+              }
+            }
+
             const chargeTo = 85;
             const chargeTime = Math.round(((chargeTo - arrivalBattery) / 100) * vehicle.battery_kwh / (charger.power_kw / 60));
             stop = {
@@ -158,7 +170,7 @@ export async function planRoute(input: PlanInput): Promise<PlanResult> {
               connector_type: charger.connector_type,
               source: best.source === "ocm" ? "ocm" : "backend",
             };
-            if (best.source === "ocm") dataSource = "google+ocm";
+            if (best.source === "ocm") dataSource = "routed+ocm";
           }
         } catch (err) {
           if (isAbort(err)) throw err;
@@ -185,7 +197,10 @@ export async function planRoute(input: PlanInput): Promise<PlanResult> {
           connector_type: "CCS2",
           source: "estimated",
         };
-        dataSource = "offline";
+        // Note: intentionally NOT downgrading dataSource here — this only means
+        // this one stop has no real nearby station, not that the route itself
+        // (distance/duration/polyline) is unreliable. Each stop already carries
+        // its own accurate `source` field, shown via the per-stop "(estimated)" pill.
       }
 
       stops.push(stop);
@@ -208,6 +223,41 @@ export async function planRoute(input: PlanInput): Promise<PlanResult> {
     polyline,
     data_source: dataSource,
   };
+}
+
+// Sample N points along the real (decoded) road polyline at evenly spaced
+// distances — follows the actual route's curves, unlike a straight-line guess.
+function waypointsAlongPolyline(
+  points: Array<[number, number]>,
+  count: number,
+): Array<{ lat: number; lng: number } | null> {
+  if (points.length < 2) return Array(count).fill(null);
+
+  const segLens: number[] = [];
+  let totalKm = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const d = haversine(points[i][0], points[i][1], points[i + 1][0], points[i + 1][1]);
+    segLens.push(d);
+    totalKm += d;
+  }
+
+  function pointAtDistance(targetKm: number): { lat: number; lng: number } {
+    let covered = 0;
+    for (let i = 0; i < segLens.length; i++) {
+      const segLen = segLens[i];
+      if (covered + segLen >= targetKm || i === segLens.length - 1) {
+        const t = segLen > 0 ? Math.min(1, Math.max(0, (targetKm - covered) / segLen)) : 0;
+        const [lat1, lng1] = points[i];
+        const [lat2, lng2] = points[i + 1];
+        return { lat: lat1 + (lat2 - lat1) * t, lng: lng1 + (lng2 - lng1) * t };
+      }
+      covered += segLen;
+    }
+    const last = points[points.length - 1];
+    return { lat: last[0], lng: last[1] };
+  }
+
+  return Array.from({ length: count }, (_, i) => pointAtDistance((totalKm * (i + 1)) / (count + 1)));
 }
 
 // Generate evenly spaced midpoints between origin and destination

@@ -83,6 +83,10 @@ class BookingService:
         lock_key = f"lock:slot:{payload.charger_id}:{start.isoformat()}"
         async with lock(lock_key, ttl_ms=SLOT_LOCK_TTL_MS):
             slot = await self.slots.get_or_create(payload.charger_id, start, end)
+            # Self-healing: no background sweep runs, so lazily expire this
+            # slot's stale hold (if any) before checking/inserting — otherwise
+            # a fresh booking could collide with an unflipped expired row.
+            await self.bookings.expire_if_stale(slot.id)
             if await self.bookings.slot_has_active_booking(slot.id):
                 raise ConflictError("That slot was just booked.", code="SLOT_UNAVAILABLE")
 

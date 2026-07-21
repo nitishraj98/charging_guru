@@ -13,6 +13,7 @@ from app.core import security
 from app.core.db import get_db, get_replica_db
 from app.core.errors import ForbiddenError, UnauthorizedError
 from app.core.razorpay import RazorpayGateway, get_razorpay_gateway
+from app.core.sms import TwilioGateway, get_twilio_gateway
 from app.models.user import User
 from app.repositories.admin_repo import AdminRepo
 from app.repositories.booking_repo import BookingRepo, SlotRepo
@@ -47,13 +48,17 @@ __all__ = [
     "get_reward_service",
     "get_membership_service",
     "get_razorpay_gateway",
+    "get_twilio_gateway",
     "get_current_user",
     "require_roles",
 ]
 
 
-def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
-    return AuthService(UserRepo(db), OtpRepo(db), SessionRepo(db))
+def get_auth_service(
+    db: AsyncSession = Depends(get_db),
+    sms: TwilioGateway = Depends(get_twilio_gateway),
+) -> AuthService:
+    return AuthService(UserRepo(db), OtpRepo(db), SessionRepo(db), sms)
 
 
 def get_station_service(db: AsyncSession = Depends(get_db)) -> StationService:

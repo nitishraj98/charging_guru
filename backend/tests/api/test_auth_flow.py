@@ -85,6 +85,34 @@ async def test_refresh_rotates_and_old_token_is_invalid(client):
 
 
 @pytest.mark.asyncio
+async def test_otp_request_dispatches_sms(client):
+    r = await client.post("/api/v1/auth/otp/request", json={"phone": PHONE})
+    assert r.status_code == 200, r.text
+    code = r.json()["debug_code"]
+
+    assert client.fake_twilio.sent == [(PHONE, code)]
+
+
+@pytest.mark.asyncio
+async def test_logout_revokes_refresh_token(client):
+    result = await _login(client)
+    refresh_token = result["refresh_token"]
+
+    r = await client.post("/api/v1/auth/logout", json={"refresh_token": refresh_token})
+    assert r.status_code == 204
+
+    # The revoked refresh token must no longer work.
+    r = await client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_logout_with_unknown_token_is_a_noop(client):
+    r = await client.post("/api/v1/auth/logout", json={"refresh_token": "not-a-real-token"})
+    assert r.status_code == 204
+
+
+@pytest.mark.asyncio
 async def test_update_profile(client):
     result = await _login(client)
     headers = {"Authorization": f"Bearer {result['access_token']}"}

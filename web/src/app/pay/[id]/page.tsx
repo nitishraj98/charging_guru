@@ -5,7 +5,7 @@ import { bookings, payments, Booking, PaymentOrder } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
-import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Lock, ShieldCheck, AlertCircle, RotateCcw } from "lucide-react";
 
 declare global {
   interface Window {
@@ -18,24 +18,28 @@ declare global {
 
 const RZP_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
 
-function HoldTimer({ expiresAt, isLight }: { expiresAt?: string; isLight: boolean }) {
-  const total = 15 * 60;
+function HoldTimer({ expiresAt, isLight, onExpire }: { expiresAt?: string; isLight: boolean; onExpire?: () => void }) {
   function calcSecs() {
-    if (!expiresAt) return total;
+    if (!expiresAt) return 0;
     return Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
   }
+  // Capture the real hold duration once (from the actual expiresAt), instead of
+  // assuming a fixed window — the ring needs to know the true 100% baseline.
+  const totalRef = useRef<number>(Math.max(calcSecs(), 1));
   const [secs, setSecs] = useState(calcSecs);
   const ref = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
+    totalRef.current = Math.max(calcSecs(), 1);
     setSecs(calcSecs());
     ref.current = setInterval(() => setSecs(calcSecs()), 1000);
     return () => { if (ref.current) clearInterval(ref.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expiresAt]);
+  const expired = secs === 0;
+  useEffect(() => { if (expired) onExpire?.(); }, [expired, onExpire]);
   const m = Math.floor(secs / 60).toString().padStart(2, "0");
   const s = (secs % 60).toString().padStart(2, "0");
-  const pct = Math.min(100, (secs / total) * 100);
-  const expired = secs === 0;
+  const pct = Math.min(100, (secs / totalRef.current) * 100);
   const timerColor = expired ? "#FF5A5F" : "#FFC043";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: isLight?"rgba(255,192,67,.07)":"rgba(255,192,67,.04)", border: `1px solid rgba(255,192,67,${expired?".35":".18"})` }}>
@@ -68,6 +72,7 @@ export default function PayPage() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
+  const [holdExpired, setHoldExpired] = useState(false);
 
   const bg          = isLight ? "#F3F7FB"              : "#080B0C";
   const cardBg      = isLight ? "#FFFFFF"              : "#101415";
@@ -102,7 +107,7 @@ export default function PayPage() {
   }, [bookingId, router]);
 
   async function handlePay() {
-    if (!order || !booking) return;
+    if (!order || !booking || holdExpired) return;
     setPaying(true); setError("");
 
     if (!window.Razorpay || !RZP_KEY) {
@@ -223,7 +228,14 @@ export default function PayPage() {
                 </div>
               </div>
             </div>
-            {order && <HoldTimer expiresAt={booking.hold_expires_at} isLight={isLight}/>}
+            {order && <HoldTimer expiresAt={booking.hold_expires_at} isLight={isLight} onExpire={() => setHoldExpired(true)}/>}
+          </div>
+        )}
+
+        {holdExpired && (
+          <div style={{ padding: "14px 16px", borderRadius: 12, marginBottom: 16, background: "rgba(255,90,95,.08)", border: "1px solid rgba(255,90,95,.25)", color: "#FF5A5F", fontSize: 13, display: "flex", alignItems: "center", gap: 10 }}>
+            <AlertCircle size={16} style={{ flexShrink: 0 }}/>
+            Your slot hold expired before payment. Book the slot again to continue.
           </div>
         )}
 
@@ -240,24 +252,33 @@ export default function PayPage() {
           <div style={{ padding: "12px 16px", borderRadius: 12, marginBottom: 16, background: "rgba(255,90,95,.08)", border: "1px solid rgba(255,90,95,.22)", color: "#FF5A5F", fontSize: 13 }}>{error}</div>
         )}
 
-        {/* Pay button */}
-        <button
-          onClick={handlePay}
-          disabled={paying || !order}
-          className={`pay-btn ${order && !paying ? "pay-btn-active" : ""}`}
-          style={{ width: "100%", padding: "20px 20px", borderRadius: 16, background: paying||!order?(isLight?"#CBD5E1":"#1A2218"):accent, color: paying||!order?textSub:"#050708", fontSize: 16.5, fontWeight: 800, border: "none", cursor: paying||!order?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: paying||!order?"none":isLight?"0 6px 28px rgba(0,210,106,.45)":"0 0 40px rgba(0,230,118,.28)" }}>
-          {paying ? (
-            <><span style={{ width: 18, height: 18, borderRadius: "50%", border: `2.5px solid ${textMuted}`, borderTopColor: "transparent", display: "inline-block", animation: "spin .7s linear infinite" }}/> Opening payment…</>
-          ) : (
-            <>
-              <Lock size={16} color="#050708" strokeWidth={2.4}/>
-              Pay ₹{totalRs.toLocaleString("en-IN")} →
-            </>
-          )}
-        </button>
+        {/* Pay button — swaps to a rebook CTA once the hold has expired */}
+        {holdExpired ? (
+          <button
+            onClick={() => router.push(booking?.station?.id ? `/station/${booking.station.id}` : "/discover")}
+            className="pay-btn"
+            style={{ width: "100%", padding: "20px 20px", borderRadius: 16, background: accent, color: "#050708", fontSize: 16.5, fontWeight: 800, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <RotateCcw size={16} strokeWidth={2.4}/> Book This Slot Again
+          </button>
+        ) : (
+          <button
+            onClick={handlePay}
+            disabled={paying || !order}
+            className={`pay-btn ${order && !paying ? "pay-btn-active" : ""}`}
+            style={{ width: "100%", padding: "20px 20px", borderRadius: 16, background: paying||!order?(isLight?"#CBD5E1":"#1A2218"):accent, color: paying||!order?textSub:"#050708", fontSize: 16.5, fontWeight: 800, border: "none", cursor: paying||!order?"not-allowed":"pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: paying||!order?"none":isLight?"0 6px 28px rgba(0,210,106,.45)":"0 0 40px rgba(0,230,118,.28)" }}>
+            {paying ? (
+              <><span style={{ width: 18, height: 18, borderRadius: "50%", border: `2.5px solid ${textMuted}`, borderTopColor: "transparent", display: "inline-block", animation: "spin .7s linear infinite" }}/> Opening payment…</>
+            ) : (
+              <>
+                <Lock size={16} color="#050708" strokeWidth={2.4}/>
+                Pay ₹{totalRs.toLocaleString("en-IN")} →
+              </>
+            )}
+          </button>
+        )}
 
         <p style={{ fontSize: 11, color: textMuted, textAlign: "center", marginTop: 12 }}>
-          Slot confirmed immediately after payment · No extra charges
+          {holdExpired ? "No payment was taken · Free to plan again" : "Slot confirmed immediately after payment · No extra charges"}
         </p>
       </div>
     </div>

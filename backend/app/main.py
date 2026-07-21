@@ -1,7 +1,8 @@
 """FastAPI application factory."""
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,7 @@ from app.core.db import dispose_engines
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 from app.core.redis import close_redis
+from app.core.scheduler import run_hold_sweep_loop
 
 log = get_logger("app")
 
@@ -25,7 +27,11 @@ log = get_logger("app")
 async def lifespan(app: FastAPI):
     configure_logging()
     log.info("startup", env=settings.env, version=__version__)
+    sweep_task = asyncio.create_task(run_hold_sweep_loop())
     yield
+    sweep_task.cancel()
+    with suppress(asyncio.CancelledError):
+        await sweep_task
     await close_redis()
     await dispose_engines()
     log.info("shutdown")

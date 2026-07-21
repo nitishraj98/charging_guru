@@ -3,8 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request, status
 
-from app.api.deps import get_auth_service, get_current_user
-from app.models.user import User
+from app.api.deps import get_auth_service
 from app.schemas.auth import (
     AuthResult,
     OtpRequestIn,
@@ -58,12 +57,10 @@ async def refresh(
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
-    request: Request,
-    user: User = Depends(get_current_user),
+    payload: RefreshIn,
     svc: AuthService = Depends(get_auth_service),
 ) -> None:
-    sid = getattr(request.state, "session_id", None)
-    if sid:
-        import uuid
-
-        await svc.logout(uuid.UUID(sid))
+    # Revoking by refresh token (rather than requiring a still-valid access
+    # token) means logout works even if the access token already expired —
+    # the same trust model /auth/refresh already uses.
+    await svc.logout_by_refresh_token(payload.refresh_token)

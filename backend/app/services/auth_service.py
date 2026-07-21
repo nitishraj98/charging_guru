@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.errors import GoneError, RateLimitError, UnauthorizedError
 from app.core.logging import get_logger
 from app.core.redis import sliding_window_allow
+from app.core.sms import TwilioGateway
 from app.core.time import ensure_aware, utcnow
 from app.models.user import User
 from app.repositories.otp_repo import OtpRepo
@@ -28,10 +29,11 @@ log = get_logger("auth")
 
 
 class AuthService:
-    def __init__(self, users: UserRepo, otps: OtpRepo, sessions: SessionRepo):
+    def __init__(self, users: UserRepo, otps: OtpRepo, sessions: SessionRepo, sms: TwilioGateway):
         self.users = users
         self.otps = otps
         self.sessions = sessions
+        self.sms = sms
 
     # ── OTP request ───────────────────────────────────────────────────────
     async def request_otp(self, phone: str, *, ip: str | None = None) -> OtpRequestOut:
@@ -50,9 +52,9 @@ class AuthService:
             max_attempts=settings.otp_max_attempts,
             ip=ip,
         )
-        # In production this is dispatched to the SMS provider via Celery.
         log.info("otp_issued", phone=phone, request_id=str(otp.id),
                  code=(code if settings.otp_debug else "***"))
+        await self.sms.send_otp(phone, code)
         return OtpRequestOut(
             request_id=otp.id,
             ttl_seconds=settings.otp_ttl_seconds,
@@ -139,6 +141,15 @@ class AuthService:
 
     async def logout(self, session_id: uuid.UUID) -> None:
         sess = await self.sessions.get(session_id)
+        if sess and sess.revoked_at is None:
+            await self.sessions.revoke(sess)
+
+    async def logout_by_refresh_token(self, refresh_token: str) -> None:
+        """Revoke a session by its refresh token directly, without requiring
+        a still-valid access token — the refresh token's own long TTL is the
+        credential here, same trust model as /auth/refresh."""
+        token_hash = security.hash_secret(refresh_token)
+        sess = await self.sessions.get_by_token_hash(token_hash)
         if sess and sess.revoked_at is None:
             await self.sessions.revoke(sess)
 

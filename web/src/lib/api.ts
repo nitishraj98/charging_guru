@@ -154,12 +154,6 @@ export const routes = {
     };
     return request<RoutePlanResponse>("/api/v1/routes/plan", { method: "POST", body: JSON.stringify(apiBody) }, false);
   },
-  reserve: (body: RouteReserveRequest) =>
-    request<Journey>("/api/v1/routes/reserve", { method: "POST", body: JSON.stringify(body) }),
-  get: (id: string) =>
-    request<Journey>(`/api/v1/routes/${id}`),
-  list: () =>
-    request<Journey[]>("/api/v1/routes"),
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -255,10 +249,6 @@ interface RoutePlanApiBody {
   vehicle_id: string;
   soc_percent: number;
 }
-export interface RouteReserveRequest {
-  source: string; destination: string;
-  vehicle_id: string; stop_charger_ids: string[];
-}
 export interface RecommendedStop {
   station_id?: string;
   station_name: string;
@@ -283,21 +273,6 @@ export interface RoutePlanResponse {
   total_charging_cost_paise: number;
   total_charging_time_min: number;
 }
-export interface JourneyStop {
-  id: string; station_name: string; city: string;
-  booking_id?: string; qr_token?: string;
-  arrival_battery_pct: number; charge_time_min: number;
-  status: "pending" | "confirmed" | "checked_in" | "completed";
-  distance_from_start_km: number;
-}
-export interface Journey {
-  id: string; source: string; destination: string;
-  total_distance_km: number; status: "upcoming" | "in_progress" | "completed" | "cancelled";
-  created_at: string; stops: JourneyStop[];
-  total_amount_paise: number; payment_status: "pending" | "paid";
-  vehicle_label: string;
-}
-
 // ── Rewards ───────────────────────────────────────────────────────────────────
 export type MembershipTier = "FREE" | "SILVER" | "GOLD";
 export interface RewardSummary {

@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from app.core.errors import AppError, ConflictError, NotFoundError
 from app.core.qr import issue_qr
 from app.core.razorpay import RazorpayGateway
+from app.core.time import ensure_aware, utcnow
 from app.models.booking import Booking
 from app.models.enums import BookingStatus, PaymentStatus
 from app.models.payment import Payment
@@ -60,6 +61,21 @@ class PaymentService:
         booking = await self.bookings.get(booking_id)
         if booking is None or booking.user_id != user_id:
             raise NotFoundError("Booking not found.", code="BOOKING_NOT_FOUND")
+
+        # A hold past its TTL must never reach Razorpay — no periodic sweep runs
+        # in this deployment, so expiry is enforced lazily right here instead of
+        # relying on a background job to have already flipped the status.
+        if (
+            booking.status == BookingStatus.PENDING_PAYMENT
+            and booking.hold_expires_at is not None
+            and ensure_aware(booking.hold_expires_at) <= utcnow()
+        ):
+            booking.status = BookingStatus.EXPIRED
+            await self.session.flush()
+            raise ConflictError(
+                "Your slot hold has expired. Please book again.", code="HOLD_EXPIRED"
+            )
+
         if booking.status != BookingStatus.PENDING_PAYMENT:
             raise ConflictError(
                 "Booking is not awaiting payment.", code="BOOKING_NOT_PENDING"

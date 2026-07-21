@@ -4,12 +4,28 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.time import utcnow
 from app.models.booking import Booking
-from app.models.enums import ACTIVE_BOOKING_STATUSES
+from app.models.enums import ACTIVE_BOOKING_STATUSES, BookingStatus
 from app.models.slot import BookingSlot
+
+
+def _hold_not_expired():
+    """True for non-PENDING_PAYMENT bookings, or PENDING_PAYMENT bookings whose
+    hold hasn't clock-expired yet.
+
+    No background sweep runs in this deployment (only a manual admin endpoint),
+    so a booking can sit in PENDING_PAYMENT status long after hold_expires_at
+    has passed. Without this check, that slot would stay blocked for every
+    other user until an admin manually expires stale holds.
+    """
+    return or_(
+        Booking.status != BookingStatus.PENDING_PAYMENT,
+        Booking.hold_expires_at > utcnow(),
+    )
 
 
 class SlotRepo:
@@ -40,6 +56,7 @@ class SlotRepo:
             .where(
                 BookingSlot.charger_id == charger_id,
                 Booking.status.in_(ACTIVE_BOOKING_STATUSES),
+                _hold_not_expired(),
             )
         )
         res = await self.session.execute(stmt)
@@ -55,6 +72,7 @@ class SlotRepo:
             .where(
                 BookingSlot.charger_id == charger_id,
                 Booking.status.in_(ACTIVE_BOOKING_STATUSES),
+                _hold_not_expired(),
             )
         )
         res = await self.session.execute(stmt)
@@ -79,9 +97,25 @@ class BookingRepo:
             select(Booking.id).where(
                 Booking.slot_id == slot_id,
                 Booking.status.in_(ACTIVE_BOOKING_STATUSES),
+                _hold_not_expired(),
             ).limit(1)
         )
         return res.scalar_one_or_none() is not None
+
+    async def expire_if_stale(self, slot_id: uuid.UUID) -> None:
+        """Flip this slot's PENDING_PAYMENT booking to EXPIRED if its hold has
+        clock-expired, so a fresh booking attempt doesn't collide with a stale
+        row that the (non-existent) background sweep never cleaned up.
+        """
+        await self.session.execute(
+            update(Booking)
+            .where(
+                Booking.slot_id == slot_id,
+                Booking.status == BookingStatus.PENDING_PAYMENT,
+                Booking.hold_expires_at <= utcnow(),
+            )
+            .values(status=BookingStatus.EXPIRED)
+        )
 
     async def list_for_station_owner(self, station_ids: list[uuid.UUID]) -> list[Booking]:
         if not station_ids:

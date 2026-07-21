@@ -54,6 +54,12 @@ class Settings(BaseSettings):
     rl_otp_requests_per_hour: int = 5
     rl_otp_verify_per_10min: int = 10
 
+    # Twilio (SMS delivery for OTP codes). Leave blank to skip real sends —
+    # the OTP flow still works locally via CG_OTP_DEBUG returning the code.
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_from_number: str = ""
+
     # Razorpay
     razorpay_key_id: str = "rzp_test_placeholder"
     razorpay_key_secret: str = "placeholder_secret_min_32_chars_____"

@@ -75,7 +75,9 @@ tests/         api/test_auth_flow.py (SQLite, stubbed Redis)
 ## Notes
 - **Dev vs prod auth:** HS256 + shared secret locally; set `CG_JWT_ALGORITHM=RS256` with
   `CG_JWT_PRIVATE_KEY`/`CG_JWT_PUBLIC_KEY` (from KMS/Secrets Manager) in production.
-- **OTP delivery:** logged in dev (`CG_OTP_DEBUG=true`); wired to an SMS provider via Celery in prod.
+- **OTP delivery:** logged in dev (`CG_OTP_DEBUG=true`); sent via Twilio (`app/core/sms.py`) when
+  `CG_TWILIO_ACCOUNT_SID`/`CG_TWILIO_AUTH_TOKEN`/`CG_TWILIO_FROM_NUMBER` are set — a direct async
+  call, no Celery (there's no broker/worker anywhere in this stack).
 - **Refresh tokens** are stored only as HMAC hashes and rotate on every use, with reuse → reject.
 - Next slices per [`../docs/18-development-milestones.md`](../docs/18-development-milestones.md):
   discovery + booking, then payments + QR + sessions.

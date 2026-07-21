@@ -8,7 +8,7 @@ import { planRoute, PlanResult } from "@/lib/services/routePlanner";
 import { listVehicles, STATIC_VEHICLES } from "@/lib/services/vehicleService";
 import type { UserVehicle } from "@/lib/services/vehicleService";
 import { decodePolyline } from "@/lib/services/googleMaps";
-import { routes } from "@/lib/api";
+import { bookings, stations } from "@/lib/api";
 
 function RouteMap({ plan, isLight }: { plan: PlanResult; isLight: boolean }) {
   const mapRef     = useRef<HTMLDivElement>(null);
@@ -94,10 +94,10 @@ function AvailBadge({ avail, isLight }: { avail: string; isLight: boolean }) {
 }
 
 function DataSourceBadge({ source }: { source: PlanResult["data_source"] }) {
-  if (source === "google+backend") return null;
+  if (source === "routed+backend") return null;
   const labels: Record<string, string> = {
-    "google+ocm": "Open Charge Map data",
-    "offline": "Estimated (Maps unavailable)",
+    "routed+ocm": "Open Charge Map data",
+    "offline": "Estimated (routing unavailable)",
   };
   return (
     <div style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(255,192,67,.08)", border: "1px solid rgba(255,192,67,.2)", fontSize: 12, color: "#FFC043", marginBottom: 16 }}>
@@ -183,23 +183,56 @@ function ResultsInner() {
     setPaying(true); setPayError("");
     try {
       const selectedStops = Array.from(selected).map(i => plan.recommended_stops[i]);
-      const chargerIds = selectedStops.map(s => s.charger_id).filter(Boolean) as string[];
+      // Only "backend" stops have a real, bookable charger in our system —
+      // "ocm" and "estimated" stops carry no live availability we can reserve.
+      const bookable = selectedStops.filter(s => s.source === "backend" && s.charger_id);
 
-      if (chargerIds.length > 0) {
-        const journey = await routes.reserve({ source, destination, vehicle_id: vehicleId, stop_charger_ids: chargerIds });
-        router.push(`/journey/${journey.id}`);
-      } else {
-        // No real charger IDs — send to journey/new with params
-        const params = new URLSearchParams({
-          source, destination,
-          vehicle: vehicle.label,
-          stops: selectedStops.map(s => s.station_name).join(","),
-          total: String(selectedStops.reduce((sum, s) => sum + s.price_per_kwh, 0)),
-        });
-        router.push(`/journey/new?${params.toString()}`);
+      if (bookable.length === 0) {
+        setPayError(
+          selectedStops.length > 0
+            ? "None of your selected stops has a live, bookable charger yet. Open Discover to find and book a real station near your route."
+            : "Select at least one charging stop first.",
+        );
+        setPaying(false);
+        return;
       }
-    } catch {
-      setPayError("Failed to reserve stops. Please try again.");
+
+      // Slots can only be held for a short window, so only the nearest stop
+      // can be reserved now — confirm before silently dropping the rest.
+      if (bookable.length > 1 && !window.confirm(
+        `Slots can't be held hours in advance, so only your first stop (${bookable[0].station_name}) can be booked now. ` +
+        `You'll need to book the remaining ${bookable.length - 1} stop(s) closer to arrival. Continue?`,
+      )) {
+        setPaying(false);
+        return;
+      }
+
+      const stop = bookable[0];
+      // Find the available slot closest to this stop's estimated arrival time.
+      const arrivalMinutes = plan.total_distance_km > 0
+        ? (stop.distance_from_start_km / plan.total_distance_km) * plan.estimated_duration_min
+        : 0;
+      const targetTime = Date.now() + arrivalMinutes * 60_000;
+
+      const slots = await stations.slots(stop.charger_id!);
+      const upcoming = slots.filter(s => s.available && new Date(s.slot_start).getTime() > Date.now());
+      if (upcoming.length === 0) {
+        setPayError(`No available slots at ${stop.station_name} right now. Try booking it directly from the station page.`);
+        setPaying(false);
+        return;
+      }
+      const bestSlot = upcoming.reduce((best, s) =>
+        Math.abs(new Date(s.slot_start).getTime() - targetTime) < Math.abs(new Date(best.slot_start).getTime() - targetTime) ? s : best
+      );
+
+      const duration = Math.max(30, Math.round(stop.charge_time_min));
+      const booking = await bookings.create(stop.charger_id!, bestSlot.slot_start, duration);
+
+      // Slots can't be held hours ahead, so only the nearest bookable stop is
+      // reserved now — remaining stops should be booked closer to arrival.
+      router.push(`/pay/${booking.id}`);
+    } catch (e: unknown) {
+      setPayError(e instanceof Error ? e.message : "Failed to reserve this stop. Please try again.");
       setPaying(false);
     }
   }
@@ -246,7 +279,12 @@ function ResultsInner() {
 
   if (!plan) return null;
 
-  const driveMin = plan.estimated_duration_min - plan.total_charging_time_min;
+  // plan.estimated_duration_min is pure road-driving time from the routing
+  // provider — it never includes charging, so it must NOT be reduced by
+  // total_charging_time_min here (that previously understated drive time by
+  // the exact amount of time charging was expected to take).
+  const driveMin = plan.estimated_duration_traffic_min ?? plan.estimated_duration_min;
+  const totalTripMin = plan.estimated_duration_min + plan.total_charging_time_min;
 
   return (
     <div style={{ background: "transparent", minHeight: "100vh" }}>
@@ -265,7 +303,7 @@ function ResultsInner() {
           <div style={{ display: "flex", gap: 20 }}>
             {[
               { label: "Distance", val: `${plan.total_distance_km} km` },
-              { label: "Drive time", val: plan.estimated_duration_traffic_min ? `${Math.floor(plan.estimated_duration_traffic_min / 60)}h ${plan.estimated_duration_traffic_min % 60}m` : `${Math.floor(driveMin / 60)}h ${driveMin % 60}m` },
+              { label: "Drive time", val: `${Math.floor(driveMin / 60)}h ${driveMin % 60}m` },
               { label: "Charge stops", val: `${plan.stops_required}` },
             ].map(s => (
               <div key={s.label} style={{ textAlign: "right" }}>
@@ -325,33 +363,50 @@ function ResultsInner() {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
                           <span style={{ fontWeight: 700, fontSize: 16, color: textPrimary }}>
-                            ⚡ {stop.station_name}
-                            {isEstimated && <span style={{ fontSize: 11, fontWeight: 500, color: "#FFC043", marginLeft: 8 }}>(estimated)</span>}
+                            ⚡ {isEstimated ? `Charging needed near ${stop.distance_from_start_km} km` : stop.station_name}
                           </span>
-                          <AvailBadge avail={stop.availability} isLight={isLight} />
-                          {stop.source === "ocm" && <span style={{ fontSize: 10, color: textMuted, padding: "2px 7px", borderRadius: 999, border: `1px solid ${cardBorder}` }}>OCM</span>}
-                          {stop.source === "backend" && <span style={{ fontSize: 10, color: accent, padding: "2px 7px", borderRadius: 999, border: `1px solid ${accentBorder}` }}>Live</span>}
+                          {isEstimated ? (
+                            <span style={{ fontSize: 10, fontWeight: 600, color: "#FFC043", padding: "3px 10px", borderRadius: 999, background: "rgba(255,192,67,.12)" }}>Expanding here</span>
+                          ) : (
+                            <>
+                              <AvailBadge avail={stop.availability} isLight={isLight} />
+                              {stop.source === "ocm" && <span style={{ fontSize: 10, color: textMuted, padding: "2px 7px", borderRadius: 999, border: `1px solid ${cardBorder}` }}>OCM</span>}
+                              {stop.source === "backend" && <span style={{ fontSize: 10, color: accent, padding: "2px 7px", borderRadius: 999, border: `1px solid ${accentBorder}` }}>Live</span>}
+                            </>
+                          )}
                         </div>
-                        {stop.city && stop.city !== "En route" && (
+                        {!isEstimated && stop.city && stop.city !== "En route" && (
                           <div style={{ fontSize: 12, color: textSub, marginBottom: 10 }}>{stop.city}</div>
                         )}
                         <div className="stop-stats-grid" style={{ marginTop: 12 }}>
-                          {[
-                            { label: "Arrival battery", val: `${stop.arrival_battery_pct}%`, warn: stop.arrival_battery_pct < 15 },
-                            { label: "Charge time", val: `${stop.charge_time_min} min` },
-                            { label: "Charger power", val: `${stop.charger_power_kw} kW` },
-                            { label: "Price", val: stop.price_per_kwh > 0 ? `₹${(stop.price_per_kwh / 100).toFixed(0)}/kWh` : "—" },
-                          ].map(s => (
+                          {(isEstimated
+                            ? [
+                                { label: "Arrival battery", val: `${stop.arrival_battery_pct}%`, warn: stop.arrival_battery_pct < 15 },
+                                { label: "Charging needed", val: `~${stop.charge_time_min} min` },
+                              ]
+                            : [
+                                { label: "Arrival battery", val: `${stop.arrival_battery_pct}%`, warn: stop.arrival_battery_pct < 15 },
+                                { label: "Charge time", val: `${stop.charge_time_min} min` },
+                                { label: "Charger power", val: `${stop.charger_power_kw} kW` },
+                                { label: "Price", val: stop.price_per_kwh > 0 ? `₹${(stop.price_per_kwh / 100).toFixed(0)}/kWh` : "—" },
+                              ]
+                          ).map(s => (
                             <div key={s.label}>
                               <div style={{ fontSize: 10, color: textMuted, marginBottom: 3 }}>{s.label}</div>
                               <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", color: s.warn ? "#FF5A5F" : textPrimary }}>{s.val}</div>
                             </div>
                           ))}
                         </div>
-                        <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-                          <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: raisedBg, border: `1px solid ${cardBorder}`, color: textSub }}>{stop.connector_type}</span>
-                          <span style={{ fontSize: 12, color: textMuted }}>{stop.distance_from_start_km} km from {source}</span>
-                        </div>
+                        {isEstimated ? (
+                          <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: isLight ? "rgba(255,192,67,.08)" : "rgba(255,192,67,.06)", border: `1px solid ${isLight ? "rgba(217,119,6,.2)" : "rgba(255,192,67,.18)"}`, fontSize: 12, color: isLight ? "#92400E" : "#FFC043", lineHeight: 1.5 }}>
+                            No partner station along this stretch yet — we&apos;re expanding our charging network here. Find a charger independently near this point for now.
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+                            <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: raisedBg, border: `1px solid ${cardBorder}`, color: textSub }}>{stop.connector_type}</span>
+                            <span style={{ fontSize: 12, color: textMuted }}>{stop.distance_from_start_km} km from {source}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0, marginTop: 2, background: isSel ? accent : "transparent", border: `2px solid ${isSel ? accent : cardBorder}`, display: "grid", placeItems: "center", transition: "all .15s" }}>
@@ -381,9 +436,12 @@ function ResultsInner() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {[
                 { label: "Total distance",  val: `${plan.total_distance_km} km` },
-                { label: "Drive time",      val: plan.estimated_duration_traffic_min ? `${Math.floor(plan.estimated_duration_traffic_min / 60)}h ${plan.estimated_duration_traffic_min % 60}m (with traffic)` : `${Math.floor(driveMin / 60)}h ${driveMin % 60}m` },
+                { label: "Drive time",      val: `${Math.floor(driveMin / 60)}h ${driveMin % 60}m${plan.estimated_duration_traffic_min ? " (with traffic)" : ""}` },
                 { label: "Charging time",   val: plan.total_charging_time_min > 0 ? `${plan.total_charging_time_min} min` : "None needed" },
                 { label: "Charging stops",  val: `${plan.stops_required}` },
+                ...(plan.total_charging_time_min > 0
+                  ? [{ label: "Total trip time", val: `${Math.floor(totalTripMin / 60)}h ${totalTripMin % 60}m` }]
+                  : []),
               ].map(s => (
                 <div key={s.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
                   <span style={{ color: textSub }}>{s.label}</span>

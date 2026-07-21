@@ -26,6 +26,7 @@ import app.services.auth_service as auth_service_module
 import app.services.booking_service as booking_service_module
 from app.api.deps import get_db
 from app.core.razorpay import get_razorpay_gateway
+from app.core.sms import get_twilio_gateway
 from app.main import app
 from app.models import Base, Charger, Role, Station, User
 from app.models.enums import ChargerStatus, ConnectorType, RoleName, StationStatus
@@ -53,6 +54,16 @@ class FakeRazorpayGateway:
 
     async def refund(self, payment_id: str, amount_paise: int) -> dict:
         return {"id": f"rfnd_test_{payment_id}"}
+
+
+class FakeTwilioGateway:
+    """Test double for TwilioGateway — no network calls, records sends."""
+
+    def __init__(self):
+        self.sent: list[tuple[str, str]] = []
+
+    async def send_otp(self, phone: str, code: str) -> None:
+        self.sent.append((phone, code))
 
 
 class FakeRedis:
@@ -115,6 +126,7 @@ async def client(engine, monkeypatch):
 
     # Fake Redis for QR jti single-use registry.
     fake_redis = FakeRedis()
+    fake_twilio = FakeTwilioGateway()
 
     monkeypatch.setattr(auth_service_module, "sliding_window_allow", _always_allow)
     monkeypatch.setattr(booking_service_module, "lock", _fake_lock)
@@ -122,9 +134,11 @@ async def client(engine, monkeypatch):
 
     app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_razorpay_gateway] = lambda: FakeRazorpayGateway()
+    app.dependency_overrides[get_twilio_gateway] = lambda: fake_twilio
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        ac.fake_twilio = fake_twilio  # exposed for assertions in tests
         yield ac
 
     app.dependency_overrides.clear()

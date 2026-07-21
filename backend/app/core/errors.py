@@ -62,6 +62,12 @@ class GoneError(AppError):
     title = "Resource expired"
 
 
+class ServiceUnavailableError(AppError):
+    status_code = 503
+    code = "SERVICE_UNAVAILABLE"
+    title = "Service temporarily unavailable"
+
+
 def _problem(request: Request, status: int, code: str, title: str, detail: str) -> JSONResponse:
     response = JSONResponse(
         status_code=status,
