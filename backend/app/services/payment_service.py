@@ -26,6 +26,7 @@ from app.repositories.booking_repo import BookingRepo
 from app.repositories.payment_repo import PaymentRepo
 from app.schemas.bookings import BookingOut
 from app.schemas.payments import PaymentVerifyIn
+from app.services.realtime import publish_slot_event
 
 # Booking statuses the user can self-cancel (charges not yet started).
 _CANCELLABLE = {
@@ -62,9 +63,9 @@ class PaymentService:
         if booking is None or booking.user_id != user_id:
             raise NotFoundError("Booking not found.", code="BOOKING_NOT_FOUND")
 
-        # A hold past its TTL must never reach Razorpay — no periodic sweep runs
-        # in this deployment, so expiry is enforced lazily right here instead of
-        # relying on a background job to have already flipped the status.
+        # A hold past its TTL must never reach Razorpay — the background sweep
+        # (app.core.scheduler) only runs periodically, so expiry is also
+        # enforced lazily right here rather than trusting it's already flipped.
         if (
             booking.status == BookingStatus.PENDING_PAYMENT
             and booking.hold_expires_at is not None
@@ -130,6 +131,7 @@ class PaymentService:
         qr_token, jti = issue_qr(booking.id)
         booking.qr_jti = jti
         await self.session.flush()
+        await publish_slot_event(booking.station_id, booking.charger_id, "booking_confirmed")
 
         return PaymentConfirmResult(booking=booking, qr_token=qr_token)
 
@@ -167,6 +169,7 @@ class PaymentService:
                 booking.status = BookingStatus.CONFIRMED
                 _, jti = issue_qr(booking.id)
                 booking.qr_jti = jti
+                await publish_slot_event(booking.station_id, booking.charger_id, "booking_confirmed")
 
         elif event_name == "refund.processed":
             entity = event.get("payload", {}).get("refund", {}).get("entity", {})
@@ -206,4 +209,5 @@ class PaymentService:
 
         booking.status = BookingStatus.CANCELLED
         await self.session.flush()
+        await publish_slot_event(booking.station_id, booking.charger_id, "hold_released")
         return booking

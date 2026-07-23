@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import Field
 
 from app.models.enums import BookingStatus
 from app.schemas.common import ORMModel, StrictModel
 from app.schemas.stations import ChargerOut, StationOut
+
+SlotStatus = Literal["AVAILABLE", "HELD", "BOOKED", "OFFLINE", "PAST"]
 
 
 class BookingCreateIn(StrictModel):
@@ -37,3 +40,10 @@ class BookingOut(ORMModel):
 
 class QRTokenOut(StrictModel):
     qr_token: str
+
+
+class SlotOut(StrictModel):
+    slot_start: datetime
+    slot_end: datetime
+    status: SlotStatus
+    available: bool  # == (status == "AVAILABLE"); kept for existing consumers

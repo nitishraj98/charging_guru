@@ -17,10 +17,11 @@ def _hold_not_expired():
     """True for non-PENDING_PAYMENT bookings, or PENDING_PAYMENT bookings whose
     hold hasn't clock-expired yet.
 
-    No background sweep runs in this deployment (only a manual admin endpoint),
-    so a booking can sit in PENDING_PAYMENT status long after hold_expires_at
-    has passed. Without this check, that slot would stay blocked for every
-    other user until an admin manually expires stale holds.
+    A background sweep (app.core.scheduler) periodically flips clock-expired
+    holds to EXPIRED, but it only runs every HOLD_SWEEP_INTERVAL_SECONDS — a
+    request landing in the gap between ticks would still see a stale
+    PENDING_PAYMENT row without this check, blocking the slot for everyone
+    else until the next sweep tick.
     """
     return or_(
         Booking.status != BookingStatus.PENDING_PAYMENT,
@@ -48,35 +49,28 @@ class SlotRepo:
         await self.session.flush()
         return slot
 
-    async def taken_starts_for_charger(self, charger_id: uuid.UUID) -> set[datetime]:
-        """slot_start values on this charger with an active booking."""
+    async def active_intervals_for_charger(
+        self, charger_id: uuid.UUID, window_start: datetime, window_end: datetime
+    ) -> list[tuple[datetime, datetime, BookingStatus]]:
+        """(slot_start, slot_end, booking.status) for every active, non-expired
+        booking on this charger whose slot overlaps [window_start, window_end).
+
+        One query; the caller does per-candidate overlap math in Python rather
+        than issuing one query per grid slot.
+        """
         stmt = (
-            select(BookingSlot.slot_start)
+            select(BookingSlot.slot_start, BookingSlot.slot_end, Booking.status)
             .join(Booking, Booking.slot_id == BookingSlot.id)
             .where(
                 BookingSlot.charger_id == charger_id,
                 Booking.status.in_(ACTIVE_BOOKING_STATUSES),
                 _hold_not_expired(),
+                BookingSlot.slot_start < window_end,
+                BookingSlot.slot_end > window_start,
             )
         )
         res = await self.session.execute(stmt)
-        return set(res.scalars().all())
-
-    async def active_slot_ids_for_charger(
-        self, charger_id: uuid.UUID
-    ) -> set[uuid.UUID]:
-        """slot ids on this charger that currently have an active booking."""
-        stmt = (
-            select(Booking.slot_id)
-            .join(BookingSlot, BookingSlot.id == Booking.slot_id)
-            .where(
-                BookingSlot.charger_id == charger_id,
-                Booking.status.in_(ACTIVE_BOOKING_STATUSES),
-                _hold_not_expired(),
-            )
-        )
-        res = await self.session.execute(stmt)
-        return set(res.scalars().all())
+        return [(s, e, st) for s, e, st in res.all()]
 
 
 class BookingRepo:
@@ -101,6 +95,43 @@ class BookingRepo:
             ).limit(1)
         )
         return res.scalar_one_or_none() is not None
+
+    async def overlapping_active(
+        self, charger_id: uuid.UUID, start: datetime, end: datetime
+    ) -> bool:
+        """Fresh, lock-scoped re-check: does any active/non-expired booking on
+        this charger overlap [start, end)? Used inside create_booking's
+        per-charger lock right before insert — must not trust anything
+        computed outside the lock, since it may be stale by the time we get in.
+        """
+        stmt = (
+            select(Booking.id)
+            .join(BookingSlot, BookingSlot.id == Booking.slot_id)
+            .where(
+                BookingSlot.charger_id == charger_id,
+                Booking.status.in_(ACTIVE_BOOKING_STATUSES),
+                _hold_not_expired(),
+                BookingSlot.slot_start < end,
+                BookingSlot.slot_end > start,
+            )
+            .limit(1)
+        )
+        res = await self.session.execute(stmt)
+        return res.scalar_one_or_none() is not None
+
+    async def stale_pending_charger_refs(
+        self, now: datetime
+    ) -> list[tuple[uuid.UUID, uuid.UUID, uuid.UUID]]:
+        """(booking_id, station_id, charger_id) for every PENDING_PAYMENT
+        booking past its hold — collected BEFORE the sweep's bulk UPDATE runs,
+        so the caller knows which chargers to publish slot_update events for.
+        """
+        stmt = select(Booking.id, Booking.station_id, Booking.charger_id).where(
+            Booking.status == BookingStatus.PENDING_PAYMENT,
+            Booking.hold_expires_at <= now,
+        )
+        res = await self.session.execute(stmt)
+        return list(res.all())
 
     async def expire_if_stale(self, slot_id: uuid.UUID) -> None:
         """Flip this slot's PENDING_PAYMENT booking to EXPIRED if its hold has

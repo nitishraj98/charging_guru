@@ -11,6 +11,9 @@ from app.models.enums import MembershipTier
 HOLD_TTL_SECONDS = 300          # slot held while payment is pending
 BOOKING_FEE_PAISE = 1000        # ₹10 convenience fee
 SLOT_LOCK_TTL_MS = 10_000       # Redis lock window for booking create
+LOCK_MAX_ATTEMPTS = 20          # bounded retry on a contended per-charger lock
+LOCK_RETRY_DELAY_S = 0.08       # base delay between lock-acquire retries
+LOCK_RETRY_JITTER_S = 0.05      # random jitter added to each retry delay
 DEFAULT_DISCOVERY_RADIUS_KM = 5.0
 MAX_DISCOVERY_RADIUS_KM = 50.0
 

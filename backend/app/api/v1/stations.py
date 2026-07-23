@@ -16,7 +16,7 @@ from app.api.deps import (
 from app.domain.policies import DEFAULT_DISCOVERY_RADIUS_KM
 from app.models.user import User
 from app.schemas.admin import PagedResult
-from app.schemas.bookings import BookingOut
+from app.schemas.bookings import BookingOut, SlotOut
 from app.schemas.stations import (
     ChargerCreateIn,
     ChargerOut,
@@ -157,14 +157,15 @@ async def set_charger_status(
     )
 
 
-@router.get("/chargers/{charger_id}/slots")
+@router.get("/chargers/{charger_id}/slots", response_model=list[SlotOut])
 async def charger_slots(
     charger_id: uuid.UUID,
     date: str | None = Query(None, description="YYYY-MM-DD (defaults to today)"),
+    duration_minutes: int = Query(30, ge=15, le=180),
     booking: BookingService = Depends(get_booking_service),
 ):
     if date:
         day = datetime.fromisoformat(date).replace(tzinfo=timezone.utc)
     else:
         day = datetime.now(timezone.utc)
-    return await booking.available_slots(charger_id, day)
+    return await booking.available_slots(charger_id, day, duration_minutes)

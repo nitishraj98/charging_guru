@@ -214,7 +214,8 @@ function ResultsInner() {
         : 0;
       const targetTime = Date.now() + arrivalMinutes * 60_000;
 
-      const slots = await stations.slots(stop.charger_id!);
+      const duration = Math.max(30, Math.round(stop.charge_time_min));
+      const slots = await stations.slots(stop.charger_id!, undefined, duration);
       const upcoming = slots.filter(s => s.available && new Date(s.slot_start).getTime() > Date.now());
       if (upcoming.length === 0) {
         setPayError(`No available slots at ${stop.station_name} right now. Try booking it directly from the station page.`);
@@ -225,7 +226,6 @@ function ResultsInner() {
         Math.abs(new Date(s.slot_start).getTime() - targetTime) < Math.abs(new Date(best.slot_start).getTime() - targetTime) ? s : best
       );
 
-      const duration = Math.max(30, Math.round(stop.charge_time_min));
       const booking = await bookings.create(stop.charger_id!, bestSlot.slot_start, duration);
 
       // Slots can't be held hours ahead, so only the nearest bookable stop is

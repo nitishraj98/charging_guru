@@ -18,7 +18,9 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string; ic
   EXPIRED:         { label: "Expired",          color: "#495154", bg: "rgba(73,81,84,.1)",    icon: "⌛" },
 };
 
-function Timeline({ status }: { status: string }) {
+const TERMINAL_STATUSES = ["COMPLETED", "CANCELLED", "EXPIRED"];
+
+function Timeline({ status, isLight }: { status: string; isLight: boolean }) {
   const STEPS = [
     { key: "PENDING_PAYMENT", label: "Booked",    icon: "📋" },
     { key: "CONFIRMED",       label: "Confirmed", icon: "✓"  },
@@ -30,6 +32,16 @@ function Timeline({ status }: { status: string }) {
   const currentIdx = ORDER.indexOf(status);
   const isCancelled = status === "CANCELLED" || status === "EXPIRED";
 
+  const accent      = isLight ? "#00A855" : "#00E676";
+  const accentSoft  = isLight ? "#DCFCE7" : "#00532B";
+  const accentText  = isLight ? "#FFFFFF" : "#050708";
+  const doneIconFg  = isLight ? "#059669" : "#4DFFA6";
+  const stepBorder  = isLight ? "#CBD5E1" : "#2E3638";
+  const doneLabel   = isLight ? "#334155" : "#98A1A6";
+  const pendingLabel= isLight ? "#94A3B8" : "#495154";
+  const railDone    = isLight ? "#86EFAC" : "#00532B";
+  const railPending = isLight ? "#E2E8F0" : "#1A1F21";
+
   return (
     <div className="booking-timeline" style={{ gap: 0 }}>
       {STEPS.map((step, i) => {
@@ -40,16 +52,16 @@ function Timeline({ status }: { status: string }) {
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
               <div style={{
                 width: 32, height: 32, borderRadius: "50%", display: "grid", placeItems: "center", fontSize: 13,
-                background: done ? (active ? "#00E676" : "#00532B") : "transparent",
-                border: done ? "none" : "1.5px solid #2E3638",
-                color: done ? (active ? "#050708" : "#4DFFA6") : "#495154",
-                boxShadow: active ? "0 0 0 4px rgba(0,230,118,.2)" : "none",
+                background: done ? (active ? accent : accentSoft) : "transparent",
+                border: done ? "none" : `1.5px solid ${stepBorder}`,
+                color: done ? (active ? accentText : doneIconFg) : pendingLabel,
+                boxShadow: active ? `0 0 0 4px ${isLight ? "rgba(0,168,85,.18)" : "rgba(0,230,118,.2)"}` : "none",
                 transition: "all .2s",
               }}>{done ? step.icon : ""}</div>
-              <span style={{ fontSize: 10, color: done ? "#98A1A6" : "#495154", whiteSpace: "nowrap" }}>{step.label}</span>
+              <span style={{ fontSize: 10, color: done ? doneLabel : pendingLabel, whiteSpace: "nowrap" }}>{step.label}</span>
             </div>
             {i < STEPS.length - 1 && (
-              <div style={{ flex: 1, height: 2, background: done && currentIdx > i ? "#00532B" : "#1A1F21", margin: "0 4px", marginBottom: 18, transition: "background .2s" }} />
+              <div style={{ flex: 1, height: 2, background: done && currentIdx > i ? railDone : railPending, margin: "0 4px", marginBottom: 18, transition: "background .2s" }} />
             )}
           </div>
         );
@@ -80,8 +92,8 @@ export default function BookingDetailPage() {
   const accentBrd   = isLight ? "#86EFAC" : "rgba(0,230,118,.25)";
   const raisedBg    = isLight ? "#F1F5F9" : "#181D1F";
 
-  function load() {
-    setLoading(true); setError("");
+  function load(silent = false) {
+    if (!silent) { setLoading(true); setError(""); }
     Promise.all([
       bookings.get(id),
       payments.getByBooking(id).catch(() => null),
@@ -89,8 +101,8 @@ export default function BookingDetailPage() {
       setBooking(b);
       setPayment(p);
     }).catch((e: unknown) => {
-      setError(e instanceof Error ? e.message : "Failed to load booking");
-    }).finally(() => setLoading(false));
+      if (!silent) setError(e instanceof Error ? e.message : "Failed to load booking");
+    }).finally(() => { if (!silent) setLoading(false); });
   }
 
   useEffect(() => {
@@ -98,6 +110,16 @@ export default function BookingDetailPage() {
     // load is stable (defined outside effect); router/id are the real deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, router]);
+
+  // Poll for status changes so the customer sees "checked in" / "charging"
+  // update on its own — the owner can transition this booking at any time
+  // from the station portal, with nothing on this end to push a live update.
+  useEffect(() => {
+    if (!booking || TERMINAL_STATUSES.includes(booking.status)) return;
+    const interval = setInterval(() => load(true), 6000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking?.status]);
 
   // Re-issue a fresh, real signed QR token whenever this becomes a
   // scannable CONFIRMED-with-pass booking — the token itself is never
@@ -213,7 +235,7 @@ export default function BookingDetailPage() {
             <span style={{ fontSize: 20 }}>{meta.icon}</span>
             <span style={{ padding: "5px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, color: meta.color, background: meta.bg }}>{meta.label}</span>
           </div>
-          <Timeline status={booking.status} />
+          <Timeline status={booking.status} isLight={isLight} />
         </div>
 
         {/* Charger info */}

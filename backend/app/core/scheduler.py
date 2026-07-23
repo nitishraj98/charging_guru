@@ -25,10 +25,16 @@ from app.core.logging import get_logger
 from app.repositories.booking_repo import BookingRepo, SlotRepo
 from app.repositories.station_repo import ChargerRepo
 from app.services.booking_service import BookingService
+from app.services.realtime import publish_slot_event
 
 log = get_logger("scheduler")
 
-HOLD_SWEEP_INTERVAL_SECONDS = 60
+# Tight enough that "a slot freed up" reaches other users watching the slot
+# picker without a noticeable lag — this is now also the mechanism that
+# powers that live update, not just DB-status bookkeeping (correctness never
+# depended on sweep promptness; the lazy-expiry checks in booking_service and
+# booking_repo already cover every path that matters for that).
+HOLD_SWEEP_INTERVAL_SECONDS = 15
 
 
 async def _sweep_once() -> None:
@@ -36,10 +42,12 @@ async def _sweep_once() -> None:
         service = BookingService(
             BookingRepo(session), SlotRepo(session), ChargerRepo(session), session
         )
-        count = await service.expire_stale_holds()
+        expired = await service.expire_stale_holds()
         await session.commit()
-        if count:
-            log.info("hold_sweep", expired_count=count)
+        if expired:
+            log.info("hold_sweep", expired_count=len(expired))
+            for _booking_id, station_id, charger_id in expired:
+                await publish_slot_event(station_id, charger_id, "hold_expired")
 
 
 async def run_hold_sweep_loop() -> None:

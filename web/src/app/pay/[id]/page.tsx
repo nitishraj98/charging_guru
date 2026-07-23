@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { bookings, payments, Booking, PaymentOrder } from "@/lib/api";
+import { bookings, payments, beaconRefund, Booking, PaymentOrder } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -73,6 +73,12 @@ export default function PayPage() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
   const [holdExpired, setHoldExpired] = useState(false);
+  // Tracks an active Razorpay attempt so the pagehide/back-button release
+  // logic never cancels a booking that's genuinely mid-payment — some flows
+  // (UPI intent apps, net-banking redirects) can trigger a page-hide while
+  // still legitimately in progress. Only cleared on failure/dismiss, never
+  // on success (success navigates away before any of this could matter).
+  const paymentInFlightRef = useRef(false);
 
   const bg          = isLight ? "#F3F7FB"              : "#080B0C";
   const cardBg      = isLight ? "#FFFFFF"              : "#101415";
@@ -109,6 +115,7 @@ export default function PayPage() {
   async function handlePay() {
     if (!order || !booking || holdExpired) return;
     setPaying(true); setError("");
+    paymentInFlightRef.current = true;
 
     if (!window.Razorpay || !RZP_KEY) {
       try {
@@ -121,6 +128,7 @@ export default function PayPage() {
       } catch {
         setError("Payment failed. Ensure the backend is running.");
         setPaying(false);
+        paymentInFlightRef.current = false;
       }
       return;
     }
@@ -134,7 +142,7 @@ export default function PayPage() {
       order_id: order.razorpay_order_id,
       prefill: {},
       theme: { color: "#00E676" },
-      modal: { ondismiss: () => { setPaying(false); } },
+      modal: { ondismiss: () => { setPaying(false); paymentInFlightRef.current = false; } },
       handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
         try {
           const result = await payments.verify(
@@ -146,6 +154,7 @@ export default function PayPage() {
         } catch {
           setError("Payment verification failed. Please contact support.");
           setPaying(false);
+          paymentInFlightRef.current = false;
         }
       },
     };
@@ -155,9 +164,32 @@ export default function PayPage() {
       const r = resp as { error?: { description?: string } };
       setError(`Payment failed: ${r?.error?.description ?? "Unknown error"}`);
       setPaying(false);
+      paymentInFlightRef.current = false;
     });
     rzp.open();
   }
+
+  // Explicit exit — release the hold immediately instead of letting it sit
+  // for the full 5 minutes. Best-effort: navigation proceeds either way.
+  async function handleBack() {
+    if (booking?.status === "PENDING_PAYMENT" && !paymentInFlightRef.current) {
+      try { await payments.refund(booking.id); } catch { /* best-effort */ }
+    }
+    router.back();
+  }
+
+  // Tab/browser close — pagehide is the correct signal (unlike
+  // visibilitychange, it doesn't fire on ordinary tab-switch/minimize, e.g.
+  // switching to a banking app for OTP mid-payment, which must not cancel it).
+  useEffect(() => {
+    function onHide() {
+      if (booking?.status === "PENDING_PAYMENT" && !paymentInFlightRef.current) {
+        beaconRefund(booking.id);
+      }
+    }
+    document.addEventListener("pagehide", onHide);
+    return () => document.removeEventListener("pagehide", onHide);
+  }, [booking]);
 
   const totalRs = ((booking?.amount ?? 0) / 100);
   const slotTime = booking?.slot_start
@@ -197,7 +229,7 @@ export default function PayPage() {
 
         {/* Back + title */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
-          <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 12, display: "grid", placeItems: "center", background: cardBg, border: `1px solid ${cardBorder}`, color: textPrimary, cursor: "pointer", flexShrink: 0 }}>
+          <button onClick={handleBack} style={{ width: 40, height: 40, borderRadius: 12, display: "grid", placeItems: "center", background: cardBg, border: `1px solid ${cardBorder}`, color: textPrimary, cursor: "pointer", flexShrink: 0 }}>
             <ArrowLeft size={16}/>
           </button>
           <div>

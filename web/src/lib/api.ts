@@ -8,6 +8,21 @@ function getToken(): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+// Fire-and-forget request for page-unload moments (tab close, back button)
+// where the page may not survive long enough for a normal awaited fetch.
+// navigator.sendBeacon can't set the Authorization header this app's auth
+// relies on, so `keepalive: true` is the modern replacement — it lets the
+// browser complete the request after the page starts unloading.
+export function beaconRefund(bookingId: string): void {
+  const tok = getToken();
+  if (!tok) return;
+  fetch(`${BASE}/api/v1/payments/${bookingId}/refund`, {
+    method: "POST",
+    keepalive: true,
+    headers: { "Authorization": `Bearer ${tok}`, "Content-Type": "application/json" },
+  }).catch(() => {});
+}
+
 let refreshing: Promise<boolean> | null = null;
 
 // Calls the BFF /api/auth refresh action which rotates both cookies server-side.
@@ -73,10 +88,22 @@ async function bffPost<T>(action: string, body?: Record<string, unknown>): Promi
 export const auth = {
   otpRequest: (phone: string) =>
     bffPost<{ request_id: string; debug_code?: string }>("otp-request", { phone }),
-  otpVerify: (request_id: string, code: string) =>
-    bffPost<{ ok: true; is_new: boolean }>("otp-verify", { request_id, code }),
+  otpVerify: (request_id: string, code: string, device?: { id: string; name: string; platform: string }) =>
+    bffPost<{ ok: true; is_new: boolean }>("otp-verify", { request_id, code, device }),
   logout: () => bffPost<{ ok: true }>("logout"),
   me: () => request<User>("/api/v1/users/me"),
+};
+
+// ── Auth sessions (device/session management) ─────────────────────────────────
+export const authSessions = {
+  list: () => request<UserSessionInfo[]>("/api/v1/auth/sessions"),
+  revoke: (id: string) => request<void>(`/api/v1/auth/sessions/${id}`, { method: "DELETE" }),
+  revokeOthers: () => request<void>("/api/v1/auth/sessions/others", { method: "DELETE" }),
+  rename: (id: string, device_name: string) =>
+    request<UserSessionInfo>(`/api/v1/auth/sessions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ device_name }),
+    }),
 };
 
 // ── Stations ──────────────────────────────────────────────────────────────────
@@ -84,9 +111,10 @@ export const stations = {
   nearby: (lat: number, lng: number, radius_km = 10) =>
     request<Station[]>(`/api/v1/stations?lat=${lat}&lng=${lng}&radius_km=${radius_km}`, {}, false),
   get: (id: string) => request<Station>(`/api/v1/stations/${id}`, {}, false),
-  slots: (chargerId: string, date?: string) => {
-    const q = date ? `?date=${date}` : "";
-    return request<Slot[]>(`/api/v1/chargers/${chargerId}/slots${q}`, {}, false);
+  slots: (chargerId: string, date?: string, durationMinutes = 30) => {
+    const params = new URLSearchParams({ duration_minutes: String(durationMinutes) });
+    if (date) params.set("date", date);
+    return request<Slot[]>(`/api/v1/chargers/${chargerId}/slots?${params}`, {}, false);
   },
   stats: (id: string) => request<StationStats>(`/api/v1/stations/${id}/stats`, {}, false),
   reviews: {
@@ -161,6 +189,10 @@ export interface User {
   id: string; phone: string; full_name?: string; email?: string; roles?: string[];
   reward_points: number; membership_tier: "FREE" | "SILVER" | "GOLD"; referral_code: string;
 }
+export interface UserSessionInfo {
+  id: string; device_name: string | null; platform: string | null; ip: string | null;
+  user_agent: string | null; created_at: string; last_seen_at: string | null; is_current: boolean;
+}
 export interface Charger {
   id: string; label: string; charger_type: string; connector_type: string;
   power_kw: number; price_per_kwh: number; status: string;
@@ -170,7 +202,8 @@ export interface Station {
   status: string; rating_avg: number; rating_count: number; amenities: string[];
   chargers: Charger[]; distance_km?: number;
 }
-export interface Slot { slot_start: string; slot_end: string; available: boolean; }
+export type SlotStatus = "AVAILABLE" | "HELD" | "BOOKED" | "OFFLINE" | "PAST";
+export interface Slot { slot_start: string; slot_end: string; status: SlotStatus; available: boolean; }
 export interface Review {
   id: string; user_id: string; rating: number; comment?: string | null; created_at: string;
 }

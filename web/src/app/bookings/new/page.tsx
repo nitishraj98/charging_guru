@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { stations, bookings, Station, Charger, Slot } from "@/lib/api";
+import { stations, bookings, Station, Charger, Slot, SlotStatus } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
+import { useStationSocket } from "@/hooks/useStationSocket";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Zap, Clock, ChevronRight, Calendar, ArrowLeft, SearchX, IndianRupee } from "lucide-react";
@@ -13,6 +14,8 @@ const DURATIONS = [
   { mins: 90,  label: "1.5 hr" },
   { mins: 120, label: "2 hr"   },
 ];
+
+const POLL_INTERVAL_MS = 18_000;
 
 function BookingNewInner() {
   const router    = useRouter();
@@ -40,23 +43,63 @@ function BookingNewInner() {
   const accentDim  = isLight ? "rgba(0,210,106,.08)" : "rgba(0,230,118,.07)";
   const accentBrd  = isLight ? "rgba(0,210,106,.30)" : "rgba(0,230,118,.22)";
 
+  // Per-status visual treatment for the slot grid — only AVAILABLE is
+  // selectable; the rest communicate *why* a slot can't be picked instead of
+  // just disappearing, per the "show state, don't just hide" requirement.
+  const STATUS_META: Record<SlotStatus, { label: string; dot: string; bg: string; border: string; fg: string; selectable: boolean }> = {
+    AVAILABLE: { label: "",           dot: accent,                          bg: raisedBg, border: cardBorder, fg: textSub,   selectable: true  },
+    HELD:      { label: "Held",       dot: isLight ? "#D97706" : "#FFC043", bg: isLight ? "rgba(217,119,6,.08)" : "rgba(255,192,67,.06)", border: isLight ? "rgba(217,119,6,.25)" : "rgba(255,192,67,.20)", fg: isLight ? "#D97706" : "#FFC043", selectable: false },
+    BOOKED:    { label: "Booked",     dot: "#EF4444",                       bg: isLight ? "rgba(239,68,68,.06)" : "rgba(239,68,68,.05)", border: isLight ? "rgba(239,68,68,.20)" : "rgba(239,68,68,.16)", fg: "#EF4444", selectable: false },
+    OFFLINE:   { label: "Offline",    dot: textMuted,                       bg: raisedBg, border: cardBorder, fg: textMuted, selectable: false },
+    PAST:      { label: "",           dot: textMuted,                       bg: "transparent",                              border: cardBorder, fg: textMuted, selectable: false },
+  };
+
+  const refetchSlots = useCallback(async (opts: { silent?: boolean } = {}) => {
+    if (!chargerIdParam) return;
+    if (!opts.silent) setLoading(true);
+    try {
+      const sl = await stations.slots(chargerIdParam, undefined, duration);
+      setSlots(sl);
+      setSelected(prev => {
+        if (prev) {
+          const still = sl.find(s => s.slot_start === prev);
+          if (still?.available) return prev;
+        }
+        return sl.find(s => s.available)?.slot_start ?? "";
+      });
+      if (!opts.silent) setError("");
+    } catch (e: unknown) {
+      if (!opts.silent) setError(e instanceof Error ? e.message : "Failed to load available slots.");
+    } finally {
+      if (!opts.silent) setLoading(false);
+    }
+  }, [chargerIdParam, duration]);
+
   useEffect(() => {
     checkAuth().then(ok => { if (!ok) router.push("/login"); });
   }, [router]);
 
   useEffect(() => {
     if (!stationId || !chargerIdParam) { setError("Missing charger or station."); setLoading(false); return; }
-    Promise.all([stations.get(stationId), stations.slots(chargerIdParam)])
-      .then(([st, sl]) => {
-        setStation(st);
-        setCharger(st.chargers?.find(c => c.id === chargerIdParam) ?? null);
-        const avail = sl.filter(s => s.available);
-        setSlots(avail);
-        if (avail.length > 0) setSelected(avail[0].slot_start);
-      })
-      .catch(e => setError(e instanceof Error ? e.message : "Failed to load."))
-      .finally(() => setLoading(false));
+    stations.get(stationId).then(st => {
+      setStation(st);
+      setCharger(st.chargers?.find(c => c.id === chargerIdParam) ?? null);
+    }).catch(() => {});
   }, [stationId, chargerIdParam]);
+
+  useEffect(() => { refetchSlots(); }, [refetchSlots]);
+
+  // Live updates: instant via WS when available, ~18s poll as a fallback for
+  // dropped sockets or the case where the sweep beat the socket to it.
+  useStationSocket(stationId, (msg) => {
+    if (msg?.type === "slot_update" && msg?.charger_id === chargerIdParam) {
+      refetchSlots({ silent: true });
+    }
+  });
+  useEffect(() => {
+    const id = setInterval(() => refetchSlots({ silent: true }), POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [refetchSlots]);
 
   async function handleBook() {
     if (!selected) { setError("Please select a slot."); return; }
@@ -65,7 +108,15 @@ function BookingNewInner() {
       const b = await bookings.create(chargerIdParam, selected, duration);
       router.push(`/pay/${b.id}`);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to create booking.");
+      const code = (e as { body?: { code?: string } })?.body?.code;
+      if (code === "SLOT_UNAVAILABLE") {
+        setError("Sorry, this slot has just been reserved by another user.");
+      } else if (code === "LOCK_CONTENDED") {
+        setError("This charger is under heavy demand right now. Please try again in a moment.");
+      } else {
+        setError(e instanceof Error ? e.message : "Failed to create booking.");
+      }
+      refetchSlots({ silent: true });
       setBooking(false);
     }
   }
@@ -77,6 +128,7 @@ function BookingNewInner() {
     return new Date(iso).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" });
   }
   const estCost = charger ? ((charger.price_per_kwh/100) * charger.power_kw * (duration/60)) : 0;
+  const availableCount = slots.filter(s => s.available).length;
 
   if (loading) return (
     <div style={{ background: isLight?"#F3F7FB":"#080B0C", minHeight: "100vh" }}>
@@ -101,7 +153,7 @@ function BookingNewInner() {
         @keyframes fade-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
         .bk-fade{animation:fade-up .45s cubic-bezier(.16,1,.3,1) both}
         .slot-btn{transition:all .15s cubic-bezier(.16,1,.3,1)}
-        .slot-btn:hover{transform:translateY(-1px)}
+        .slot-btn:hover:not(:disabled){transform:translateY(-1px)}
         .dur-btn{transition:all .15s}
         .bk-cta{transition:all .22s cubic-bezier(.16,1,.3,1)}
         .bk-cta:hover:not(:disabled){transform:translateY(-2px);box-shadow:${isLight?"0 8px 32px rgba(0,210,106,.45)":"0 0 40px rgba(0,230,118,.28)"} !important}
@@ -120,7 +172,7 @@ function BookingNewInner() {
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: textPrimary, letterSpacing: "-.02em", marginBottom: 4 }}>Book Your Slot</h1>
-          <p style={{ fontSize: 13, color: textSub }}>Pick a time, choose your duration, and reserve — pay on the next step.</p>
+          <p style={{ fontSize: 13, color: textSub }}>Pick your duration, then a time — pay on the next step.</p>
         </div>
 
         {/* Station + charger info */}
@@ -141,21 +193,51 @@ function BookingNewInner() {
         )}
 
         <div className="bk-fade">
-          {/* Slot picker */}
+          {/* Duration picker — first, since it controls which slots can even fit */}
           <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "20px", marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <Clock size={14} color={accent}/>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: textMuted }}>Duration</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+              {DURATIONS.map(d => {
+                const isAct = duration === d.mins;
+                return (
+                  <button key={d.mins} className="dur-btn" onClick={() => setDuration(d.mins)} style={{ padding: "12px 6px", borderRadius: 13, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center", background: isAct?accentDim:raisedBg, border: `1.5px solid ${isAct?accentBrd:cardBorder}`, color: isAct?accent:textSub }}>
+                    {d.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Slot picker */}
+          <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "20px", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <Calendar size={14} color={accent}/>
               <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: textMuted }}>Select time slot</span>
-              {selected && <span style={{ marginLeft: "auto", fontSize: 12, color: textSub }}>{fmtDate(selected)}</span>}
+              {slots[0] && <span style={{ marginLeft: "auto", fontSize: 12, color: textSub }}>{fmtDate(slots[0].slot_start)}</span>}
             </div>
 
-            {slots.length === 0 ? (
+            {/* Legend */}
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 14, fontSize: 10.5, color: textMuted }}>
+              {([
+                ["AVAILABLE", "Available"], ["HELD", "Held"], ["BOOKED", "Booked"], ["OFFLINE", "Offline"], ["PAST", "Past"],
+              ] as [SlotStatus, string][]).map(([key, label]) => (
+                <span key={key} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: STATUS_META[key].dot, display: "inline-block" }}/>
+                  {label}
+                </span>
+              ))}
+            </div>
+
+            {slots.length === 0 || availableCount === 0 ? (
               <div style={{ padding: "28px 0", textAlign: "center" }}>
                 <div style={{ width: 52, height: 52, borderRadius: 16, background: raisedBg, border: `1px solid ${cardBorder}`, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>
                   <SearchX size={22} color={textMuted}/>
                 </div>
                 <div style={{ fontWeight: 700, color: textPrimary, marginBottom: 6 }}>No slots available</div>
-                <div style={{ fontSize: 13, color: textSub }}>All slots are taken. Try another charger.</div>
+                <div style={{ fontSize: 13, color: textSub }}>All slots are taken for this duration. Try a shorter duration or another charger.</div>
                 <button onClick={() => router.back()} style={{ marginTop: 16, padding: "10px 20px", borderRadius: 10, background: raisedBg, border: `1px solid ${cardBorder}`, color: textPrimary, fontSize: 13, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>
                   <ArrowLeft size={13}/> Go back
                 </button>
@@ -164,10 +246,28 @@ function BookingNewInner() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {slots.map(s => {
                   const isSel = selected === s.slot_start;
+                  const meta = STATUS_META[s.status];
                   return (
-                    <button key={s.slot_start} className="slot-btn" onClick={() => setSelected(s.slot_start)} style={{ padding: "12px 6px", borderRadius: 13, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center", background: isSel?accentDim:raisedBg, border: `1.5px solid ${isSel?accentBrd:cardBorder}`, color: isSel?accent:textSub, boxShadow: isSel?(!isLight?"0 0 16px rgba(0,230,118,.12)":"0 0 0 3px rgba(0,210,106,.12)"):"none" }}>
+                    <button
+                      key={s.slot_start}
+                      className="slot-btn"
+                      disabled={!meta.selectable}
+                      onClick={() => meta.selectable && setSelected(s.slot_start)}
+                      style={{
+                        padding: "10px 6px", borderRadius: 13, fontSize: 13, fontWeight: 600,
+                        cursor: meta.selectable ? "pointer" : "not-allowed", textAlign: "center",
+                        background: isSel ? accentDim : meta.bg,
+                        border: `1.5px solid ${isSel ? accentBrd : meta.border}`,
+                        color: isSel ? accent : meta.fg,
+                        opacity: meta.selectable ? 1 : 0.7,
+                        boxShadow: isSel ? (!isLight ? "0 0 16px rgba(0,230,118,.12)" : "0 0 0 3px rgba(0,210,106,.12)") : "none",
+                      }}>
                       {fmt(s.slot_start)}
-                      {isSel && <div style={{ fontSize: 9, marginTop: 3, color: accent, letterSpacing: ".06em" }}>SELECTED</div>}
+                      {isSel ? (
+                        <div style={{ fontSize: 9, marginTop: 3, color: accent, letterSpacing: ".06em" }}>SELECTED</div>
+                      ) : meta.label ? (
+                        <div style={{ fontSize: 9, marginTop: 3, letterSpacing: ".06em" }}>{meta.label.toUpperCase()}</div>
+                      ) : null}
                     </button>
                   );
                 })}
@@ -175,28 +275,8 @@ function BookingNewInner() {
             )}
           </div>
 
-          {/* Duration picker */}
-          {slots.length > 0 && (
-            <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "20px", marginBottom: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <Clock size={14} color={accent}/>
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: textMuted }}>Duration</span>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                {DURATIONS.map(d => {
-                  const isAct = duration === d.mins;
-                  return (
-                    <button key={d.mins} className="dur-btn" onClick={() => setDuration(d.mins)} style={{ padding: "12px 6px", borderRadius: 13, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center", background: isAct?accentDim:raisedBg, border: `1.5px solid ${isAct?accentBrd:cardBorder}`, color: isAct?accent:textSub }}>
-                      {d.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* Compact summary + CTA */}
-          {slots.length > 0 && (
+          {availableCount > 0 && (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderRadius: 18, background: isLight?"#F0FDF4":"rgba(0,230,118,.04)", border: `1px solid ${accentBrd}`, marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -205,7 +285,7 @@ function BookingNewInner() {
                   </div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary }}>{selected ? `${fmt(selected)} · ${duration} min` : "—"}</div>
-                    <div style={{ fontSize: 11, color: textSub, marginTop: 2 }}>Slot held for 10 min · pay to confirm</div>
+                    <div style={{ fontSize: 11, color: textSub, marginTop: 2 }}>You&apos;ll have 5 minutes to pay once you reserve this slot</div>
                   </div>
                 </div>
                 <span style={{ display: "inline-flex", alignItems: "center", fontFamily: "'JetBrains Mono',monospace", fontSize: 24, fontWeight: 800, color: accent }}>
@@ -226,6 +306,9 @@ function BookingNewInner() {
               </button>
               <p style={{ textAlign: "center", fontSize: 11, color: textMuted, marginTop: 10 }}>No charge until payment confirmed on the next step</p>
             </>
+          )}
+          {availableCount === 0 && error && (
+            <div style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(255,90,95,.08)", border: "1px solid rgba(255,90,95,.22)", color: "#FF5A5F", fontSize: 13 }}>{error}</div>
           )}
         </div>
       </div>

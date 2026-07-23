@@ -61,5 +61,9 @@ class AvailabilityService:
             await r.expire(f"avail:station:{station_id}", 3600)
             await r.publish(
                 f"chan:station:{station_id}",
-                json.dumps({"charger_id": str(charger_id), "status": status.value}),
+                json.dumps({
+                    "type": "charger_status",
+                    "charger_id": str(charger_id),
+                    "status": status.value,
+                }),
             )
