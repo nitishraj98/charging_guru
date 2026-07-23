@@ -4,8 +4,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   User as UserIcon, Mail, Phone, Edit3, Check, X, LogOut,
   Car, Zap, Map, Star, Building2, ChevronRight, ShieldCheck, PartyPopper,
+  Smartphone, Monitor, Pencil,
 } from "lucide-react";
-import { auth, User } from "@/lib/api";
+import { auth, authSessions, User, UserSessionInfo } from "@/lib/api";
 import { checkAuth, bffLogout } from "@/lib/auth";
 import { useUser } from "@/contexts/UserContext";
 import NavBar from "@/components/NavBar";
@@ -55,6 +56,12 @@ function ProfileInner() {
   const [saveErr, setSaveErr] = useState("");
   const [saved, setSaved]     = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [sessions, setSessions] = useState<UserSessionInfo[] | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [revokingOthers, setRevokingOthers] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [savingRename, setSavingRename] = useState(false);
 
   const cardBg     = isLight ? "#FFFFFF" : "#101415";
   const cardBorder = isLight ? "#CBD5E1" : "#222829";
@@ -78,8 +85,44 @@ function ProfileInner() {
         })
         .catch(() => router.push("/login"))
         .finally(() => setLoading(false));
+      authSessions.list().then(setSessions).catch(() => setSessions(null));
     });
   }, [router, welcome]);
+
+  async function revokeSession(id: string) {
+    setRevokingId(id);
+    try {
+      await authSessions.revoke(id);
+      setSessions(s => s?.filter(sess => sess.id !== id) ?? s);
+    } catch { /* leave the list as-is on failure */ }
+    finally { setRevokingId(null); }
+  }
+
+  async function revokeOtherSessions() {
+    setRevokingOthers(true);
+    try {
+      await authSessions.revokeOthers();
+      setSessions(s => s?.filter(sess => sess.is_current) ?? s);
+    } catch { /* leave the list as-is on failure */ }
+    finally { setRevokingOthers(false); }
+  }
+
+  function startRename(sess: UserSessionInfo) {
+    setRenamingId(sess.id);
+    setRenameValue(sess.device_name ?? "");
+  }
+
+  async function saveRename(id: string) {
+    const trimmed = renameValue.trim();
+    if (!trimmed) return;
+    setSavingRename(true);
+    try {
+      const updated = await authSessions.rename(id, trimmed);
+      setSessions(s => s?.map(sess => sess.id === id ? updated : sess) ?? s);
+      setRenamingId(null);
+    } catch { /* leave the list as-is on failure */ }
+    finally { setSavingRename(false); }
+  }
 
   async function save() {
     setSaving(true); setSaveErr(""); setSaved(false);
@@ -275,6 +318,71 @@ function ProfileInner() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* ── Active Sessions card ── */}
+        <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "22px 24px", marginBottom: 16, boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Monitor size={15} strokeWidth={2} color={textMuted} />
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: textPrimary }}>Active Sessions</h2>
+            </div>
+            {sessions && sessions.filter(s => !s.is_current).length > 0 && (
+              <button onClick={revokeOtherSessions} disabled={revokingOthers} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 10, background: "rgba(255,90,95,.06)", border: "1px solid rgba(255,90,95,.18)", color: "#FF5A5F", fontSize: 12.5, fontWeight: 600, cursor: revokingOthers ? "not-allowed" : "pointer" }}>
+                <LogOut size={12} strokeWidth={2.5} /> {revokingOthers ? "Signing out…" : "Log out all other devices"}
+              </button>
+            )}
+          </div>
+
+          {!sessions && (
+            <div style={{ fontSize: 13, color: textSub, padding: "8px 0" }}>Loading sessions…</div>
+          )}
+          {sessions?.length === 0 && (
+            <div style={{ fontSize: 13, color: textSub, padding: "8px 0" }}>No active sessions.</div>
+          )}
+          {sessions?.map((s, i, arr) => (
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 0", borderBottom: i < arr.length - 1 ? `1px solid ${cardBorder}` : "none" }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: raisedBg, border: `1px solid ${cardBorder}`, display: "grid", placeItems: "center", flexShrink: 0, color: textMuted }}>
+                <Smartphone size={15} strokeWidth={2} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {renamingId === s.id ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <input
+                      autoFocus value={renameValue} onChange={e => setRenameValue(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") saveRename(s.id); if (e.key === "Escape") setRenamingId(null); }}
+                      maxLength={128}
+                      style={{ flex: 1, minWidth: 0, background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: 8, padding: "6px 10px", color: textPrimary, fontSize: 13, outline: "none" }}
+                    />
+                    <button onClick={() => saveRename(s.id)} disabled={savingRename || !renameValue.trim()} style={{ flexShrink: 0, padding: 6, borderRadius: 8, background: accentDim, border: `1px solid ${accentBrd}`, color: accent, cursor: savingRename ? "not-allowed" : "pointer", display: "flex" }}>
+                      <Check size={14} strokeWidth={2.5} />
+                    </button>
+                    <button onClick={() => setRenamingId(null)} style={{ flexShrink: 0, padding: 6, borderRadius: 8, background: raisedBg, border: `1px solid ${cardBorder}`, color: textSub, cursor: "pointer", display: "flex" }}>
+                      <X size={14} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 14, fontWeight: 600, color: textPrimary, display: "flex", alignItems: "center", gap: 8 }}>
+                    {s.device_name || s.platform || "Unknown device"}
+                    {s.is_current && (
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: accent, background: accentDim, border: `1px solid ${accentBrd}`, borderRadius: 999, padding: "2px 8px" }}>This device</span>
+                    )}
+                    <button onClick={() => startRename(s)} title="Rename device" style={{ flexShrink: 0, padding: 3, borderRadius: 6, background: "none", border: "none", color: textMuted, cursor: "pointer", display: "flex" }}>
+                      <Pencil size={12} strokeWidth={2} />
+                    </button>
+                  </div>
+                )}
+                <div style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>
+                  {s.ip ?? "Unknown IP"}{s.last_seen_at ? ` · last active ${new Date(s.last_seen_at).toLocaleString()}` : ""}
+                </div>
+              </div>
+              {!s.is_current && renamingId !== s.id && (
+                <button onClick={() => revokeSession(s.id)} disabled={revokingId === s.id} style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 9, background: raisedBg, border: `1px solid ${cardBorder}`, color: textSub, fontSize: 12, fontWeight: 600, cursor: revokingId === s.id ? "not-allowed" : "pointer" }}>
+                  {revokingId === s.id ? "Signing out…" : "Sign out"}
+                </button>
+              )}
+            </div>
+          ))}
         </div>
 
         {/* ── Quick links ── */}

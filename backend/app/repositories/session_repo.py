@@ -67,3 +67,7 @@ class SessionRepo:
     async def revoke(self, sess: UserSession) -> None:
         sess.revoked_at = datetime.now(timezone.utc)
         await self.session.flush()
+
+    async def rename(self, sess: UserSession, *, device_name: str) -> None:
+        sess.device_name = device_name
+        await self.session.flush()

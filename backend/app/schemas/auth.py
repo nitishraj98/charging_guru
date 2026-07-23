@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from datetime import datetime
 
 from pydantic import Field, field_validator
 
@@ -71,3 +72,18 @@ class AuthResult(ORMModel):
 
 class RefreshIn(StrictModel):
     refresh_token: str
+
+
+class SessionRenameIn(StrictModel):
+    device_name: str = Field(..., min_length=1, max_length=128)
+
+
+class UserSessionOut(ORMModel):
+    id: uuid.UUID
+    device_name: str | None
+    platform: str | None
+    ip: str | None
+    user_agent: str | None
+    created_at: datetime
+    last_seen_at: datetime | None
+    is_current: bool

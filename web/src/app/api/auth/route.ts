@@ -31,10 +31,18 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === "otp-verify") {
+    // Forward the real caller's IP/User-Agent through to the backend —
+    // otherwise it only ever sees this BFF's own outbound connection
+    // (e.g. the Docker bridge address), not the actual browser's.
+    const forwardedFor = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip");
     const r = await fetch(`${BACKEND}/api/v1/auth/otp/verify`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ request_id: body.request_id, code: body.code }),
+      headers: {
+        "Content-Type": "application/json",
+        ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+        "User-Agent": req.headers.get("user-agent") ?? "",
+      },
+      body: JSON.stringify({ request_id: body.request_id, code: body.code, device: body.device }),
     });
     const data = await r.json();
     if (!r.ok) return NextResponse.json(data, { status: r.status });

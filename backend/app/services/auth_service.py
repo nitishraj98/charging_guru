@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 from app.core import security
 from app.core.config import settings
-from app.core.errors import GoneError, RateLimitError, UnauthorizedError
+from app.core.errors import GoneError, NotFoundError, RateLimitError, UnauthorizedError
 from app.core.logging import get_logger
 from app.core.redis import sliding_window_allow
 from app.core.sms import TwilioGateway
@@ -23,6 +23,7 @@ from app.schemas.auth import (
     DeviceInfo,
     OtpRequestOut,
     UserPublic,
+    UserSessionOut,
 )
 
 log = get_logger("auth")
@@ -152,6 +153,53 @@ class AuthService:
         sess = await self.sessions.get_by_token_hash(token_hash)
         if sess and sess.revoked_at is None:
             await self.sessions.revoke(sess)
+
+    # ── Session management (device list / revoke) ─────────────────────────
+    async def list_sessions(
+        self, user_id: uuid.UUID, current_session_id: uuid.UUID
+    ) -> list[UserSessionOut]:
+        sessions = await self.sessions.list_active_for_user(user_id)
+        return [
+            UserSessionOut(
+                id=s.id, device_name=s.device_name, platform=s.platform,
+                ip=str(s.ip) if s.ip else None, user_agent=s.user_agent,
+                created_at=s.created_at, last_seen_at=s.last_seen_at,
+                is_current=s.id == current_session_id,
+            )
+            for s in sessions
+        ]
+
+    async def revoke_session(self, user_id: uuid.UUID, session_id: uuid.UUID) -> None:
+        sess = await self.sessions.get(session_id)
+        if sess is None or sess.user_id != user_id or sess.revoked_at is not None:
+            raise NotFoundError("Session not found.", code="SESSION_NOT_FOUND")
+        await self.sessions.revoke(sess)
+
+    async def rename_session(
+        self, user_id: uuid.UUID, session_id: uuid.UUID,
+        current_session_id: uuid.UUID, device_name: str,
+    ) -> UserSessionOut:
+        sess = await self.sessions.get(session_id)
+        if sess is None or sess.user_id != user_id or sess.revoked_at is not None:
+            raise NotFoundError("Session not found.", code="SESSION_NOT_FOUND")
+        await self.sessions.rename(sess, device_name=device_name)
+        return UserSessionOut(
+            id=sess.id, device_name=sess.device_name, platform=sess.platform,
+            ip=str(sess.ip) if sess.ip else None, user_agent=sess.user_agent,
+            created_at=sess.created_at, last_seen_at=sess.last_seen_at,
+            is_current=sess.id == current_session_id,
+        )
+
+    async def revoke_other_sessions(
+        self, user_id: uuid.UUID, current_session_id: uuid.UUID
+    ) -> int:
+        sessions = await self.sessions.list_active_for_user(user_id)
+        revoked = 0
+        for sess in sessions:
+            if sess.id != current_session_id:
+                await self.sessions.revoke(sess)
+                revoked += 1
+        return revoked
 
     # ── helpers ───────────────────────────────────────────────────────────
     async def _issue_session(

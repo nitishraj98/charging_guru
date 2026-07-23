@@ -130,6 +130,129 @@ async def test_invalid_phone_rejected(client):
 
 
 @pytest.mark.asyncio
+async def test_list_sessions_shows_current(client):
+    result = await _login(client)
+    headers = {"Authorization": f"Bearer {result['access_token']}"}
+    r = await client.get("/api/v1/auth/sessions", headers=headers)
+    assert r.status_code == 200, r.text
+    sessions = r.json()
+    assert len(sessions) == 1
+    assert sessions[0]["is_current"] is True
+
+
+@pytest.mark.asyncio
+async def test_revoke_other_session_logs_it_out(client):
+    first = await _login(client)
+    second = await _login(client)  # same phone, second device/session
+    headers2 = {"Authorization": f"Bearer {second['access_token']}"}
+
+    r = await client.get("/api/v1/auth/sessions", headers=headers2)
+    sessions = r.json()
+    assert len(sessions) == 2
+    other = next(s for s in sessions if not s["is_current"])
+
+    r = await client.delete(f"/api/v1/auth/sessions/{other['id']}", headers=headers2)
+    assert r.status_code == 204
+
+    # The revoked session's refresh token must no longer work.
+    r = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]}
+    )
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_revoke_other_sessions_keeps_current(client):
+    first = await _login(client)
+    second = await _login(client)
+    third = await _login(client)
+    headers3 = {"Authorization": f"Bearer {third['access_token']}"}
+
+    r = await client.delete("/api/v1/auth/sessions/others", headers=headers3)
+    assert r.status_code == 204
+
+    r = await client.get("/api/v1/auth/sessions", headers=headers3)
+    sessions = r.json()
+    assert len(sessions) == 1
+    assert sessions[0]["is_current"] is True
+
+    for stale in (first, second):
+        r = await client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": stale["refresh_token"]}
+        )
+        assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_cannot_revoke_another_users_session(client):
+    mine = await _login(client)
+
+    r = await client.post(
+        "/api/v1/auth/otp/request", json={"phone": "+919111111199"}
+    )
+    code = r.json()["debug_code"]
+    r = await client.post(
+        "/api/v1/auth/otp/verify",
+        json={"request_id": r.json()["request_id"], "code": code},
+    )
+    other = r.json()
+    other_headers = {"Authorization": f"Bearer {other['access_token']}"}
+    r = await client.get("/api/v1/auth/sessions", headers=other_headers)
+    other_session_id = r.json()[0]["id"]
+
+    my_headers = {"Authorization": f"Bearer {mine['access_token']}"}
+    r = await client.delete(
+        f"/api/v1/auth/sessions/{other_session_id}", headers=my_headers
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_rename_session(client):
+    result = await _login(client)
+    headers = {"Authorization": f"Bearer {result['access_token']}"}
+    r = await client.get("/api/v1/auth/sessions", headers=headers)
+    session_id = r.json()[0]["id"]
+
+    r = await client.patch(
+        f"/api/v1/auth/sessions/{session_id}",
+        json={"device_name": "My Lenovo Laptop"},
+        headers=headers,
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["device_name"] == "My Lenovo Laptop"
+
+    r = await client.get("/api/v1/auth/sessions", headers=headers)
+    assert r.json()[0]["device_name"] == "My Lenovo Laptop"
+
+
+@pytest.mark.asyncio
+async def test_cannot_rename_another_users_session(client):
+    mine = await _login(client)
+
+    r = await client.post(
+        "/api/v1/auth/otp/request", json={"phone": "+919111111198"}
+    )
+    code = r.json()["debug_code"]
+    r = await client.post(
+        "/api/v1/auth/otp/verify",
+        json={"request_id": r.json()["request_id"], "code": code},
+    )
+    other = r.json()
+    other_headers = {"Authorization": f"Bearer {other['access_token']}"}
+    r = await client.get("/api/v1/auth/sessions", headers=other_headers)
+    other_session_id = r.json()[0]["id"]
+
+    my_headers = {"Authorization": f"Bearer {mine['access_token']}"}
+    r = await client.patch(
+        f"/api/v1/auth/sessions/{other_session_id}",
+        json={"device_name": "Hijack"},
+        headers=my_headers,
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_health_live(client):
     r = await client.get("/health/live")
     assert r.status_code == 200

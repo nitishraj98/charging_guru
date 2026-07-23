@@ -16,6 +16,7 @@ from app.core.razorpay import RazorpayGateway, get_razorpay_gateway
 from app.core.sms import TwilioGateway, get_twilio_gateway
 from app.models.user import User
 from app.repositories.admin_repo import AdminRepo
+from app.repositories.audit_log_repo import AuditLogRepo
 from app.repositories.booking_repo import BookingRepo, SlotRepo
 from app.repositories.membership_payment_repo import MembershipPaymentRepo
 from app.repositories.otp_repo import OtpRepo
@@ -45,11 +46,13 @@ __all__ = [
     "get_payment_service",
     "get_session_service",
     "get_admin_service",
+    "get_audit_log_repo",
     "get_reward_service",
     "get_membership_service",
     "get_razorpay_gateway",
     "get_twilio_gateway",
     "get_current_user",
+    "get_current_session_id",
     "require_roles",
 ]
 
@@ -91,6 +94,10 @@ def get_admin_service(db: AsyncSession = Depends(get_db)) -> AdminService:
     return AdminService(AdminRepo(db), StationRepo(db), UserRepo(db))
 
 
+def get_audit_log_repo(db: AsyncSession = Depends(get_db)) -> AuditLogRepo:
+    return AuditLogRepo(db)
+
+
 def get_reward_service(db: AsyncSession = Depends(get_db)) -> RewardService:
     return RewardService(RewardRepo(db), UserRepo(db), db)
 
@@ -126,6 +133,12 @@ async def get_current_user(
     request.state.user_id = str(user.id)
     request.state.session_id = payload.get("sid")
     return user
+
+
+async def get_current_session_id(
+    request: Request, _: User = Depends(get_current_user)
+) -> uuid.UUID:
+    return uuid.UUID(request.state.session_id)
 
 
 def require_roles(*roles: str) -> Callable[..., User]:

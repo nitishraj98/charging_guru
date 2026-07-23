@@ -464,7 +464,7 @@ function FinalCTA({ isLight }: { isLight: boolean }) {
               fontSize: "clamp(34px,4vw,60px)", fontWeight: 800, letterSpacing: "-.04em",
               color: t.text, lineHeight: 1.04, marginBottom: 20,
             }}>
-              Charge smarter.<br />
+              Charge smarter.<br />     
               <span style={{
                 background: "linear-gradient(90deg,#00D26A,#22D3EE,#00E676)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",

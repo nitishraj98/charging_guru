@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BatteryCharging, Gift, LockKeyhole, ShieldCheck, Smartphone, Zap } from "lucide-react";
 import { auth } from "@/lib/api";
+import { getDeviceInfo } from "@/lib/device";
 import Logo from "@/components/Logo";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
@@ -100,7 +101,7 @@ export default function LoginPage() {
     if (code.length < 6) return;
     setError(""); setLoading(true);
     try {
-      const { is_new } = await auth.otpVerify(requestId, code);
+      const { is_new } = await auth.otpVerify(requestId, code, await getDeviceInfo());
       reloadUser();
       try {
         const me = await auth.me();
