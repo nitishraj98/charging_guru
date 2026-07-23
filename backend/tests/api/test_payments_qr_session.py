@@ -249,6 +249,53 @@ async def test_normal_user_cannot_verify_qr(client, seed_station):
     assert r.status_code == 403
 
 
+# ── Tests: manual check-in by booking ID (QR fallback) ────────────────────────
+
+@pytest.mark.asyncio
+async def test_manual_checkin_transitions_to_checked_in(client, seed_station):
+    user = await _login(client)
+    booking = await _make_booking(client, seed_station, user)
+    order = await _make_order(client, booking["id"], user)
+    await _verify_payment(client, order, user)  # booking → CONFIRMED
+
+    owner = await _login(client, phone=seed_station["owner_phone"])
+    r = await client.post(
+        f"/api/v1/sessions/{booking['id']}/checkin",
+        headers=_auth(owner),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] == "CHECKED_IN"
+
+
+@pytest.mark.asyncio
+async def test_manual_checkin_rejects_wrong_state(client, seed_station):
+    """Booking is still PENDING_PAYMENT (never paid) → checkin should fail."""
+    user = await _login(client)
+    booking = await _make_booking(client, seed_station, user)
+
+    owner = await _login(client, phone=seed_station["owner_phone"])
+    r = await client.post(
+        f"/api/v1/sessions/{booking['id']}/checkin",
+        headers=_auth(owner),
+    )
+    assert r.status_code == 409
+    assert r.json()["code"] == "INVALID_BOOKING_STATE"
+
+
+@pytest.mark.asyncio
+async def test_normal_user_cannot_manual_checkin(client, seed_station):
+    user = await _login(client)
+    booking = await _make_booking(client, seed_station, user)
+    order = await _make_order(client, booking["id"], user)
+    await _verify_payment(client, order, user)
+
+    r = await client.post(
+        f"/api/v1/sessions/{booking['id']}/checkin",
+        headers=_auth(user),
+    )
+    assert r.status_code == 403
+
+
 # ── Tests: session start / complete ───────────────────────────────────────────
 
 async def _full_checkin(client, seed_station) -> tuple[dict, dict, str]:

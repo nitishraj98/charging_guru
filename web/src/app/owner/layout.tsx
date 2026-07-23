@@ -213,16 +213,16 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
             <span style={{ fontSize: 11, color: th.textSub }}>{isLight ? "Light mode" : "Dark mode"}</span>
             <button onClick={toggle} style={{
               width: 32, height: 18, borderRadius: 999, position: "relative",
-              background: isLight ? th.accent : th.raised, border: `1px solid ${isLight ? th.accent : th.border}`,
+              background: isLight ? th.raised : th.accent, border: `1px solid ${isLight ? th.border : th.accent}`,
               cursor: "pointer", transition: "all 0.2s", padding: 0,
             }}>
               <div style={{
-                position: "absolute", top: 2, left: isLight ? 15 : 2,
+                position: "absolute", top: 2, left: isLight ? 2 : 15,
                 width: 12, height: 12, borderRadius: "50%",
-                background: isLight ? "#fff" : th.textSub, transition: "left 0.2s",
+                background: isLight ? th.textSub : "#fff", transition: "left 0.2s",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                {isLight ? <Sun size={7} color={th.accent} strokeWidth={2.5} /> : <Moon size={7} color={th.text} strokeWidth={2} />}
+                {isLight ? <Sun size={7} color={th.accent} strokeWidth={2.5} /> : <Moon size={7} color="#12151A" strokeWidth={2} />}
               </div>
             </button>
           </div>

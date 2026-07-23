@@ -17,6 +17,22 @@ _OWNER_OR_ADMIN = require_roles(RoleName.STATION_OWNER.value, RoleName.ADMIN.val
 
 
 @router.post(
+    "/{booking_id}/checkin",
+    response_model=SessionOut,
+    status_code=status.HTTP_200_OK,
+)
+async def checkin_session(
+    booking_id: uuid.UUID,
+    current_user: User = Depends(_OWNER_OR_ADMIN),
+    svc: SessionService = Depends(get_session_service),
+):
+    """Manual check-in fallback for when a customer's QR code won't scan."""
+    is_admin = RoleName.ADMIN.value in current_user.role_names
+    booking = await svc.checkin_by_id(booking_id, current_user.id, skip_ownership=is_admin)
+    return booking
+
+
+@router.post(
     "/{booking_id}/start",
     response_model=SessionOut,
     status_code=status.HTTP_200_OK,

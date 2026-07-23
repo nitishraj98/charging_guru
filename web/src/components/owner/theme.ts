@@ -62,11 +62,13 @@ export function getOwnerTheme(isLight: boolean): OwnerTheme {
     sans: SANS, mono: MONO,
   } : {
     isLight,
-    bg: "#0A0D0F",
-    bgGradient: "linear-gradient(135deg,#080B0C 0%,#0C1315 48%,#08130E 100%)",
-    card: "#14181B", cardHover: "#171C1F", raised: "#1B2124", raised2: "#212829",
-    border: "#262D31", borderHi: "#333C41",
-    text: "#EAF1EF", textSub: "#98A3AC", textMuted: "#67727B",
+    // Soft charcoal rather than near-pure-black, with off-white (not #FFF)
+    // text — high contrast between true black and white reads as harsh.
+    bg: "#12151A",
+    bgGradient: "linear-gradient(135deg,#12151A 0%,#161C1E 48%,#121B16 100%)",
+    card: "#1B2024", cardHover: "#1E2428", raised: "#242B2F", raised2: "#2A3235",
+    border: "#2C343A", borderHi: "#3A444B",
+    text: "#E6ECEA", textSub: "#9AA5AC", textMuted: "#707B82",
     accent: "#00E676", accentDark: "#00C862", accentDim: "rgba(0,230,118,.10)", accentBorder: "rgba(0,230,118,.26)",
     info: "#22D3EE", infoDim: "rgba(34,211,238,.10)",
     warn: "#FFC043", warnDim: "rgba(255,192,67,.10)",

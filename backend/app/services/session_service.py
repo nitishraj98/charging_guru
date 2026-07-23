@@ -78,6 +78,31 @@ class SessionService:
         await self.session.flush()
         return booking
 
+    async def checkin_by_id(
+        self,
+        booking_id: uuid.UUID,
+        operator_id: uuid.UUID,
+        *,
+        skip_ownership: bool = False,
+    ) -> Booking:
+        """Manual check-in fallback for when a customer's QR won't scan —
+        same CONFIRMED → CHECKED_IN transition as qr_checkin, just looked up
+        by booking ID instead of a signed QR token."""
+        booking = await self.bookings.get(booking_id)
+        if booking is None:
+            raise NotFoundError("Booking not found.", code="BOOKING_NOT_FOUND")
+
+        await self._check_ownership(booking, operator_id, skip_ownership)
+
+        if not can_transition(booking.status, BookingStatus.CHECKED_IN):
+            raise ConflictError(
+                f"Cannot check in a booking in status {booking.status.value}.",
+                code="INVALID_BOOKING_STATE",
+            )
+        booking.status = BookingStatus.CHECKED_IN
+        await self.session.flush()
+        return booking
+
     async def start(
         self,
         booking_id: uuid.UUID,
