@@ -1,4 +1,5 @@
 """SQLAlchemy ORM models. Import all here so Alembic autogenerate sees them."""
+from app.models.audit_log import AuditLog
 from app.models.base import Base
 from app.models.booking import Booking, ChargerStatusHistory
 from app.models.charger import Charger
@@ -17,5 +18,5 @@ from app.models.vehicle import Vehicle
 __all__ = [
     "Base", "User", "Role", "UserRole", "UserSession", "OtpRequest", "Vehicle",
     "Station", "Charger", "BookingSlot", "Booking", "ChargerStatusHistory", "Payment",
-    "Review", "RewardTransaction", "MembershipPayment",
+    "Review", "RewardTransaction", "MembershipPayment", "AuditLog",
 ]

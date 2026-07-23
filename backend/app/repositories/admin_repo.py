@@ -13,9 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking import Booking
 from app.models.charger import Charger
-from app.models.enums import BookingStatus, ChargerStatus, PaymentStatus, StationStatus
+from app.models.enums import BookingStatus, ChargerStatus, PaymentStatus, RoleName, StationStatus
 from app.models.membership_payment import MembershipPayment
 from app.models.payment import Payment
+from app.models.role import Role, UserRole
 from app.models.station import Station
 from app.models.user import User
 
@@ -319,6 +320,16 @@ class AdminRepo:
             )
         ).scalars().all()
         return list(rows), total
+
+    async def list_admins(self) -> list[User]:
+        res = await self.session.execute(
+            select(User)
+            .join(UserRole, UserRole.user_id == User.id)
+            .join(Role, Role.id == UserRole.role_id)
+            .where(Role.name == RoleName.ADMIN.value, User.deleted_at.is_(None))
+            .order_by(User.created_at.desc())
+        )
+        return list(res.scalars().unique().all())
 
     async def get_user(self, user_id: str):
         import uuid as _uuid

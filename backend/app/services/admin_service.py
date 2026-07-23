@@ -262,6 +262,30 @@ class AdminService:
             pages=pages,
         )
 
+    async def list_admins(self) -> list[UserAdminOut]:
+        users = await self.repo.list_admins()
+        return [UserAdminOut.model_validate(u) for u in users]
+
+    async def grant_admin(self, phone: str) -> UserAdminOut:
+        user = await self.users.get_by_phone(phone)
+        if user is None:
+            raise NotFoundError("No user found with that phone number.", code="USER_NOT_FOUND")
+        if RoleName.ADMIN.value not in {r.name for r in user.roles}:
+            role = await self.users._get_role(RoleName.ADMIN)
+            user.roles.append(role)
+        return UserAdminOut.model_validate(user)
+
+    async def revoke_admin(self, user_id: uuid.UUID, acting_admin_id: uuid.UUID) -> UserAdminOut:
+        if user_id == acting_admin_id:
+            raise ConflictError(
+                "You cannot revoke your own admin access.", code="CANNOT_REVOKE_SELF"
+            )
+        user = await self.repo.get_user(str(user_id))
+        if user is None:
+            raise NotFoundError("User not found.", code="USER_NOT_FOUND")
+        user.roles = [r for r in user.roles if r.name != RoleName.ADMIN.value]
+        return UserAdminOut.model_validate(user)
+
     async def cancel_booking(self, booking_id: uuid.UUID) -> AdminBookingOut:
         booking = await self.repo.get_booking(str(booking_id))
         if booking is None:

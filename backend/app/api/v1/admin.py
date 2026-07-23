@@ -1,19 +1,30 @@
 """Admin-only endpoints: analytics overview, user/station/charger/payment management."""
 from __future__ import annotations
 
+import math
 import uuid
 
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel
 
-from app.api.deps import get_admin_service, get_booking_service, get_payment_service, require_roles
+from app.api.deps import (
+    get_admin_service,
+    get_audit_log_repo,
+    get_booking_service,
+    get_payment_service,
+    require_roles,
+)
 from app.core.db import get_db
-from app.core.errors import ForbiddenError
+from app.core.errors import ForbiddenError, NotFoundError
 from app.models.enums import RoleName
+from app.models.user import User
+from app.repositories.audit_log_repo import AuditLogRepo
 from app.repositories.user_repo import UserRepo
 from app.schemas.admin import (
     AdminBookingOut,
+    AdminInviteIn,
     AdminOverviewOut,
+    AuditLogOut,
     ChargerAdminOut,
     MembershipPaymentAdminOut,
     PagedResult,
@@ -35,6 +46,21 @@ class MaintenanceResult(BaseModel):
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 _ADMIN_ONLY = require_roles(RoleName.ADMIN.value)
+
+
+async def _audit(
+    audit: AuditLogRepo,
+    admin: User,
+    action: str,
+    *,
+    target_type: str | None = None,
+    target_id: uuid.UUID | None = None,
+    detail: dict | None = None,
+) -> None:
+    await audit.create(
+        actor_id=admin.id, action=action,
+        target_type=target_type, target_id=target_id, detail=detail,
+    )
 
 
 class CheckPhoneIn(BaseModel):
@@ -85,10 +111,16 @@ async def list_users(
 async def update_user_status(
     user_id: uuid.UUID,
     body: UserStatusIn,
-    _: object = Depends(_ADMIN_ONLY),
+    admin: User = Depends(_ADMIN_ONLY),
     svc: AdminService = Depends(get_admin_service),
+    audit: AuditLogRepo = Depends(get_audit_log_repo),
 ):
-    return await svc.update_user_status(user_id, body.status)
+    result = await svc.update_user_status(user_id, body.status)
+    await _audit(
+        audit, admin, "USER_STATUS_UPDATED",
+        target_type="user", target_id=user_id, detail={"status": body.status.value},
+    )
+    return result
 
 
 @router.get("/users/{user_id}/bookings", response_model=PagedResult[AdminBookingOut])
@@ -122,10 +154,13 @@ async def list_stations(
 )
 async def approve_station(
     station_id: uuid.UUID,
-    _: object = Depends(_ADMIN_ONLY),
+    admin: User = Depends(_ADMIN_ONLY),
     svc: AdminService = Depends(get_admin_service),
+    audit: AuditLogRepo = Depends(get_audit_log_repo),
 ):
-    return await svc.approve_station(station_id)
+    result = await svc.approve_station(station_id)
+    await _audit(audit, admin, "STATION_APPROVED", target_type="station", target_id=station_id)
+    return result
 
 
 @router.post(
@@ -136,10 +171,16 @@ async def approve_station(
 async def reject_station(
     station_id: uuid.UUID,
     body: StationRejectIn,
-    _: object = Depends(_ADMIN_ONLY),
+    admin: User = Depends(_ADMIN_ONLY),
     svc: AdminService = Depends(get_admin_service),
+    audit: AuditLogRepo = Depends(get_audit_log_repo),
 ):
-    return await svc.reject_station(station_id, body.reason)
+    result = await svc.reject_station(station_id, body.reason)
+    await _audit(
+        audit, admin, "STATION_REJECTED",
+        target_type="station", target_id=station_id, detail={"reason": body.reason},
+    )
+    return result
 
 
 @router.patch("/stations/{station_id}/status", response_model=StationAdminOut)
@@ -181,26 +222,30 @@ async def list_bookings(
 @router.post("/bookings/{booking_id}/cancel", response_model=AdminBookingOut)
 async def cancel_booking(
     booking_id: uuid.UUID,
-    _: object = Depends(_ADMIN_ONLY),
+    admin: User = Depends(_ADMIN_ONLY),
     svc: AdminService = Depends(get_admin_service),
+    audit: AuditLogRepo = Depends(get_audit_log_repo),
 ):
-    return await svc.cancel_booking(booking_id)
+    result = await svc.cancel_booking(booking_id)
+    await _audit(audit, admin, "BOOKING_CANCELLED", target_type="booking", target_id=booking_id)
+    return result
 
 
 @router.post("/bookings/{booking_id}/refund", response_model=AdminBookingOut)
 async def refund_booking(
     booking_id: uuid.UUID,
-    _: object = Depends(_ADMIN_ONLY),
+    admin: User = Depends(_ADMIN_ONLY),
     payment_svc: PaymentService = Depends(get_payment_service),
     svc: AdminService = Depends(get_admin_service),
+    audit: AuditLogRepo = Depends(get_audit_log_repo),
 ):
     """Admin force-refund: cancels booking and attempts Razorpay refund."""
     booking = await svc.repo.get_booking(str(booking_id))
     if booking is None:
-        from app.core.errors import NotFoundError
         raise NotFoundError("Booking not found.", code="BOOKING_NOT_FOUND")
     # Re-use PaymentService.refund_booking but override user_id check by using booking's owner
     result = await payment_svc.refund_booking(booking_id, booking.user_id)
+    await _audit(audit, admin, "BOOKING_REFUNDED", target_type="booking", target_id=booking_id)
     return AdminBookingOut.model_validate(result)
 
 
@@ -249,9 +294,66 @@ async def get_membership_revenue(
     status_code=status.HTTP_200_OK,
 )
 async def expire_stale_holds(
-    _: object = Depends(_ADMIN_ONLY),
+    admin: User = Depends(_ADMIN_ONLY),
     booking_svc: BookingService = Depends(get_booking_service),
+    audit: AuditLogRepo = Depends(get_audit_log_repo),
 ):
     """Expire PENDING_PAYMENT bookings whose hold window has elapsed."""
-    count = await booking_svc.expire_stale_holds()
+    expired = await booking_svc.expire_stale_holds()
+    count = len(expired)
+    await _audit(audit, admin, "HOLDS_EXPIRED", detail={"expired_count": count})
     return MaintenanceResult(expired_count=count)
+
+
+# ── Admin management ───────────────────────────────────────────────────────────
+
+@router.get("/admins", response_model=list[UserAdminOut])
+async def list_admins(
+    _: object = Depends(_ADMIN_ONLY),
+    svc: AdminService = Depends(get_admin_service),
+):
+    return await svc.list_admins()
+
+
+@router.post("/admins", response_model=UserAdminOut, status_code=status.HTTP_201_CREATED)
+async def grant_admin(
+    body: AdminInviteIn,
+    admin: User = Depends(_ADMIN_ONLY),
+    svc: AdminService = Depends(get_admin_service),
+    audit: AuditLogRepo = Depends(get_audit_log_repo),
+):
+    result = await svc.grant_admin(body.phone)
+    await _audit(
+        audit, admin, "ADMIN_GRANTED",
+        target_type="user", target_id=result.id, detail={"phone": body.phone},
+    )
+    return result
+
+
+@router.delete("/admins/{user_id}", response_model=UserAdminOut)
+async def revoke_admin(
+    user_id: uuid.UUID,
+    admin: User = Depends(_ADMIN_ONLY),
+    svc: AdminService = Depends(get_admin_service),
+    audit: AuditLogRepo = Depends(get_audit_log_repo),
+):
+    result = await svc.revoke_admin(user_id, admin.id)
+    await _audit(audit, admin, "ADMIN_REVOKED", target_type="user", target_id=user_id)
+    return result
+
+
+# ── Audit log ─────────────────────────────────────────────────────────────────
+
+@router.get("/audit-log", response_model=PagedResult[AuditLogOut])
+async def list_audit_log(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    _: object = Depends(_ADMIN_ONLY),
+    audit: AuditLogRepo = Depends(get_audit_log_repo),
+):
+    entries, total = await audit.list(page, per_page)
+    pages = max(1, math.ceil(total / per_page)) if total else 1
+    return PagedResult(
+        items=[AuditLogOut.model_validate(e) for e in entries],
+        total=total, page=page, per_page=per_page, pages=pages,
+    )

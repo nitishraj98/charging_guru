@@ -177,3 +177,93 @@ async def test_admin_approve_unknown_station_returns_404(client, admin_tokens):
         headers=_auth(admin_tokens),
     )
     assert r.status_code == 404
+
+
+# ── Admin invite/revoke ─────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_normal_user_cannot_manage_admins(client):
+    user = await _login(client, "+919876543210")
+    r = await client.get("/api/v1/admin/admins", headers=_auth(user))
+    assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_admin_can_grant_and_list_admins(client, admin_tokens):
+    await _login(client, "+919444444444")
+
+    r = await client.post(
+        "/api/v1/admin/admins",
+        json={"phone": "+919444444444"},
+        headers=_auth(admin_tokens),
+    )
+    assert r.status_code == 201, r.text
+    assert "ROLE_ADMIN" in r.json()["role_names"]
+
+    r = await client.get("/api/v1/admin/admins", headers=_auth(admin_tokens))
+    assert r.status_code == 200
+    phones = [u["phone"] for u in r.json()]
+    assert "+919444444444" in phones
+
+
+@pytest.mark.asyncio
+async def test_admin_grant_unknown_phone_returns_404(client, admin_tokens):
+    r = await client.post(
+        "/api/v1/admin/admins",
+        json={"phone": "+919000000099"},
+        headers=_auth(admin_tokens),
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_admin_cannot_revoke_own_admin_role(client, admin_tokens):
+    me = await client.get("/api/v1/users/me", headers=_auth(admin_tokens))
+    r = await client.delete(
+        f"/api/v1/admin/admins/{me.json()['id']}", headers=_auth(admin_tokens)
+    )
+    assert r.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_admin_can_revoke_another_admin(client, admin_tokens):
+    other = await _login(client, "+919444444445")
+    await client.post(
+        "/api/v1/admin/admins",
+        json={"phone": "+919444444445"},
+        headers=_auth(admin_tokens),
+    )
+    r = await client.delete(
+        f"/api/v1/admin/admins/{other['user']['id']}", headers=_auth(admin_tokens)
+    )
+    assert r.status_code == 200
+    assert "ROLE_ADMIN" not in r.json()["role_names"]
+
+
+# ── Audit log ────────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_audit_log_records_station_approval(client, admin_tokens, seed_station):
+    station_id = seed_station["station_id"]
+    await client.post(
+        f"/api/v1/admin/stations/{station_id}/approve", headers=_auth(admin_tokens)
+    )
+    r = await client.get("/api/v1/admin/audit-log", headers=_auth(admin_tokens))
+    assert r.status_code == 200, r.text
+    actions = [e["action"] for e in r.json()["items"]]
+    assert "STATION_APPROVED" in actions
+
+
+@pytest.mark.asyncio
+async def test_audit_log_records_admin_grant(client, admin_tokens):
+    await _login(client, "+919444444446")
+    await client.post(
+        "/api/v1/admin/admins",
+        json={"phone": "+919444444446"},
+        headers=_auth(admin_tokens),
+    )
+    r = await client.get("/api/v1/admin/audit-log", headers=_auth(admin_tokens))
+    entries = r.json()["items"]
+    grant_entries = [e for e in entries if e["action"] == "ADMIN_GRANTED"]
+    assert len(grant_entries) == 1
+    assert grant_entries[0]["detail"]["phone"] == "+919444444446"

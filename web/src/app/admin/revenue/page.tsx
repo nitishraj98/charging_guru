@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { IndianRupee, TrendingUp, RefreshCw, Award, ArrowUpRight } from "lucide-react";
+import { IndianRupee, TrendingUp, RefreshCw, Award, ArrowUpRight, Search } from "lucide-react";
 import { getTheme, authFetch, fmtRupee, fmtDateTime, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAdminData } from "@/components/admin/AdminData";
@@ -32,6 +32,7 @@ export default function AdminRevenuePage() {
   const [overview,  setOverview]  = useState<Overview | null>(null);
   const [payments,  setPayments]  = useState<PagedResult | null>(null);
   const [pmtStatus, setPmtStatus] = useState("ALL");
+  const [pmtQuery,  setPmtQuery]  = useState("");
   const [pmtPage,   setPmtPage]   = useState(1);
   const [loading,   setLoading]   = useState(true);
   const [pmtLoad,   setPmtLoad]   = useState(false);
@@ -61,6 +62,20 @@ export default function AdminRevenuePage() {
   useEffect(() => { loadOverview(); }, [loadOverview]);
   useEffect(() => { setPmtPage(1); loadPayments(1, pmtStatus); }, [pmtStatus]); // eslint-disable-line
   useEffect(() => { loadPayments(pmtPage); }, [pmtPage, loadPayments]);
+
+  const filteredPayments = useMemo(() => {
+    const items = payments?.items ?? [];
+    const q = pmtQuery.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(p => {
+      const u = userById.get(p.user_id);
+      return (u?.full_name ?? "").toLowerCase().includes(q)
+        || (u?.phone ?? "").toLowerCase().includes(q)
+        || p.id.toLowerCase().includes(q)
+        || p.razorpay_order_id.toLowerCase().includes(q)
+        || (p.razorpay_payment_id ?? "").toLowerCase().includes(q);
+    });
+  }, [payments, pmtQuery, userById]);
 
   const topSt  = overview?.top_stations ?? [];
   const maxRev = topSt.length > 0 ? Math.max(...topSt.map(s => s.revenue_paise)) || 1 : 1;
@@ -214,14 +229,25 @@ export default function AdminRevenuePage() {
                 ))}
               </div>
             </div>
+            <div style={{ padding: "14px 20px", borderBottom: `1px solid ${th.border}` }}>
+              <div style={{ position: "relative", maxWidth: 340 }}>
+                <Search size={13} color={th.sub} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+                <input
+                  value={pmtQuery}
+                  onChange={e => setPmtQuery(e.target.value)}
+                  placeholder="Search by user, phone, payment or order ID…"
+                  style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 32px", borderRadius: 9, background: th.raised, border: `1px solid ${th.border}`, color: th.text, fontSize: 12, outline: "none", fontFamily: C.sans }}
+                />
+              </div>
+            </div>
             {pmtLoad ? (
               <div style={{ padding: "40px", textAlign: "center", color: th.sub, fontSize: 13 }}>Loading…</div>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr>{["Payment ID", "User", "Amount", "Status", "Razorpay Order", "Time"].map(h => <th key={h} style={tH}>{h}</th>)}</tr></thead>
                 <tbody>
-                  {payments?.items.length === 0 && <tr><td colSpan={6} style={{ ...tD, textAlign: "center", padding: "40px", color: th.sub }}>No payments found.</td></tr>}
-                  {payments?.items.map(p => {
+                  {filteredPayments.length === 0 && <tr><td colSpan={6} style={{ ...tD, textAlign: "center", padding: "40px", color: th.sub }}>{pmtQuery ? "No payments match your search." : "No payments found."}</td></tr>}
+                  {filteredPayments.map(p => {
                     const color = PMT_COLOR[p.status] ?? th.sub;
                     const user = userById.get(p.user_id);
                     return (

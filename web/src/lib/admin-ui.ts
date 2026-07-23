@@ -1,18 +1,19 @@
 // Shared design tokens and helpers for the admin dashboard.
 import { bffRefresh } from "@/lib/auth";
 
-// Dark theme tokens
+// Dark theme tokens — soft charcoal, not near-pure-black, with off-white text
+// (not #FFF) to keep contrast comfortable rather than glaring.
 export const DARK = {
-  bg:       "#08090C",
-  panel:    "#0D1017",
-  card:     "#111520",
-  raised:   "#161B28",
-  border:   "rgba(255,255,255,0.07)",
-  borderHi: "rgba(255,255,255,0.14)",
-  text:     "#F1F3F6",
-  sub:      "#64748B",
-  muted:    "#1E2636",
-  inputBg:  "#0F1420",
+  bg:       "#12151B",
+  panel:    "#171B22",
+  card:     "#1B2029",
+  raised:   "#232935",
+  border:   "rgba(255,255,255,0.08)",
+  borderHi: "rgba(255,255,255,0.16)",
+  text:     "#E7EAEE",
+  sub:      "#8892A3",
+  muted:    "#242C3D",
+  inputBg:  "#1A1F28",
 } as const;
 
 // Light theme tokens

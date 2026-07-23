@@ -143,3 +143,17 @@ class StationStatusIn(StrictModel):
 
 class StationRejectIn(StrictModel):
     reason: str | None = None
+
+
+class AdminInviteIn(StrictModel):
+    phone: str
+
+
+class AuditLogOut(ORMModel):
+    id: uuid.UUID
+    actor_id: uuid.UUID | None
+    action: str
+    target_type: str | None
+    target_id: uuid.UUID | None
+    detail: dict | None
+    created_at: datetime

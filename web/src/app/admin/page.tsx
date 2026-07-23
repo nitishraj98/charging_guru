@@ -38,13 +38,13 @@ function Card({ title, Icon, action, children, th, pad = true, style }: {
   children: React.ReactNode; th: ThemeTokens; pad?: boolean; style?: React.CSSProperties;
 }) {
   return (
-    <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden", ...style }}>
-      <div style={{ padding: "11px 16px", borderBottom: `1px solid ${th.border}`, display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 14, overflow: "hidden", height: "100%", display: "flex", flexDirection: "column", ...style }}>
+      <div style={{ padding: "11px 16px", borderBottom: `1px solid ${th.border}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         {Icon && <Icon size={12} color={th.sub} strokeWidth={1.75} />}
         <span style={{ fontSize: 12.5, fontWeight: 600, color: th.text, flex: 1, letterSpacing: "-0.01em" }}>{title}</span>
         {action}
       </div>
-      <div style={pad ? { padding: "14px 16px" } : {}}>{children}</div>
+      <div style={{ flex: 1, minHeight: 0, ...(pad ? { padding: "14px 16px" } : {}) }}>{children}</div>
     </div>
   );
 }
@@ -500,8 +500,8 @@ export default function AdminDashboard() {
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.green, animation: "pdot 1.4s ease-in-out infinite" }} />
               <span style={{ fontSize: 9, fontWeight: 700, color: C.green, letterSpacing: "0.1em" }}>LIVE</span>
             </div>}>
-            <div style={{ padding: "2px 16px 10px", maxHeight: 280, overflowY: "auto" }}>
-              {analytics.recent.length === 0 && <div style={{ color: th.sub, fontSize: 12.5, textAlign: "center", padding: "20px 0" }}>No recent activity.</div>}
+            <div style={{ padding: "2px 16px 10px", height: "100%", overflowY: "auto" }}>
+              {analytics.recent.length === 0 && <div style={{ color: th.sub, fontSize: 12.5, textAlign: "center", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>No recent activity.</div>}
               {analytics.recent.map(b => {
                 const st = stationById.get(b.station_id);
                 const statusColor: Record<string, string> = { COMPLETED: C.green, IN_PROGRESS: C.blue, CHECKED_IN: C.teal, CONFIRMED: C.green, CANCELLED: C.red, PENDING_PAYMENT: C.amber, EXPIRED: C.amber };

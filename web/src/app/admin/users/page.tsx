@@ -1,9 +1,10 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Users as UsersIcon, ShieldOff, ShieldCheck, Trash2, Download } from "lucide-react";
+import { Users as UsersIcon, ShieldOff, ShieldCheck, ShieldX, Trash2, Download } from "lucide-react";
 import { authFetch, fmtDate, fmtDateTime, fmtRupee } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useUser } from "@/contexts/UserContext";
 import {
   getAdminTheme, Card, DataTable, Column, StatusBadge, Pill, Button, PageHeader,
   useToast, Drawer, DrawerRow, useAdminData,
@@ -28,6 +29,7 @@ export default function AdminUsersPage() {
   const th = getAdminTheme(isLight);
   const toast = useToast();
   const { stationById, chargerById } = useAdminData();
+  const { user: me } = useUser();
 
   const [data,    setData]    = useState<PagedResult<UserRow> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -81,6 +83,19 @@ export default function AdminUsersPage() {
       const updated: UserRow = await res.json();
       setData(d => d ? { ...d, items: d.items.map(u => u.id === updated.id ? updated : u) } : d);
       toast.show("success", `User set to ${newStatus}.`);
+    } catch (e: unknown) { toast.show("error", e instanceof Error ? e.message : "Failed"); }
+    finally { setActBusy(false); }
+  }
+
+  async function revokeAdmin() {
+    if (!drawerUser) return;
+    setActBusy(true);
+    try {
+      const res = await authFetch(`/api/v1/admin/admins/${drawerUser.id}`, { method: "DELETE" });
+      if (!res.ok) { const j = await res.json(); throw new Error(j.detail ?? `HTTP ${res.status}`); }
+      const updated: UserRow = await res.json();
+      setData(d => d ? { ...d, items: d.items.map(u => u.id === updated.id ? updated : u) } : d);
+      toast.show("success", "Admin access revoked.");
     } catch (e: unknown) { toast.show("error", e instanceof Error ? e.message : "Failed"); }
     finally { setActBusy(false); }
   }
@@ -153,6 +168,12 @@ export default function AdminUsersPage() {
               {drawerUser.status !== "SUSPENDED" && <Button th={th} variant="secondary" icon={<ShieldOff size={13} />} fullWidth disabled={actBusy} onClick={() => setStatus("SUSPENDED")}>Suspend</Button>}
               {drawerUser.status !== "DELETED" && <Button th={th} variant="danger" icon={<Trash2 size={13} />} fullWidth disabled={actBusy} onClick={() => setStatus("DELETED")}>Ban</Button>}
             </div>
+
+            {drawerUser.role_names.includes("ROLE_ADMIN") && me?.id !== drawerUser.id && (
+              <div style={{ marginTop: 8 }}>
+                <Button th={th} variant="danger" icon={<ShieldX size={13} />} fullWidth disabled={actBusy} onClick={revokeAdmin}>Revoke Admin Access</Button>
+              </div>
+            )}
           </div>
         )}
         {drawerUser && tab === "bookings" && (

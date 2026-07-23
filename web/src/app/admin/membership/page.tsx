@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Award, RefreshCw, Crown, Users as UsersIcon } from "lucide-react";
+import { Award, RefreshCw, Crown, Users as UsersIcon, Search } from "lucide-react";
 import { getTheme, authFetch, fmtRupee, fmtDateTime, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAdminData } from "@/components/admin/AdminData";
@@ -24,6 +24,7 @@ export default function AdminMembershipPage() {
 
   const [payments, setPayments] = useState<PagedResult | null>(null);
   const [status,   setStatus]   = useState("ALL");
+  const [query,    setQuery]    = useState("");
   const [page,     setPage]     = useState(1);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState("");
@@ -80,6 +81,20 @@ export default function AdminMembershipPage() {
     const activeMembers = new Set(paid.map(p => p.user_id)).size;
     return { tiers, totalRevenue, activeMembers, sampledCount: paid.length };
   }, [sample]);
+
+  const filteredPayments = useMemo(() => {
+    const items = payments?.items ?? [];
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(p => {
+      const u = userById.get(p.user_id);
+      return (u?.full_name ?? "").toLowerCase().includes(q)
+        || (u?.phone ?? "").toLowerCase().includes(q)
+        || p.id.toLowerCase().includes(q)
+        || p.razorpay_order_id.toLowerCase().includes(q)
+        || (p.razorpay_payment_id ?? "").toLowerCase().includes(q);
+    });
+  }, [payments, query, userById]);
 
   const tH: React.CSSProperties = { padding: "10px 18px", fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: th.sub, textAlign: "left", borderBottom: `1px solid ${th.border}`, background: th.raised, whiteSpace: "nowrap" };
   const tD: React.CSSProperties = { padding: "12px 18px", fontSize: 12, color: th.text, borderBottom: `1px solid ${th.border}`, verticalAlign: "middle" };
@@ -182,14 +197,25 @@ export default function AdminMembershipPage() {
             ))}
           </div>
         </div>
+        <div style={{ padding: "14px 20px", borderBottom: `1px solid ${th.border}` }}>
+          <div style={{ position: "relative", maxWidth: 340 }}>
+            <Search size={13} color={th.sub} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search by user, phone, payment or order ID…"
+              style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 32px", borderRadius: 9, background: th.raised, border: `1px solid ${th.border}`, color: th.text, fontSize: 12, outline: "none", fontFamily: C.sans }}
+            />
+          </div>
+        </div>
         {loading ? (
           <div style={{ padding: "40px", textAlign: "center", color: th.sub, fontSize: 13 }}>Loading…</div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>{["Payment ID", "User", "Tier", "Amount", "Status", "Razorpay Order", "Time"].map(h => <th key={h} style={tH}>{h}</th>)}</tr></thead>
             <tbody>
-              {payments?.items.length === 0 && <tr><td colSpan={7} style={{ ...tD, textAlign: "center", padding: "40px", color: th.sub }}>No membership payments found.</td></tr>}
-              {payments?.items.map(p => {
+              {filteredPayments.length === 0 && <tr><td colSpan={7} style={{ ...tD, textAlign: "center", padding: "40px", color: th.sub }}>{query ? "No payments match your search." : "No membership payments found."}</td></tr>}
+              {filteredPayments.map(p => {
                 const color = PMT_COLOR[p.status] ?? th.sub;
                 const tierColor = TIER_COLOR[p.tier] ?? th.sub;
                 const user = userById.get(p.user_id);

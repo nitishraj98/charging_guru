@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/api";
+import { getDeviceInfo } from "@/lib/device";
 import { checkAuth, bffLogout } from "@/lib/auth";
 import { getTheme, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -14,7 +15,7 @@ import {
   LayoutDashboard, Zap, BookOpen, Users, MapPin,
   IndianRupee, Settings, ChevronRight,
   Building2, PlugZap, LogOut, Sun, Moon, ClipboardCheck,
-  Activity, BatteryCharging, ShieldCheck, Smartphone, Award,
+  Activity, BatteryCharging, ShieldCheck, Smartphone, Award, ScrollText,
 } from "lucide-react";
 
 const NAV = [
@@ -51,7 +52,8 @@ const NAV = [
   {
     section: "SYSTEM",
     items: [
-      { href: "/admin/settings", label: "Settings",           Icon: Settings  },
+      { href: "/admin/audit-log", label: "Audit Log",         Icon: ScrollText },
+      { href: "/admin/settings",  label: "Settings",           Icon: Settings  },
     ],
   },
 ];
@@ -74,6 +76,7 @@ async function checkAdminRole(): Promise<"admin" | "not-admin" | "unauthenticate
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const path    = usePathname();
+  const router  = useRouter();
   const { isLight, toggle } = useTheme();
   const [status,  setStatus]  = useState<Status>("checking");
   const [hovered, setHovered] = useState<string | null>(null);
@@ -136,7 +139,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (code.length < 6) return;
     setLoginErr(""); setVerifying(true);
     try {
-      await auth.otpVerify(requestId, code);
+      await auth.otpVerify(requestId, code, await getDeviceInfo());
       const result = await checkAdminRole();
       if (result === "admin") { setStatus("ready"); return; }
       setLoginErr("Your account does not have admin access.");
@@ -529,7 +532,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       fontWeight: active ? 600 : 400,
                       color: active ? C.green
                         : hovering ? th.text
-                        : isLight ? "#5A6478" : "#6B7A8D",
+                        : isLight ? "#5A6478" : th.sub,
                       background: active
                         ? "rgba(0,192,96,0.10)"
                         : hovering
@@ -540,7 +543,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     }}
                   >
                     <Icon size={14} strokeWidth={active ? 2 : 1.6}
-                      style={{ flexShrink: 0, opacity: active ? 1 : hovering ? 0.85 : 0.5 }} />
+                      style={{ flexShrink: 0, opacity: active ? 1 : hovering ? 0.85 : 0.7 }} />
                     <span style={{ fontSize: 12.5, flex: 1, letterSpacing: "-0.01em" }}>{label}</span>
                     {active && <ChevronRight size={10} style={{ opacity: 0.3 }} />}
                   </Link>
@@ -559,22 +562,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               onClick={toggle}
               style={{
                 width: 32, height: 18, borderRadius: 999, position: "relative" as const,
-                background: isLight ? C.green : th.raised,
-                border: `1px solid ${isLight ? C.green : th.border}`,
+                background: isLight ? th.raised : C.green,
+                border: `1px solid ${isLight ? th.border : C.green}`,
                 cursor: "pointer", transition: "all 0.2s", padding: 0,
               }}
             >
               <div style={{
                 position: "absolute" as const,
-                top: 2, left: isLight ? 15 : 2,
+                top: 2, left: isLight ? 2 : 15,
                 width: 12, height: 12, borderRadius: "50%",
-                background: isLight ? "#fff" : th.sub,
+                background: isLight ? th.sub : "#fff",
                 transition: "left 0.2s",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 {isLight
                   ? <Sun size={7} color={C.green} strokeWidth={2.5} />
-                  : <Moon size={7} color={th.text} strokeWidth={2} />}
+                  : <Moon size={7} color="#12151B" strokeWidth={2} />}
               </div>
             </button>
           </div>
@@ -601,6 +604,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 title="Sign out"
                 onClick={() => {
                   bffLogout().finally(() => {
+                    router.replace("/admin");
                     setStatus("login");
                     setLoginStep("phone");
                     setPhone("");
