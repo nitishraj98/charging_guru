@@ -16,7 +16,7 @@ from app.api.deps import (
 from app.domain.policies import DEFAULT_DISCOVERY_RADIUS_KM
 from app.models.user import User
 from app.schemas.admin import PagedResult
-from app.schemas.bookings import BookingOut, SlotOut
+from app.schemas.bookings import BookingOut, OwnerBookingOut, SlotOut
 from app.schemas.stations import (
     ChargerCreateIn,
     ChargerOut,
@@ -98,15 +98,25 @@ async def list_owner_stations(
     return await svc.list_by_owner(user.id)
 
 
-@router.get("/owner/bookings", response_model=list[BookingOut])
+@router.get("/owner/bookings", response_model=list[OwnerBookingOut])
 async def list_owner_bookings(
     user: User = Depends(require_roles("ROLE_STATION_OWNER", "ROLE_ADMIN")),
     svc: StationService = Depends(get_station_service),
     booking_svc: BookingService = Depends(get_booking_service),
 ):
+    """Owner-facing booking list. response_model=OwnerBookingOut strips
+    `amount` (customer's full paid total) and the platform/convenience/GST
+    fields from `breakdown` — Pydantic filters them out at serialization
+    even though the underlying ORM objects carry the full figures."""
     stations = await svc.list_by_owner(user.id)
     station_ids = [s.id for s in stations]
-    return await booking_svc.list_for_owner(station_ids)
+    bookings = await booking_svc.list_for_owner(station_ids)
+    out = []
+    for b in bookings:
+        row = OwnerBookingOut.model_validate(b)
+        row.breakdown = await booking_svc.get_breakdown(b)
+        out.append(row)
+    return out
 
 
 @router.post("/owner/stations", response_model=StationDetailOut, status_code=201)

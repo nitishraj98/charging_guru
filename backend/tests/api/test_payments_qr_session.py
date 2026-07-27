@@ -130,6 +130,25 @@ async def test_verify_payment_confirms_booking_and_issues_qr(client, seed_statio
 
 
 @pytest.mark.asyncio
+async def test_verify_payment_persists_breakdown_with_accounting_identity(client, seed_station):
+    user = await _login(client)
+    booking = await _make_booking(client, seed_station, user)
+    order = await _make_order(client, booking["id"], user)
+
+    result = await _verify_payment(client, order, user)
+    b = result["breakdown"]
+    assert b["total_paise"] == booking["amount"]
+    # Owner + Charging Guru earnings + GST must reconstitute the charged total
+    # (minus discount) — the two earnings splits must never overlap.
+    assert (
+        b["owner_earnings_paise"] + b["charging_guru_earnings_paise"] + b["gst_amount_paise"]
+        == b["total_paise"] - b["discount_amount_paise"]
+    )
+    assert b["owner_earnings_paise"] == b["energy_cost_paise"] + b["parking_fee_paise"] + b["idle_fee_paise"]
+    assert b["charging_guru_earnings_paise"] == b["platform_fee_paise"] + b["convenience_fee_paise"]
+
+
+@pytest.mark.asyncio
 async def test_verify_payment_bad_signature_rejected(client, seed_station):
     user = await _login(client)
     booking = await _make_booking(client, seed_station, user)

@@ -18,6 +18,8 @@ class ChargerOut(ORMModel):
     connector_type: ConnectorType
     status: ChargerStatus
     price_per_kwh: int  # paise
+    parking_fee_paise: int = 0
+    idle_fee_paise_per_min: int = 0
 
 
 class StationOut(ORMModel):
@@ -49,6 +51,8 @@ class ChargerCreateIn(StrictModel):
     power_kw: float = Field(..., gt=0, le=400)
     connector_type: ConnectorType
     price_per_kwh: int = Field(..., gt=0, description="paise per kWh")
+    parking_fee_paise: int = Field(0, ge=0, description="flat paise per booking")
+    idle_fee_paise_per_min: int = Field(0, ge=0, description="paise per minute beyond grace period")
 
 
 class StationCreateIn(StrictModel):

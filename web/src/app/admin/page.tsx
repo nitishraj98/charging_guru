@@ -7,6 +7,7 @@ import {
   ArrowUpRight, RefreshCw, AlertCircle,
   CheckCircle, TrendingUp, Download, UserPlus,
   MapPin, Wifi, Shield, Clock, BarChart2, Building2,
+  Wallet, ParkingSquare, Timer, ReceiptText, Landmark,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -21,10 +22,18 @@ interface Overview {
   total_users: number; total_stations: number; active_stations: number;
   pending_stations: number; total_chargers: number;
   bookings_today: number; confirmed_bookings_today: number;
+  completed_sessions_total: number;
   revenue_today_paise: number; revenue_total_paise: number;
+  gtv_today_paise: number; gtv_total_paise: number;
+  charging_guru_revenue_total_paise: number;
+  owner_payouts_total_paise: number; owner_payouts_pending_paise: number;
   trend_7d: { date: string; bookings: number; revenue_paise: number }[];
   charger_breakdown: Record<string, number>;
   top_stations: { id: string; name: string; city: string; revenue_paise: number; bookings: number }[];
+  marketplace_volume: { charging_revenue_paise: number; parking_revenue_paise: number; idle_revenue_paise: number; gtv_paise: number };
+  charging_guru_revenue: { platform_fee_paise: number; convenience_fee_paise: number; subscription_fee_paise: number; ad_revenue_paise: number; total_paise: number };
+  station_payouts: { total_paid_paise: number; pending_paise: number; scheduled_paise: number };
+  taxes: { gst_collected_paise: number; gst_payable_paise: number };
 }
 interface AdminBooking {
   id: string; user_id: string; station_id: string; charger_id: string;
@@ -303,6 +312,16 @@ export default function AdminDashboard() {
           </Link>
         )}
 
+        {/* ROW 0 — Marketplace financial KPIs (GTV / Charging Guru revenue / payouts / sessions / stations) */}
+        <div className="admin-kpi-grid" style={{ marginBottom: 14, alignItems: "stretch" }}>
+          <KPI label="Gross Transaction Value" value={data ? fmtRupee(data.gtv_total_paise) : "—"} sub="all-time, total money processed" Icon={Landmark} color={C.green} href="/admin/revenue" th={th} />
+          <KPI label="Charging Guru Revenue" value={data ? fmtRupee(data.charging_guru_revenue_total_paise) : "—"} sub="platform + convenience fees" Icon={IndianRupee} color={C.purple} href="/admin/revenue" th={th} />
+          <KPI label="Station Owner Payouts" value={data ? fmtRupee(data.owner_payouts_total_paise) : "—"} sub="paid to owners" Icon={Wallet} color={C.teal} href="/admin/payouts" th={th} />
+          <KPI label="Pending Payouts" value={data ? fmtRupee(data.owner_payouts_pending_paise) : "—"} sub="awaiting transfer" Icon={Clock} color={C.amber} href="/admin/payouts" th={th} />
+          <KPI label="Completed Sessions" value={String(data?.completed_sessions_total ?? 0)} sub="all-time charges" Icon={Zap} color={C.blue} href="/admin/sessions" th={th} />
+          <KPI label="Active Stations" value={String(data?.active_stations ?? 0)} sub={`of ${data?.total_stations ?? 0} total`} Icon={MapPin} color={C.green} href="/admin/stations" th={th} />
+        </div>
+
         {/* ROW 1 — KPIs */}
         <div className="admin-kpi-grid" style={{ marginBottom: 14, alignItems: "stretch" }}>
           <KPI label="Charging Now"      value={String(data?.confirmed_bookings_today ?? 0)} sub="active sessions" Icon={Zap} color={C.green} href="/admin/sessions" th={th} />
@@ -459,6 +478,79 @@ export default function AdminDashboard() {
                 </div>
               );
             })}
+          </Card>
+        </div>
+
+        {/* ROW 3.5 — Marketplace financial sections */}
+        <div className="admin-fin-row" style={{ gap: 12, marginBottom: 14 }}>
+          <Card title="Marketplace Volume" Icon={Landmark} th={th}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { label: "Charging Revenue", value: data?.marketplace_volume.charging_revenue_paise ?? 0, Icon: Zap, color: C.green },
+                { label: "Parking Revenue", value: data?.marketplace_volume.parking_revenue_paise ?? 0, Icon: ParkingSquare, color: C.amber },
+                { label: "Idle Fee Revenue", value: data?.marketplace_volume.idle_revenue_paise ?? 0, Icon: Timer, color: C.red },
+                { label: "Gross Transaction Value", value: data?.marketplace_volume.gtv_paise ?? 0, Icon: Landmark, color: C.blue },
+              ].map(row => (
+                <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: th.sub }}>
+                    <row.Icon size={12} color={row.color} /> {row.label}
+                  </span>
+                  <span style={{ fontFamily: C.mono, fontSize: 12.5, fontWeight: 700, color: th.text }}>{fmtRupee(row.value)}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card title="Charging Guru Revenue" Icon={IndianRupee} th={th}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { label: "Platform Fees", value: data?.charging_guru_revenue.platform_fee_paise ?? 0, Icon: IndianRupee, color: C.purple },
+                { label: "Convenience Fees", value: data?.charging_guru_revenue.convenience_fee_paise ?? 0, Icon: ReceiptText, color: C.blue },
+                { label: "Subscription Revenue", value: data?.charging_guru_revenue.subscription_fee_paise ?? 0, Icon: TrendingUp, color: th.sub, muted: true },
+                { label: "Advertisement Revenue", value: data?.charging_guru_revenue.ad_revenue_paise ?? 0, Icon: BarChart2, color: th.sub, muted: true },
+              ].map(row => (
+                <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", opacity: row.muted ? 0.55 : 1 }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: th.sub }}>
+                    <row.Icon size={12} color={row.color} /> {row.label}{row.muted ? " (coming soon)" : ""}
+                  </span>
+                  <span style={{ fontFamily: C.mono, fontSize: 12.5, fontWeight: 700, color: th.text }}>{fmtRupee(row.value)}</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 8, borderTop: `1px solid ${th.border}` }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: th.text }}>Total</span>
+                <span style={{ fontFamily: C.mono, fontSize: 13.5, fontWeight: 800, color: C.green }}>{fmtRupee(data?.charging_guru_revenue.total_paise ?? 0)}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card title="Station Payouts" Icon={Wallet} th={th}
+            action={<Link href="/admin/payouts" style={{ fontSize: 10, color: C.green, textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}>Manage <ArrowUpRight size={9} /></Link>}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { label: "Total Paid", value: data?.station_payouts.total_paid_paise ?? 0, color: C.green },
+                { label: "Pending", value: data?.station_payouts.pending_paise ?? 0, color: C.amber },
+                { label: "Scheduled", value: data?.station_payouts.scheduled_paise ?? 0, color: C.blue },
+              ].map(row => (
+                <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, color: th.sub }}>{row.label}</span>
+                  <span style={{ fontFamily: C.mono, fontSize: 12.5, fontWeight: 700, color: row.color }}>{fmtRupee(row.value)}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card title="Taxes" Icon={ReceiptText} th={th}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 12, color: th.sub }}>GST Collected</span>
+                <span style={{ fontFamily: C.mono, fontSize: 12.5, fontWeight: 700, color: th.text }}>{fmtRupee(data?.taxes.gst_collected_paise ?? 0)}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 12, color: th.sub }}>GST Payable</span>
+                <span style={{ fontFamily: C.mono, fontSize: 12.5, fontWeight: 700, color: th.text }}>{fmtRupee(data?.taxes.gst_payable_paise ?? 0)}</span>
+              </div>
+              <div style={{ fontSize: 9.5, color: th.sub, marginTop: 4, opacity: 0.7 }}>No input-credit modeling in this MVP — payable mirrors collected.</div>
+            </div>
           </Card>
         </div>
 

@@ -3,7 +3,8 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   MapPin, Zap, Plus, RefreshCw, ChevronRight, Activity, IndianRupee,
-  CalendarClock, TrendingUp, ArrowUpRight, BookOpen, ScanLine, Clock3,
+  TrendingUp, ArrowUpRight, BookOpen, ScanLine, Clock3,
+  ParkingSquare, Timer, Wallet, CheckCircle2, Gauge,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -12,6 +13,7 @@ import {
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
 import { authFetch } from "@/lib/admin-ui";
+import { owner as ownerApi, OwnerFinanceSummary, OwnerStationFinance } from "@/lib/api";
 import {
   getOwnerTheme, Card, CardHeader, StatCard, EmptyState,
   DataTable, Column, StatusBadge, Button, ChartSkeleton, StatCardSkeleton, TableSkeleton,
@@ -26,11 +28,15 @@ interface Station {
   status: string; rating_avg: number; chargers: Charger[];
 }
 interface Booking {
-  id: string; status: string; amount: number; created_at: string;
+  id: string; status: string; created_at: string;
   slot_start?: string;
   charger?: { label: string; connector_type: string; power_kw: number };
   station?: { id: string; name: string };
+  // Owner-safe breakdown only — never includes Charging Guru's platform/
+  // convenience fee or GST. owner_earnings_paise is what the owner actually earns.
+  breakdown?: { owner_earnings_paise: number } | null;
 }
+const earningsOf = (b: Booking) => b.breakdown?.owner_earnings_paise ?? 0;
 
 const PAID_STATUSES = new Set(["CONFIRMED", "CHECKED_IN", "IN_PROGRESS", "COMPLETED"]);
 const rupees = (paise: number) => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
@@ -48,9 +54,9 @@ function useDashboardData(stations: Station[], bookings: Booking[]) {
     const todayKey = now.toISOString().slice(0, 10);
     const monthPrefix = now.toISOString().slice(0, 7);
 
-    const totalRevenue = paid.reduce((s, b) => s + b.amount, 0);
-    const todayRevenue = paid.filter(b => dayKey(b.created_at) === todayKey).reduce((s, b) => s + b.amount, 0);
-    const monthRevenue = paid.filter(b => b.created_at.slice(0, 7) === monthPrefix).reduce((s, b) => s + b.amount, 0);
+    const totalRevenue = paid.reduce((s, b) => s + earningsOf(b), 0);
+    const todayRevenue = paid.filter(b => dayKey(b.created_at) === todayKey).reduce((s, b) => s + earningsOf(b), 0);
+    const monthRevenue = paid.filter(b => b.created_at.slice(0, 7) === monthPrefix).reduce((s, b) => s + earningsOf(b), 0);
 
     const allChargers = stations.flatMap(s => s.chargers);
     const activeChargers = allChargers.filter(c => c.status === "AVAILABLE" || c.status === "OCCUPIED").length;
@@ -79,7 +85,7 @@ function useDashboardData(stations: Station[], bookings: Booking[]) {
     const dayIndex = new Map(days.map((d, i) => [d.key, i]));
     paid.forEach(b => {
       const idx = dayIndex.get(dayKey(b.created_at));
-      if (idx !== undefined) days[idx].revenue += b.amount;
+      if (idx !== undefined) days[idx].revenue += earningsOf(b);
     });
     completed.forEach(b => {
       const idx = dayIndex.get(dayKey(b.created_at));
@@ -93,7 +99,7 @@ function useDashboardData(stations: Station[], bookings: Booking[]) {
     // Per-station performance
     const stationPerf = stations.map(s => {
       const stBookings = paid.filter(b => b.station?.id === s.id);
-      const revenue = stBookings.reduce((sum, b) => sum + b.amount, 0);
+      const revenue = stBookings.reduce((sum, b) => sum + earningsOf(b), 0);
       const sessions = stBookings.filter(b => b.status === "COMPLETED").length;
       const avail = s.chargers.filter(c => c.status === "AVAILABLE").length;
       const utilization = s.chargers.length ? Math.round((avail / s.chargers.length) * 100) : 0;
@@ -118,6 +124,9 @@ export default function OwnerDashboard() {
 
   const [stations, setStations] = useState<Station[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [finance, setFinance]   = useState<OwnerFinanceSummary | null>(null);
+  const [stationFinance, setStationFinance] = useState<OwnerStationFinance[]>([]);
+  const [selectedStationId, setSelectedStationId] = useState<string>("all");
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError]       = useState("");
@@ -132,15 +141,19 @@ export default function OwnerDashboard() {
     if (!quiet) setLoading(true); else setRefreshing(true);
     setError("");
     try {
-      const [stRes, bkRes] = await Promise.all([
+      const [stRes, bkRes, financeData, stationFinanceData] = await Promise.all([
         authFetch("/api/v1/owner/stations"),
         authFetch("/api/v1/owner/bookings"),
+        ownerApi.financeSummary().catch(() => null),
+        ownerApi.financeByStation().catch(() => []),
       ]);
       if (!stRes.ok) throw new Error(`HTTP ${stRes.status}`);
       const stData = await stRes.json();
       const bkData = bkRes.ok ? await bkRes.json() : [];
       setStations(Array.isArray(stData) ? stData : []);
       setBookings(Array.isArray(bkData) ? bkData : []);
+      setFinance(financeData);
+      setStationFinance(Array.isArray(stationFinanceData) ? stationFinanceData : []);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load dashboard");
     } finally {
@@ -153,6 +166,24 @@ export default function OwnerDashboard() {
   const kpi = useDashboardData(stations, bookings);
   const greeting = now.getHours() < 12 ? "Good morning" : now.getHours() < 18 ? "Good afternoon" : "Good evening";
   const firstName = user?.full_name?.split(" ")[0] ?? "Partner";
+
+  // Multi-station owners see one combined total by default (finance) — this
+  // switcher lets them isolate a single station's numbers (stationFinance)
+  // instead, since two stations can look identical in the combined view
+  // while one is actually losing money.
+  const selectedStation = selectedStationId === "all"
+    ? null
+    : stationFinance.find(s => s.station_id === selectedStationId) ?? null;
+  const activeFinance = selectedStation ? {
+    total_earnings_paise: selectedStation.total_earnings_paise,
+    charging_revenue_paise: selectedStation.charging_revenue_paise,
+    parking_revenue_paise: selectedStation.parking_revenue_paise,
+    idle_fee_revenue_paise: selectedStation.idle_fee_revenue_paise,
+    pending_payouts_paise: selectedStation.pending_payout_paise,
+    completed_payouts_paise: selectedStation.paid_out_paise,
+    charging_sessions_count: selectedStation.charging_sessions_count,
+    energy_sold_kwh: selectedStation.energy_sold_kwh,
+  } : finance;
 
   const CHARGER_STATUS_META: Record<string, { label: string; color: string }> = {
     AVAILABLE: { label: "Available", color: th.success },
@@ -178,8 +209,8 @@ export default function OwnerDashboard() {
         {new Date(b.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
       </span>
     ) },
-    { key: "amount", header: "Amount", align: "right", sortValue: b => b.amount, render: b => (
-      <span style={{ fontFamily: th.mono, fontWeight: 700, color: th.text }}>{rupees(b.amount)}</span>
+    { key: "amount", header: "Your Earnings", align: "right", sortValue: b => earningsOf(b), render: b => (
+      <span style={{ fontFamily: th.mono, fontWeight: 700, color: th.text }}>{rupees(earningsOf(b))}</span>
     ) },
     { key: "status", header: "Status", render: b => <StatusBadge status={b.status} th={th} /> },
   ];
@@ -272,13 +303,41 @@ export default function OwnerDashboard() {
         />
       ) : (
         <>
-          {/* KPI cards */}
-          <div className="owner-stat-grid" style={{ marginBottom: 20 }}>
-            <StatCard th={th} label="Total Revenue" value={rupees(kpi.totalRevenue)} numericValue={kpi.totalRevenue} format={n => rupees(n)} icon={<IndianRupee size={15} color={th.accent} />} accentColor={th.accent} sub="all-time, paid bookings" />
-            <StatCard th={th} label="Today's Earnings" value={rupees(kpi.todayRevenue)} numericValue={kpi.todayRevenue} format={n => rupees(n)} icon={<TrendingUp size={15} color={th.info} />} accentColor={th.info} sub="since midnight" />
-            <StatCard th={th} label="This Month" value={rupees(kpi.monthRevenue)} numericValue={kpi.monthRevenue} format={n => rupees(n)} icon={<CalendarClock size={15} color={th.warn} />} accentColor={th.warn} sub="calendar month to date" />
-            <StatCard th={th} label="Total Sessions" value={kpi.totalSessions} numericValue={kpi.totalSessions} icon={<Zap size={15} color={th.accent} />} accentColor={th.accent} sub="completed charges" />
+          {/* Financial KPI cards — sourced from the owner-scoped finance summary,
+              which structurally excludes platform/convenience fee and Charging
+              Guru revenue fields. Never add such a field here. */}
+          {stations.length > 1 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <span style={{ fontSize: 12, fontWeight: 650, color: th.textSub }}>Showing earnings for:</span>
+              <select
+                value={selectedStationId}
+                onChange={e => setSelectedStationId(e.target.value)}
+                style={{
+                  padding: "7px 12px", borderRadius: 9, fontSize: 12.5, fontWeight: 650,
+                  background: th.raised, border: `1px solid ${th.border}`, color: th.text,
+                  fontFamily: th.sans, cursor: "pointer",
+                }}
+              >
+                <option value="all">All stations (combined)</option>
+                {stationFinance.map(s => (
+                  <option key={s.station_id} value={s.station_id}>{s.station_name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="owner-stat-grid" style={{ marginBottom: 14 }}>
+            <StatCard th={th} label="Total Earnings" value={rupees(activeFinance?.total_earnings_paise ?? 0)} numericValue={activeFinance?.total_earnings_paise ?? 0} format={n => rupees(n)} icon={<IndianRupee size={15} color={th.accent} />} accentColor={th.accent} sub="charging + parking + idle" />
+            <StatCard th={th} label="Charging Revenue" value={rupees(activeFinance?.charging_revenue_paise ?? 0)} numericValue={activeFinance?.charging_revenue_paise ?? 0} format={n => rupees(n)} icon={<Zap size={15} color={th.info} />} accentColor={th.info} sub="energy sold" />
+            <StatCard th={th} label="Parking Revenue" value={rupees(activeFinance?.parking_revenue_paise ?? 0)} numericValue={activeFinance?.parking_revenue_paise ?? 0} format={n => rupees(n)} icon={<ParkingSquare size={15} color={th.warn} />} accentColor={th.warn} sub="parking fees collected" />
+            <StatCard th={th} label="Idle Fee Revenue" value={rupees(activeFinance?.idle_fee_revenue_paise ?? 0)} numericValue={activeFinance?.idle_fee_revenue_paise ?? 0} format={n => rupees(n)} icon={<Timer size={15} color={th.danger} />} accentColor={th.danger} sub="overtime/idle fees" />
           </div>
+          <div className="owner-stat-grid" style={{ marginBottom: 24 }}>
+            <StatCard th={th} label="Pending Payouts" value={rupees(activeFinance?.pending_payouts_paise ?? 0)} numericValue={activeFinance?.pending_payouts_paise ?? 0} format={n => rupees(n)} icon={<Wallet size={15} color={th.warn} />} accentColor={th.warn} sub="awaiting transfer" />
+            <StatCard th={th} label="Completed Payouts" value={rupees(activeFinance?.completed_payouts_paise ?? 0)} numericValue={activeFinance?.completed_payouts_paise ?? 0} format={n => rupees(n)} icon={<CheckCircle2 size={15} color={th.success} />} accentColor={th.success} sub="paid out to date" />
+            <StatCard th={th} label="Charging Sessions" value={activeFinance?.charging_sessions_count ?? 0} numericValue={activeFinance?.charging_sessions_count ?? 0} icon={<Activity size={15} color={th.accent} />} accentColor={th.accent} sub="completed + confirmed" />
+            <StatCard th={th} label="Energy Sold" value={`${(activeFinance?.energy_sold_kwh ?? 0).toFixed(1)} kWh`} numericValue={activeFinance?.energy_sold_kwh ?? 0} format={n => `${n.toFixed(1)} kWh`} icon={<Gauge size={15} color={th.info} />} accentColor={th.info} sub="total kWh delivered" />
+          </div>
+
           <div className="owner-stat-grid" style={{ marginBottom: 24 }}>
             <StatCard th={th} label="Active Chargers" value={`${kpi.activeChargers}/${kpi.totalChargers}`} numericValue={kpi.activeChargers} format={n => `${Math.round(n)}/${kpi.totalChargers}`} icon={<Activity size={15} color={th.accent} />} accentColor={th.accent} sub="available or in session" />
             <StatCard th={th} label="Stations Online" value={kpi.onlineStations} numericValue={kpi.onlineStations} icon={<MapPin size={15} color={th.success} />} accentColor={th.success} sub={kpi.offlineStations > 0 ? `${kpi.offlineStations} offline/pending` : "all stations live"} />
@@ -410,6 +469,10 @@ export default function OwnerDashboard() {
               <MapPin size={17} color={th.accent} />
               <span>Manage Stations</span>
             </button>
+            <button onClick={() => router.push("/owner/payouts")} className="owner-card owner-card-hover" style={quickActionStyle(th)}>
+              <Wallet size={17} color={th.warn} />
+              <span>Payouts</span>
+            </button>
           </div>
 
           {/* Recent bookings */}
@@ -429,12 +492,12 @@ export default function OwnerDashboard() {
         .owner-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
         .owner-chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .owner-perf-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
-        .owner-quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .owner-quick-actions { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
         @media (max-width: 1100px) {
           .owner-stat-grid { grid-template-columns: repeat(2, 1fr); }
           .owner-chart-grid { grid-template-columns: 1fr; }
           .owner-perf-grid { grid-template-columns: 1fr; }
-          .owner-quick-actions { grid-template-columns: repeat(2, 1fr); }
+          .owner-quick-actions { grid-template-columns: repeat(3, 1fr); }
         }
         @media (max-width: 560px) {
           .owner-stat-grid { grid-template-columns: 1fr; }

@@ -15,7 +15,7 @@ import {
   LayoutDashboard, Zap, BookOpen, Users, MapPin,
   IndianRupee, Settings, ChevronRight,
   Building2, PlugZap, LogOut, Sun, Moon, ClipboardCheck,
-  Activity, BatteryCharging, ShieldCheck, Smartphone, Award, ScrollText,
+  Activity, BatteryCharging, ShieldCheck, Smartphone, Award, ScrollText, Wallet,
 } from "lucide-react";
 
 const NAV = [
@@ -46,6 +46,7 @@ const NAV = [
     section: "FINANCE",
     items: [
       { href: "/admin/revenue",    label: "Revenue",     Icon: IndianRupee },
+      { href: "/admin/payouts",    label: "Payouts",     Icon: Wallet      },
       { href: "/admin/membership", label: "Membership",  Icon: Award       },
     ],
   },

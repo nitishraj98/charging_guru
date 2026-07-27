@@ -28,7 +28,7 @@ from app.api.deps import get_db
 from app.core.razorpay import get_razorpay_gateway
 from app.core.sms import get_twilio_gateway
 from app.main import app
-from app.models import Base, Charger, Role, Station, User
+from app.models import Base, Charger, PricingSettings, Role, Station, User
 from app.models.enums import ChargerStatus, ConnectorType, RoleName, StationStatus
 
 ADMIN_PHONE = "+918000000001"
@@ -90,13 +90,16 @@ async def engine():
     )
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    # Seed roles (normally done by the Alembic migration).
+    # Seed roles + the single pricing_settings row (normally done by the
+    # Alembic migration) — defaults mirror migration 0009's seed exactly:
+    # convenience fee ₹10 fixed & enabled, everything else off/zero.
     factory = async_sessionmaker(eng, expire_on_commit=False)
     async with factory() as s:
         # Explicit ids: SQLite only auto-increments INTEGER rowid PKs, not
         # SMALLINT. Postgres assigns these via identity at migration time.
         for i, name in enumerate(RoleName, start=1):
             s.add(Role(id=i, name=name.value))
+        s.add(PricingSettings())
         await s.commit()
     yield eng
     await eng.dispose()

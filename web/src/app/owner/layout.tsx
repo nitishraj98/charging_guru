@@ -11,7 +11,7 @@ import Logo from "@/components/Logo";
 import { getOwnerTheme } from "@/components/owner/theme";
 import { OwnerToastProvider } from "@/components/owner/Toast";
 import {
-  LayoutDashboard, MapPin, BookOpen, Zap, Plus,
+  LayoutDashboard, MapPin, BookOpen, Zap, Plus, Wallet,
   LogOut, Sun, Moon, ChevronRight, ShieldCheck, Search, X,
 } from "lucide-react";
 
@@ -23,6 +23,7 @@ const NAV = [
     { href: "/owner/stations/new", label: "Add Station",    Icon: Plus,     exact: false },
     { href: "/owner/bookings",     label: "Bookings",       Icon: BookOpen, exact: false },
     { href: "/owner/sessions",     label: "Sessions",       Icon: Zap,      exact: false },
+    { href: "/owner/payouts",      label: "Payouts",        Icon: Wallet,   exact: false },
   ]},
   { section: "NETWORK", items: [
     { href: "/owner/stations",     label: "My Stations",    Icon: MapPin,   exact: false },

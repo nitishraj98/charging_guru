@@ -11,13 +11,17 @@ RUN pip install --prefix=/install \
     "pydantic[email]>=2.7" "pydantic-settings>=2.3" \
     "sqlalchemy[asyncio]>=2.0.30" "asyncpg>=0.29" "alembic>=1.13" \
     "redis>=5.0" "pyjwt[crypto]>=2.8" "bcrypt>=4.1" "structlog>=24.1" \
-    "httpx>=0.27" "python-multipart>=0.0.9" "prometheus-client>=0.20"
+    "httpx>=0.27" "python-multipart>=0.0.9" "prometheus-client>=0.20" \
+    "weasyprint>=62.0" "qrcode[pil]>=7.4" "jinja2>=3.1"
 
 # ---- runtime ----
 FROM python:3.12-slim AS runtime
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 RUN useradd -m -u 10001 app \
-    && apt-get update && apt-get install -y --no-install-recommends libpq5 curl \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 curl \
+        libpango-1.0-0 libpangoft2-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 \
+        libffi8 shared-mime-info fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=builder /install /usr/local

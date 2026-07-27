@@ -10,10 +10,13 @@ import { useToast } from "@/components/owner/Toast";
 const SCAN_REGION_ID = "qr-camera-scan-region";
 
 interface Booking {
-  id: string; status: string; slot_start: string; amount: number;
+  id: string; status: string; slot_start: string;
   qr_jti?: string;
   charger?: { label: string; connector_type: string; power_kw: number };
   station?: { name: string };
+  // Owner-safe breakdown only — never includes Charging Guru's platform/
+  // convenience fee or GST. owner_earnings_paise is what the owner actually earns.
+  breakdown?: { owner_earnings_paise: number } | null;
 }
 
 async function apiPost(path: string) {
@@ -402,7 +405,7 @@ function SessionManagerInner() {
               </div>
               <div style={{ fontSize: 12, color: th.textSub }}>
                 {booking.slot_start ? new Date(booking.slot_start).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
-                {" · ₹"}{(booking.amount / 100).toLocaleString("en-IN")}
+                {" · ₹"}{((booking.breakdown?.owner_earnings_paise ?? 0) / 100).toLocaleString("en-IN")}
               </div>
             </div>
             <StatusBadge status={booking.status} th={th} />
@@ -436,7 +439,7 @@ function SessionManagerInner() {
 
             {booking.status === "COMPLETED" && (
               <div style={{ padding: "12px 14px", borderRadius: 12, background: th.successDim, border: `1px solid ${th.accentBorder}`, fontSize: 13, color: th.success }}>
-                Session completed. Payment of ₹{(booking.amount / 100).toLocaleString("en-IN")} received.
+                Session completed. You earned ₹{((booking.breakdown?.owner_earnings_paise ?? 0) / 100).toLocaleString("en-IN")}.
               </div>
             )}
           </div>

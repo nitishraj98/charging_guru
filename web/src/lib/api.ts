@@ -1,8 +1,8 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 // Read access token from the cg_access cookie (non-HttpOnly, readable by JS).
 // The cg_refresh cookie is HttpOnly and never touched by JS.
-function getToken(): string | null {
+export function getToken(): string | null {
   if (typeof document === "undefined") return null;
   const match = document.cookie.match(/(?:^|; )cg_access=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : null;
@@ -153,6 +153,53 @@ export const vehicles = {
     request<void>(`/api/v1/vehicles/${id}`, { method: "DELETE" }),
 };
 
+// ── Admin: pricing settings & payouts ──────────────────────────────────────────
+export const admin = {
+  overview: () => request<AdminOverview>("/api/v1/admin/analytics/overview"),
+  stationsRevenue: (page = 1, per_page = 20, search?: string) => {
+    const params = new URLSearchParams({ page: String(page), per_page: String(per_page) });
+    if (search) params.set("search", search);
+    return request<PagedResult<StationRevenueRow>>(`/api/v1/admin/analytics/stations-revenue?${params}`);
+  },
+  pricingSettings: {
+    get: () => request<PricingSettings>("/api/v1/admin/pricing/settings"),
+    update: (body: Partial<PricingSettingsUpdate>) =>
+      request<PricingSettings>("/api/v1/admin/pricing/settings", {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+  },
+  payouts: {
+    list: (status?: string, page = 1, per_page = 20) => {
+      const params = new URLSearchParams({ page: String(page), per_page: String(per_page) });
+      if (status) params.set("status", status);
+      return request<PagedResult<OwnerPayout>>(`/api/v1/admin/pricing/payouts?${params}`);
+    },
+    create: (body: OwnerPayoutCreate) =>
+      request<OwnerPayout>("/api/v1/admin/pricing/payouts", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    markPaid: (id: string) =>
+      request<OwnerPayout>(`/api/v1/admin/pricing/payouts/${id}/mark-paid`, { method: "POST" }),
+  },
+  ownerStationsSummary: (ownerId: string) =>
+    request<OwnerStationFinance[]>(`/api/v1/admin/pricing/owners/${ownerId}/stations-summary`),
+  payoutQuote: (ownerId: string, periodStart: string, periodEnd: string, stationId?: string | null) => {
+    const params = new URLSearchParams({ period_start: periodStart, period_end: periodEnd });
+    if (stationId) params.set("station_id", stationId);
+    return request<PayoutQuote>(`/api/v1/admin/pricing/owners/${ownerId}/payout-quote?${params}`);
+  },
+};
+
+// ── Owner: scoped finance summary & payouts ────────────────────────────────────
+export const owner = {
+  financeSummary: () => request<OwnerFinanceSummary>("/api/v1/owner/finance/summary"),
+  financeByStation: () => request<OwnerStationFinance[]>("/api/v1/owner/finance/by-station"),
+  payouts: (page = 1, per_page = 20) =>
+    request<PagedResult<OwnerPayout>>(`/api/v1/owner/finance/payouts?page=${page}&per_page=${per_page}`),
+};
+
 // ── Payments ──────────────────────────────────────────────────────────────────
 export const payments = {
   createOrder: (booking_id: string) =>
@@ -196,6 +243,7 @@ export interface UserSessionInfo {
 export interface Charger {
   id: string; label: string; charger_type: string; connector_type: string;
   power_kw: number; price_per_kwh: number; status: string;
+  parking_fee_paise?: number; idle_fee_paise_per_min?: number;
 }
 export interface Station {
   id: string; name: string; address: string; city?: string; lat: number; lng: number;
@@ -209,21 +257,119 @@ export interface Review {
 }
 export interface PagedResult<T> { items: T[]; total: number; page: number; per_page: number; pages: number; }
 export interface StationStats { sessions_today: number; uptime_pct: number; }
+
+// Itemized fee breakdown — Grand Total = Energy + Parking + Idle + Platform
+// + Convenience + GST - Discount. owner_earnings + charging_guru_earnings +
+// gst == total - discount (never overlapping).
+export interface PricingBreakdown {
+  energy_kwh: number; energy_cost_paise: number; parking_fee_paise: number;
+  idle_fee_paise: number; platform_fee_paise: number; convenience_fee_paise: number;
+  gst_amount_paise: number; discount_amount_paise: number; total_paise: number;
+  owner_earnings_paise: number; charging_guru_earnings_paise: number;
+}
 export interface Booking {
   id: string; charger_id: string; station_id?: string; status: string; slot_start: string;
   slot_end: string; amount: number; qr_jti?: string;
   hold_expires_at?: string;
   charger?: Charger; station?: Station;
+  breakdown?: PricingBreakdown;
 }
 export interface PaymentOrder {
   razorpay_order_id: string; amount: number; currency: string; status: string;
+  breakdown?: PricingBreakdown;
 }
 export interface PaymentVerify {
   booking_id: string; booking_status: string; qr_token?: string;
+  breakdown?: PricingBreakdown;
 }
 export interface PaymentRecord {
   id: string; booking_id: string; amount: number; status: string;
   razorpay_order_id?: string; razorpay_payment_id?: string;
+  breakdown?: PricingBreakdown;
+}
+
+// ── Admin pricing/payouts & owner finance types ────────────────────────────────
+export type FeeMode = "FIXED" | "PERCENTAGE";
+export interface PricingSettings {
+  platform_fee_mode: FeeMode; platform_fee_fixed_paise: number; platform_fee_percent: number;
+  platform_fee_min_paise: number; platform_fee_max_paise: number; platform_fee_enabled: boolean;
+  convenience_fee_mode: FeeMode; convenience_fee_fixed_paise: number; convenience_fee_percent: number;
+  convenience_fee_min_paise: number; convenience_fee_max_paise: number; convenience_fee_enabled: boolean;
+  gst_percentage: number; gst_enabled: boolean;
+  parking_fee_enabled: boolean; idle_fee_enabled: boolean; idle_grace_minutes: number;
+  updated_at: string;
+}
+export type PricingSettingsUpdate = Omit<PricingSettings, "updated_at">;
+
+export type PayoutStatus = "PENDING" | "SCHEDULED" | "PAID" | "FAILED";
+export interface OwnerPayout {
+  id: string; owner_id: string; station_id: string | null;
+  period_start: string; period_end: string; amount_paise: number; status: PayoutStatus;
+  payout_method: string | null; reference_note: string | null;
+  paid_at: string | null; created_at: string;
+}
+export interface OwnerPayoutCreate {
+  owner_id: string; station_id?: string | null; period_start: string; period_end: string;
+  amount_paise: number; payout_method?: string | null; reference_note?: string | null;
+}
+// Deliberately excludes any platform_fee/convenience_fee/charging_guru_* field
+// — owners must never see Charging Guru's cut (backend enforces this too).
+export interface OwnerFinanceSummary {
+  total_earnings_paise: number; charging_revenue_paise: number; parking_revenue_paise: number;
+  idle_fee_revenue_paise: number; pending_payouts_paise: number; completed_payouts_paise: number;
+  charging_sessions_count: number; energy_sold_kwh: number;
+}
+// Per-station earnings breakdown — same restricted field set as
+// OwnerFinanceSummary, one row per station. paid_out/pending_payout are
+// derived from station-scoped PAID payouts only.
+export interface OwnerStationFinance {
+  station_id: string; station_name: string;
+  total_earnings_paise: number; charging_revenue_paise: number; parking_revenue_paise: number;
+  idle_fee_revenue_paise: number; energy_sold_kwh: number; charging_sessions_count: number;
+  paid_out_paise: number; pending_payout_paise: number;
+}
+// Live-computed payout amount for an owner (optionally one station) over a
+// chosen period — earned in that window minus anything an overlapping
+// existing payout already covers.
+export interface PayoutQuote {
+  earned_in_period_paise: number; already_covered_paise: number; suggested_amount_paise: number;
+}
+
+export interface DayTrend { date: string; bookings: number; revenue_paise: number; }
+export interface TopStation { id: string; name: string; city: string; revenue_paise: number; bookings: number; }
+// Full marketplace breakdown per station, platform-wide (every owner) — for
+// the admin Revenue page's station-level view. Distinct from TopStation
+// (gross amount only) and OwnerStationFinance (one owner's own stations only,
+// owner-earnings fields only).
+export interface StationRevenueRow {
+  station_id: string; station_name: string; city: string; owner_name: string;
+  gtv_paise: number; owner_earnings_paise: number; charging_guru_earnings_paise: number;
+  charging_revenue_paise: number; parking_revenue_paise: number; idle_revenue_paise: number;
+  gst_collected_paise: number; transaction_count: number;
+}
+export interface ChargerBreakdown {
+  AVAILABLE: number; BOOKED: number; OCCUPIED: number; OFFLINE: number; MAINTENANCE: number;
+}
+export interface MarketplaceVolume {
+  charging_revenue_paise: number; parking_revenue_paise: number; idle_revenue_paise: number; gtv_paise: number;
+}
+export interface ChargingGuruRevenue {
+  platform_fee_paise: number; convenience_fee_paise: number;
+  subscription_fee_paise: number; ad_revenue_paise: number; total_paise: number;
+}
+export interface StationPayouts { total_paid_paise: number; pending_paise: number; scheduled_paise: number; }
+export interface Taxes { gst_collected_paise: number; gst_payable_paise: number; }
+export interface AdminOverview {
+  total_users: number; total_stations: number; active_stations: number; pending_stations: number;
+  total_chargers: number; bookings_today: number; confirmed_bookings_today: number;
+  completed_sessions_total: number;
+  revenue_today_paise: number; revenue_total_paise: number;
+  gtv_today_paise: number; gtv_total_paise: number;
+  charging_guru_revenue_total_paise: number;
+  owner_payouts_total_paise: number; owner_payouts_pending_paise: number;
+  trend_7d: DayTrend[]; charger_breakdown: ChargerBreakdown; top_stations: TopStation[];
+  marketplace_volume: MarketplaceVolume; charging_guru_revenue: ChargingGuruRevenue;
+  station_payouts: StationPayouts; taxes: Taxes;
 }
 export interface Vehicle {
   id: string; brand: string; model: string;

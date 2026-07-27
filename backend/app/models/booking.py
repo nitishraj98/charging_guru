@@ -61,6 +61,14 @@ class Booking(Base, UUIDPkMixin, TimestampMixin):
     hold_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     qr_jti: Mapped[uuid.UUID | None] = mapped_column()
 
+    # Session-actuals, populated by SessionService.start()/complete(). Display-
+    # only (invoice generation) — never used to alter the already-captured
+    # payment amount, since Razorpay orders are immutable post-capture.
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    energy_kwh_actual: Mapped[float | None] = mapped_column()
+    idle_minutes_actual: Mapped[int | None] = mapped_column()
+
     charger: Mapped["Charger"] = relationship(lazy="selectin")
     station: Mapped["Station"] = relationship(lazy="selectin")
     slot: Mapped["BookingSlot"] = relationship(lazy="selectin")

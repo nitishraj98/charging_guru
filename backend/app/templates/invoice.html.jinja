@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Invoice {{ invoice_number }}</title>
+<style>
+  @page { size: A4; margin: 26px 30px; }
+  /* Loaded directly by file path (not via fontconfig lookup) — keeps
+     WeasyPrint's font-matching pass fast regardless of how many system
+     fonts happen to be installed in the image. This font is the only one
+     in this document with confirmed ₹ (U+20B9) and ✓ (U+2713) coverage. */
+  @font-face {
+    font-family: 'InvoiceSans';
+    src: url('{{ font_regular_path }}');
+    font-weight: 400; font-style: normal;
+  }
+  @font-face {
+    font-family: 'InvoiceSans';
+    src: url('{{ font_bold_path }}');
+    font-weight: 700; font-style: normal;
+  }
+  @font-face {
+    font-family: 'InvoiceSans';
+    src: url('{{ font_italic_path }}');
+    font-weight: 400; font-style: italic;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'InvoiceSans', 'Liberation Sans', Helvetica, Arial, sans-serif;
+    color: #0F172A;
+    font-size: 11px;
+    margin: 0;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────────── */
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .brand-row { display: flex; align-items: center; gap: 10px; }
+  .brand-mark { width: 40px; height: 40px; }
+  .brand-name { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: #0F172A; line-height: 1.15; }
+  .brand-name .accent { color: #00A855; }
+  .brand-tagline { font-size: 9px; color: #64748B; margin-top: 1px; }
+  .paid-ribbon {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #00C060; color: #FFFFFF; font-weight: 800; font-size: 13px;
+    letter-spacing: 0.06em; padding: 8px 18px; border-radius: 999px;
+  }
+
+  /* ── Title row ──────────────────────────────────────────────────── */
+  .title-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
+  .tax-invoice { font-size: 22px; font-weight: 800; color: #00A855; letter-spacing: -0.01em; }
+  .tax-invoice-sub { font-size: 10.5px; color: #64748B; margin-top: 1px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .meta-grid { display: flex; gap: 22px; text-align: right; }
+  .meta-item .meta-label { font-size: 8.5px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.06em; }
+  .meta-item .meta-value { font-size: 12px; font-weight: 700; color: #0F172A; margin-top: 2px; }
+
+  /* ── Info cards ─────────────────────────────────────────────────── */
+  .grid-2 { display: flex; gap: 14px; margin-bottom: 14px; }
+  .card { flex: 1; border: 1px solid #E2E8F0; border-radius: 10px; padding: 13px 15px; background: #F8FAFC; }
+  .card-title { font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #16A34A; margin-bottom: 8px; }
+  .card .row { display: flex; justify-content: space-between; padding: 2.5px 0; font-size: 10.5px; gap: 10px; }
+  .card .row .label { color: #64748B; flex-shrink: 0; }
+  .card .row .value { font-weight: 600; color: #0F172A; text-align: right; }
+
+  /* ── Session + Billing two-col ─────────────────────────────────── */
+  table.fees { width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 4px; }
+  table.fees th {
+    text-align: left; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #64748B; border-bottom: 1.5px solid #0F172A; padding: 5px 4px;
+  }
+  table.fees th.amt, table.fees td.amt { text-align: right; }
+  table.fees td { padding: 6px 4px; border-bottom: 1px solid #E2E8F0; font-size: 10.5px; }
+  table.fees td.detail { color: #94A3B8; font-size: 8.5px; }
+  table.fees tr.subtotal td { font-weight: 700; border-top: 1.5px solid #CBD5E1; border-bottom: none; padding-top: 8px; }
+  table.fees tr.discount td { color: #DC2626; }
+  table.fees tr.total td {
+    font-weight: 800; font-size: 15px; border-top: 2px solid #0F172A; border-bottom: none;
+    padding-top: 10px;
+  }
+  table.fees tr.total td.amt { color: #00A855; }
+
+  /* ── Footer ─────────────────────────────────────────────────────── */
+  .footer { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 18px; gap: 14px; }
+  .footer .thanks-box { flex: 1.2; }
+  .footer .thanks-box .h { font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 3px; }
+  .footer .thanks-box .p { font-size: 9.5px; color: #64748B; line-height: 1.5; }
+  .footer .help-box { flex: 1; font-size: 9.5px; color: #475569; line-height: 1.9; }
+  .footer .help-box .h { font-size: 10.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; }
+  .qr-box { text-align: center; flex-shrink: 0; }
+  .qr-box img { width: 70px; height: 70px; }
+  .qr-box .caption { font-size: 8px; color: #94A3B8; margin-top: 4px; max-width: 90px; }
+
+  .legal-footer {
+    margin-top: 16px; padding-top: 10px; border-top: 1px solid #E2E8F0;
+    font-size: 8.5px; color: #94A3B8; text-align: center; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand-row">
+      <svg class="brand-mark" width="40" height="40" viewBox="0 0 48 48" fill="none">
+        <path d="M24 5C16.3 5 10 11.3 10 19C10 29 24 43 24 43C24 43 38 29 38 19C38 11.3 31.7 5 24 5Z" fill="#00C060"/>
+        <circle cx="24" cy="19" r="9.5" fill="#06140C"/>
+        <path d="M25.5 11.5L17.5 20H22.5L21 26.5L30 17.5H25L25.5 11.5Z" fill="#FFFFFF"/>
+      </svg>
+      <div>
+        <div class="brand-name">CHARGING <span class="accent">GURU</span></div>
+        <div class="brand-tagline">Powering a Greener Tomorrow</div>
+      </div>
+    </div>
+    <div class="paid-ribbon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+        <path d="M20 6L9 17L4 12" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      PAID
+    </div>
+  </div>
+
+  <div class="title-row">
+    <div>
+      <div class="tax-invoice">TAX INVOICE</div>
+      <div class="tax-invoice-sub">EV Charging Session</div>
+    </div>
+    <div class="meta-grid">
+      <div class="meta-item"><div class="meta-label">Invoice No.</div><div class="meta-value">{{ invoice_number }}</div></div>
+      <div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">{{ issued_date }}</div></div>
+      <div class="meta-item"><div class="meta-label">Time</div><div class="meta-value">{{ issued_time }}</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Bill To</div>
+      <div class="row"><span class="label">Name</span><span class="value">{{ customer_name }}</span></div>
+      <div class="row"><span class="label">Phone</span><span class="value">{{ customer_phone }}</span></div>
+      {% if vehicle %}
+      <div class="row"><span class="label">Vehicle</span><span class="value">{{ vehicle }}</span></div>
+      {% endif %}
+    </div>
+    <div class="card">
+      <div class="card-title">Charging Station</div>
+      <div class="row"><span class="label">Station</span><span class="value">{{ station_name }}</span></div>
+      <div class="row"><span class="label">Address</span><span class="value">{{ station_address }}</span></div>
+      <div class="row"><span class="label">Charger</span><span class="value">{{ charger_label }}</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Charging Session Details</div>
+      <div class="row"><span class="label">Start Time</span><span class="value">{{ start_time }}</span></div>
+      <div class="row"><span class="label">End Time</span><span class="value">{{ end_time }}</span></div>
+      <div class="row"><span class="label">Duration</span><span class="value">{{ duration }}</span></div>
+      <div class="row"><span class="label">Energy Delivered</span><span class="value">{{ energy_kwh }} kWh</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Billing Summary</div>
+      <table class="fees">
+        <tbody>
+          <tr>
+            <td>Energy Charges<div class="detail">{{ energy_kwh }} kWh &times; {{ rate_per_kwh }}</div></td>
+            <td class="amt">{{ energy_cost }}</td>
+          </tr>
+          {% if parking_fee_paise > 0 %}
+          <tr><td>Parking Fee</td><td class="amt">{{ parking_fee }}</td></tr>
+          {% endif %}
+          {% if idle_fee_paise > 0 %}
+          <tr><td>Idle Fee</td><td class="amt">{{ idle_fee }}</td></tr>
+          {% endif %}
+          {% if platform_fee_paise > 0 %}
+          <tr><td>Platform Fee</td><td class="amt">{{ platform_fee }}</td></tr>
+          {% endif %}
+          {% if convenience_fee_paise > 0 %}
+          <tr><td>Convenience Fee</td><td class="amt">{{ convenience_fee }}</td></tr>
+          {% endif %}
+          {% if discount_amount_paise > 0 %}
+          <tr class="discount"><td>Discount</td><td class="amt">-{{ discount_amount }}</td></tr>
+          {% endif %}
+          {% if gst_amount_paise > 0 %}
+          <tr class="subtotal"><td>Subtotal</td><td class="amt">{{ subtotal }}</td></tr>
+          <tr><td>GST ({{ gst_percentage }}%)</td><td class="amt">{{ gst_amount }}</td></tr>
+          {% endif %}
+          <tr class="total"><td>Total Paid</td><td class="amt">{{ grand_total }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 14px;">
+    <div class="card-title">Payment Information</div>
+    <div class="grid-2" style="margin: 0; gap: 24px;">
+      <div style="flex: 1;">
+        <div class="row"><span class="label">Payment Method</span><span class="value">Razorpay</span></div>
+        <div class="row"><span class="label">Transaction ID</span><span class="value">{{ transaction_id }}</span></div>
+      </div>
+      <div style="flex: 1;">
+        <div class="row"><span class="label">Order ID</span><span class="value">{{ order_id }}</span></div>
+        <div class="row"><span class="label">Paid On</span><span class="value">{{ issued_date }} {{ issued_time }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="thanks-box">
+      <div class="h">Thank you for choosing Charging Guru!</div>
+      <div class="p">Drive clean, charge green, and keep the world sustainable.</div>
+    </div>
+    <div class="help-box">
+      <div class="h">Need help?</div>
+      <div>support@chargingguru.app</div>
+    </div>
+    <div class="qr-box">
+      <img src="data:image/png;base64,{{ qr_base64 }}" alt="verification QR">
+      <div class="caption">Scan to verify this invoice</div>
+    </div>
+  </div>
+
+  <div class="legal-footer">
+    Charging Guru &middot; Invoice {{ invoice_number }} &middot; This is a computer generated invoice and does not require a signature.
+  </div>
+
+</body>
+</html>

@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from app.models.enums import MembershipTier
 
 HOLD_TTL_SECONDS = 300          # slot held while payment is pending
-BOOKING_FEE_PAISE = 1000        # ₹10 convenience fee
 SLOT_LOCK_TTL_MS = 10_000       # Redis lock window for booking create
 LOCK_MAX_ATTEMPTS = 20          # bounded retry on a contended per-charger lock
 LOCK_RETRY_DELAY_S = 0.08       # base delay between lock-acquire retries
@@ -40,26 +39,7 @@ MEMBERSHIP_TIERS: dict[MembershipTier, TierMeta] = {
 }
 
 
-@dataclass(frozen=True)
-class Quote:
-    energy_kwh: float
-    energy_cost_paise: int
-    booking_fee_paise: int
-    total_paise: int
-
-
-def quote_booking(power_kw: float, duration_minutes: int, price_per_kwh_paise: int) -> Quote:
-    """Estimate energy + cost for a session.
-
-    Assumes the charger delivers near its rated power for the window (a simple
-    MVP model; refined later by the dynamic-pricing / telemetry services).
-    """
-    energy_kwh = round(float(power_kw) * (duration_minutes / 60.0), 3)
-    energy_cost = round(energy_kwh * price_per_kwh_paise)
-    total = energy_cost + BOOKING_FEE_PAISE
-    return Quote(
-        energy_kwh=energy_kwh,
-        energy_cost_paise=energy_cost,
-        booking_fee_paise=BOOKING_FEE_PAISE,
-        total_paise=total,
-    )
+# Pricing (energy cost, parking/idle fees, platform/convenience fees, GST) has
+# moved to app.domain.pricing.compute_pricing — the fixed BOOKING_FEE_PAISE
+# convenience fee is now an admin-configurable PricingSettings row instead of
+# a hardcoded constant.

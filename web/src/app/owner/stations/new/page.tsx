@@ -9,6 +9,7 @@ import { getOwnerTheme, Card, Button, Breadcrumb } from "@/components/owner";
 interface ChargerForm {
   label: string; charger_type: string; power_kw: string;
   connector_type: string; price_per_kwh: string;
+  parking_fee_paise: string; idle_fee_paise_per_min: string;
 }
 
 const CONNECTOR_TYPES = ["CCS2", "TYPE2", "CHADEMO", "GBT", "BHARAT_AC", "BHARAT_DC"];
@@ -36,7 +37,7 @@ export default function NewStationPage() {
   const [lng, setLng]           = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
   const [chargers, setChargers] = useState<ChargerForm[]>([
-    { label: "Bay 1", charger_type: "DC", power_kw: "50", connector_type: "CCS2", price_per_kwh: "1800" },
+    { label: "Bay 1", charger_type: "DC", power_kw: "50", connector_type: "CCS2", price_per_kwh: "1800", parking_fee_paise: "0", idle_fee_paise_per_min: "0" },
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState("");
@@ -57,7 +58,7 @@ export default function NewStationPage() {
     setChargers(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: value } : c));
   }
   function addCharger() {
-    setChargers(prev => [...prev, { label: `Bay ${prev.length + 1}`, charger_type: "DC", power_kw: "50", connector_type: "CCS2", price_per_kwh: "1800" }]);
+    setChargers(prev => [...prev, { label: `Bay ${prev.length + 1}`, charger_type: "DC", power_kw: "50", connector_type: "CCS2", price_per_kwh: "1800", parking_fee_paise: "0", idle_fee_paise_per_min: "0" }]);
   }
 
   function validateStep(i: number): string {
@@ -107,6 +108,8 @@ export default function NewStationPage() {
           power_kw: parseFloat(c.power_kw),
           connector_type: c.connector_type,
           price_per_kwh: parseInt(c.price_per_kwh),
+          parking_fee_paise: parseInt(c.parking_fee_paise || "0"),
+          idle_fee_paise_per_min: parseInt(c.idle_fee_paise_per_min || "0"),
         })),
       };
       const res = await authFetch("/api/v1/owner/stations", {
@@ -261,6 +264,14 @@ export default function NewStationPage() {
                       <label style={{ ...labelStyle, fontSize: 10.5 }}>Price (paise/kWh) — ₹18/kWh = 1800</label>
                       <input type="number" value={c.price_per_kwh} onChange={e => updateCharger(i, "price_per_kwh", e.target.value)} style={inputStyle} placeholder="1800" min="100" />
                     </div>
+                    <div>
+                      <label style={{ ...labelStyle, fontSize: 10.5 }}>Parking Fee (paise) — optional</label>
+                      <input type="number" value={c.parking_fee_paise} onChange={e => updateCharger(i, "parking_fee_paise", e.target.value)} style={inputStyle} placeholder="0" min="0" />
+                    </div>
+                    <div>
+                      <label style={{ ...labelStyle, fontSize: 10.5 }}>Idle Fee (paise/min) — optional</label>
+                      <input type="number" value={c.idle_fee_paise_per_min} onChange={e => updateCharger(i, "idle_fee_paise_per_min", e.target.value)} style={inputStyle} placeholder="0" min="0" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -282,7 +293,11 @@ export default function NewStationPage() {
                   {chargers.map((c, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 10, background: th.raised, border: `1px solid ${th.border}` }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: th.text }}>{c.label} · {c.connector_type}</span>
-                      <span style={{ fontSize: 12, color: th.textSub, fontFamily: th.mono }}>{c.power_kw}kW · ₹{(parseInt(c.price_per_kwh || "0") / 100).toFixed(0)}/kWh</span>
+                      <span style={{ fontSize: 12, color: th.textSub, fontFamily: th.mono }}>
+                        {c.power_kw}kW · ₹{(parseInt(c.price_per_kwh || "0") / 100).toFixed(0)}/kWh
+                        {parseInt(c.parking_fee_paise || "0") > 0 && ` · +₹${(parseInt(c.parking_fee_paise) / 100).toFixed(0)} parking`}
+                        {parseInt(c.idle_fee_paise_per_min || "0") > 0 && ` · +₹${(parseInt(c.idle_fee_paise_per_min) / 100).toFixed(0)}/min idle`}
+                      </span>
                     </div>
                   ))}
                 </div>

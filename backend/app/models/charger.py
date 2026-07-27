@@ -34,6 +34,8 @@ class Charger(Base, UUIDPkMixin, TimestampMixin):
         nullable=False,
     )
     price_per_kwh: Mapped[int] = mapped_column(BigInteger, nullable=False)  # paise
+    parking_fee_paise: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    idle_fee_paise_per_min: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     station: Mapped["Station"] = relationship(back_populates="chargers")

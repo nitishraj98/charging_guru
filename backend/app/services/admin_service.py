@@ -15,11 +15,16 @@ from app.schemas.admin import (
     AdminOverviewOut,
     ChargerAdminOut,
     ChargerBreakdown,
+    ChargingGuruRevenueOut,
     DayTrend,
+    MarketplaceVolumeOut,
     MembershipPaymentAdminOut,
     PagedResult,
     PaymentAdminOut,
     StationAdminOut,
+    StationPayoutsOut,
+    StationRevenueRow,
+    TaxesOut,
     TopStation,
     UserAdminOut,
 )
@@ -37,6 +42,8 @@ class AdminService:
             total_users, total_stations, active_stations, pending_stations,
             total_chargers, bookings_today, confirmed_today, revenue_today,
             revenue_total, trend_7d, charger_bkdn, top_stations,
+            completed_sessions, marketplace_volume, platform_revenue_bkdn,
+            owner_payouts, gst_collected,
         ) = await asyncio.gather(
             self.repo.count_users(),
             self.repo.count_stations(),
@@ -50,6 +57,11 @@ class AdminService:
             self.repo.bookings_last_n_days(7),
             self.repo.charger_status_breakdown(),
             self.repo.top_stations_by_revenue(5),
+            self.repo.count_completed_sessions(),
+            self.repo.marketplace_volume_breakdown(),
+            self.repo.sum_platform_revenue_breakdown(),
+            self.repo.sum_owner_payouts(),
+            self.repo.sum_gst_collected(),
         )
         return AdminOverviewOut(
             total_users=total_users,
@@ -59,11 +71,21 @@ class AdminService:
             total_chargers=total_chargers,
             bookings_today=bookings_today,
             confirmed_bookings_today=confirmed_today,
+            completed_sessions_total=completed_sessions,
             revenue_today_paise=revenue_today,
             revenue_total_paise=revenue_total,
+            gtv_today_paise=revenue_today,
+            gtv_total_paise=revenue_total,
+            charging_guru_revenue_total_paise=platform_revenue_bkdn["total_paise"],
+            owner_payouts_total_paise=owner_payouts["total_paid_paise"],
+            owner_payouts_pending_paise=owner_payouts["pending_paise"] + owner_payouts["scheduled_paise"],
             trend_7d=[DayTrend(**d) for d in trend_7d],
             charger_breakdown=ChargerBreakdown(**{k: v for k, v in charger_bkdn.items() if k in ChargerBreakdown.model_fields}),
             top_stations=[TopStation(**s) for s in top_stations],
+            marketplace_volume=MarketplaceVolumeOut(**marketplace_volume),
+            charging_guru_revenue=ChargingGuruRevenueOut(**platform_revenue_bkdn),
+            station_payouts=StationPayoutsOut(**owner_payouts),
+            taxes=TaxesOut(gst_collected_paise=gst_collected, gst_payable_paise=gst_collected),
         )
 
     async def list_users(self, page: int, per_page: int) -> PagedResult[UserAdminOut]:
@@ -94,6 +116,19 @@ class AdminService:
         pages = max(1, math.ceil(total / per_page)) if total else 1
         return PagedResult(
             items=[StationAdminOut.model_validate(s) for s in stations],
+            total=total,
+            page=page,
+            per_page=per_page,
+            pages=pages,
+        )
+
+    async def station_revenue_breakdown(
+        self, page: int, per_page: int, search: str | None
+    ) -> PagedResult[StationRevenueRow]:
+        items, total = await self.repo.station_revenue_breakdown(page, per_page, search)
+        pages = max(1, math.ceil(total / per_page)) if total else 1
+        return PagedResult(
+            items=[StationRevenueRow(**row) for row in items],
             total=total,
             page=page,
             per_page=per_page,

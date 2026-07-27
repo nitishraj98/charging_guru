@@ -6,6 +6,7 @@ import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ArrowLeft, Lock, ShieldCheck, AlertCircle, RotateCcw } from "lucide-react";
+import { getOwnerTheme, InvoiceBreakdown } from "@/components/owner";
 
 declare global {
   interface Window {
@@ -191,7 +192,24 @@ export default function PayPage() {
     return () => document.removeEventListener("pagehide", onHide);
   }, [booking]);
 
-  const totalRs = ((booking?.amount ?? 0) / 100);
+  // Native browser/OS back button or swipe gesture — Next.js's router
+  // intercepts this as a client-side popstate and unmounts the page without
+  // ever firing pagehide (it's not a real navigation away from the app), and
+  // it doesn't go through the in-app arrow's onClick either. Without this,
+  // backing out this way left the hold showing for other users for the full
+  // 5-minute TTL even though this user had already left.
+  useEffect(() => {
+    function onPopState() {
+      if (booking?.status === "PENDING_PAYMENT" && !paymentInFlightRef.current) {
+        beaconRefund(booking.id);
+      }
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [booking]);
+
+  const totalRs = ((booking?.breakdown?.total_paise ?? booking?.amount ?? 0) / 100);
+  const ownerTheme = getOwnerTheme(isLight);
   const slotTime = booking?.slot_start
     ? new Date(booking.slot_start).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
     : "";
@@ -245,22 +263,32 @@ export default function PayPage() {
         {booking && (
           <div style={{ background: isLight?"linear-gradient(135deg,#F0FDF4,#ECFDF5)":"linear-gradient(135deg,#091A0F,#101415)", border: `1px solid ${accentBrd}`, borderRadius: 20, padding: "18px 20px", marginBottom: 20 }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: isLight?"#16A34A":accent, marginBottom: 12, opacity: .7 }}>Booking Summary</div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: textPrimary, marginBottom: 3 }}>
-                  {booking.charger?.label ?? "Bay 1"} · {booking.charger?.connector_type ?? "CCS2"} {booking.charger?.power_kw ?? ""}kW
-                </div>
-                <div style={{ fontSize: 13, color: textSub }}>{slotTime}</div>
-                {booking.station?.name && <div style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>{booking.station.name}</div>}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: textPrimary, marginBottom: 3 }}>
+                {booking.charger?.label ?? "Bay 1"} · {booking.charger?.connector_type ?? "CCS2"} {booking.charger?.power_kw ?? ""}kW
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 16 }}>
+              <div style={{ fontSize: 13, color: textSub }}>{slotTime}</div>
+              {booking.station?.name && <div style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>{booking.station.name}</div>}
+            </div>
+
+            {booking.breakdown ? (
+              <InvoiceBreakdown
+                th={ownerTheme}
+                breakdown={booking.breakdown}
+                energyRatePaise={booking.charger?.price_per_kwh ?? 0}
+              />
+            ) : (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
                 <div style={{ fontSize: 10, color: textMuted, marginBottom: 3, letterSpacing: ".06em" }}>TOTAL</div>
                 <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, fontSize: 30, color: textPrimary, lineHeight: 1 }}>
                   ₹{totalRs.toLocaleString("en-IN")}
                 </div>
               </div>
+            )}
+
+            <div style={{ marginTop: 16 }}>
+              {order && <HoldTimer expiresAt={booking.hold_expires_at} isLight={isLight} onExpire={() => setHoldExpired(true)}/>}
             </div>
-            {order && <HoldTimer expiresAt={booking.hold_expires_at} isLight={isLight} onExpire={() => setHoldExpired(true)}/>}
           </div>
         )}
 

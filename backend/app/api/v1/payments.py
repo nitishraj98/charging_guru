@@ -26,7 +26,20 @@ async def create_order(
     svc: PaymentService = Depends(get_payment_service),
 ):
     payment = await svc.create_order(body.booking_id, current_user.id)
-    return payment
+    # No breakdown exists yet at order-creation time (it's persisted at
+    # capture — see PaymentService._persist_breakdown). Build the response
+    # explicitly rather than model_validate(payment), which would try to
+    # read the ORM `breakdown` relationship — unsafe to lazy-load on a
+    # freshly-constructed instance outside an active fetch.
+    return PaymentOrderOut(
+        id=payment.id,
+        booking_id=payment.booking_id,
+        razorpay_order_id=payment.razorpay_order_id,
+        amount=payment.amount,
+        status=payment.status,
+        created_at=payment.created_at,
+        breakdown=None,
+    )
 
 
 @router.post("/verify", response_model=PaymentVerifyOut)
@@ -40,6 +53,7 @@ async def verify_payment(
         booking_id=result.booking.id,
         booking_status=result.booking.status,
         qr_token=result.qr_token,
+        breakdown=result.breakdown,
     )
 
 

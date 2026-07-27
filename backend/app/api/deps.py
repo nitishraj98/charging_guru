@@ -18,18 +18,27 @@ from app.models.user import User
 from app.repositories.admin_repo import AdminRepo
 from app.repositories.audit_log_repo import AuditLogRepo
 from app.repositories.booking_repo import BookingRepo, SlotRepo
+from app.repositories.gst_record_repo import GSTRecordRepo
 from app.repositories.membership_payment_repo import MembershipPaymentRepo
 from app.repositories.otp_repo import OtpRepo
+from app.repositories.owner_payout_repo import OwnerPayoutRepo
 from app.repositories.payment_repo import PaymentRepo
+from app.repositories.platform_revenue_repo import PlatformRevenueRepo
+from app.repositories.pricing_settings_repo import PricingSettingsRepo
 from app.repositories.session_repo import SessionRepo
 from app.repositories.reward_repo import RewardRepo
 from app.repositories.station_repo import ChargerRepo, ReviewRepo, StationRepo
+from app.repositories.transaction_breakdown_repo import TransactionBreakdownRepo
 from app.repositories.user_repo import UserRepo
 from app.services.admin_service import AdminService
 from app.services.auth_service import AuthService
 from app.services.availability_service import AvailabilityService
 from app.services.booking_service import BookingService
+from app.services.invoice_service import InvoiceService
+from app.services.owner_finance_service import OwnerFinanceService
 from app.services.payment_service import PaymentService
+from app.services.payout_service import PayoutService
+from app.services.pricing_settings_service import PricingSettingsService
 from app.services.reward_service import MembershipService, RewardService
 from app.services.session_service import SessionService
 from app.services.station_service import StationService
@@ -49,6 +58,10 @@ __all__ = [
     "get_audit_log_repo",
     "get_reward_service",
     "get_membership_service",
+    "get_pricing_settings_service",
+    "get_payout_service",
+    "get_owner_finance_service",
+    "get_invoice_service",
     "get_razorpay_gateway",
     "get_twilio_gateway",
     "get_current_user",
@@ -72,22 +85,39 @@ def get_availability_service(db: AsyncSession = Depends(get_db)) -> Availability
     return AvailabilityService(ChargerRepo(db), db)
 
 
-def get_booking_service(db: AsyncSession = Depends(get_db)) -> BookingService:
-    return BookingService(BookingRepo(db), SlotRepo(db), ChargerRepo(db), db)
+def get_pricing_settings_service(db: AsyncSession = Depends(get_db)) -> PricingSettingsService:
+    return PricingSettingsService(PricingSettingsRepo(db))
+
+
+def get_booking_service(
+    db: AsyncSession = Depends(get_db),
+    pricing_settings: PricingSettingsService = Depends(get_pricing_settings_service),
+) -> BookingService:
+    return BookingService(BookingRepo(db), SlotRepo(db), ChargerRepo(db), db, pricing_settings)
 
 
 def get_payment_service(
     db: AsyncSession = Depends(get_db),
     gateway: RazorpayGateway = Depends(get_razorpay_gateway),
+    pricing_settings: PricingSettingsService = Depends(get_pricing_settings_service),
 ) -> PaymentService:
     membership = MembershipService(UserRepo(db), MembershipPaymentRepo(db), gateway, db)
-    return PaymentService(PaymentRepo(db), BookingRepo(db), gateway, db, membership)
+    return PaymentService(
+        PaymentRepo(db), BookingRepo(db), gateway, db, membership,
+        pricing_settings=pricing_settings,
+        breakdown_repo=TransactionBreakdownRepo(db),
+        platform_revenue_repo=PlatformRevenueRepo(db),
+        gst_repo=GSTRecordRepo(db),
+    )
 
 
-def get_session_service(db: AsyncSession = Depends(get_db)) -> SessionService:
+def get_session_service(
+    db: AsyncSession = Depends(get_db),
+    pricing_settings: PricingSettingsService = Depends(get_pricing_settings_service),
+) -> SessionService:
     avail = AvailabilityService(ChargerRepo(db), db)
     rewards = RewardService(RewardRepo(db), UserRepo(db), db)
-    return SessionService(BookingRepo(db), StationRepo(db), avail, db, rewards)
+    return SessionService(BookingRepo(db), StationRepo(db), avail, db, rewards, pricing_settings)
 
 
 def get_admin_service(db: AsyncSession = Depends(get_db)) -> AdminService:
@@ -107,6 +137,20 @@ def get_membership_service(
     gateway: RazorpayGateway = Depends(get_razorpay_gateway),
 ) -> MembershipService:
     return MembershipService(UserRepo(db), MembershipPaymentRepo(db), gateway, db)
+
+
+def get_payout_service(db: AsyncSession = Depends(get_db)) -> PayoutService:
+    return PayoutService(OwnerPayoutRepo(db))
+
+
+def get_owner_finance_service(db: AsyncSession = Depends(get_db)) -> OwnerFinanceService:
+    return OwnerFinanceService(TransactionBreakdownRepo(db), OwnerPayoutRepo(db))
+
+
+def get_invoice_service(db: AsyncSession = Depends(get_db)) -> InvoiceService:
+    return InvoiceService(
+        db, TransactionBreakdownRepo(db), GSTRecordRepo(db), PricingSettingsService(PricingSettingsRepo(db)),
+    )
 
 
 async def get_current_user(

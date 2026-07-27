@@ -39,13 +39,14 @@ from app.domain.policies import (
     LOCK_RETRY_DELAY_S,
     LOCK_RETRY_JITTER_S,
     SLOT_LOCK_TTL_MS,
-    quote_booking,
 )
+from app.domain.pricing import ChargerPricing, compute_pricing
 from app.models.booking import Booking
 from app.models.enums import BookingStatus, ChargerStatus
 from app.repositories.booking_repo import BookingRepo, SlotRepo
 from app.repositories.station_repo import ChargerRepo
 from app.schemas.bookings import BookingCreateIn
+from app.services.pricing_settings_service import PricingSettingsService
 from app.services.realtime import publish_slot_event
 
 # Slot grid used by the slot picker (local-naive hours interpreted as UTC for demo).
@@ -59,11 +60,19 @@ MAX_BOOKING_MINUTES = 180
 
 
 class BookingService:
-    def __init__(self, bookings: BookingRepo, slots: SlotRepo, chargers: ChargerRepo, session):
+    def __init__(
+        self,
+        bookings: BookingRepo,
+        slots: SlotRepo,
+        chargers: ChargerRepo,
+        session,
+        pricing_settings: PricingSettingsService,
+    ):
         self.bookings = bookings
         self.slots = slots
         self.chargers = chargers
         self.session = session
+        self.pricing_settings = pricing_settings
 
     async def available_slots(
         self, charger_id: uuid.UUID, day: datetime, duration_minutes: int
@@ -140,7 +149,21 @@ class BookingService:
             raise ConflictError("Slot is in the past.", code="SLOT_IN_PAST")
         end = start + timedelta(minutes=payload.duration_minutes)
 
-        q = quote_booking(float(charger.power_kw), payload.duration_minutes, charger.price_per_kwh)
+        platform_config = await self.pricing_settings.to_platform_config()
+        charger_pricing = ChargerPricing(
+            power_kw=float(charger.power_kw),
+            price_per_kwh_paise=charger.price_per_kwh,
+            parking_fee_paise=charger.parking_fee_paise,
+            idle_fee_paise_per_min=charger.idle_fee_paise_per_min,
+        )
+        # Provisional quote: idle fee unknowable pre-session (stays 0), energy
+        # estimated from rated power * duration. This becomes the amount
+        # actually charged via Razorpay (see PaymentService._persist_breakdown,
+        # which recomputes with these same inputs to persist the authoritative
+        # breakdown at capture time).
+        breakdown = compute_pricing(
+            charger_pricing, platform_config, duration_minutes=payload.duration_minutes,
+        )
 
         # Locked per-charger (not per-exact-start-time): two requests for
         # *different* start times that still overlap in time (e.g. 5:00/90min
@@ -173,8 +196,8 @@ class BookingService:
                         charger_id=charger.id,
                         slot_id=slot.id,
                         status=BookingStatus.PENDING_PAYMENT,
-                        amount=q.total_paise,
-                        energy_kwh_est=q.energy_kwh,
+                        amount=breakdown.total_paise,
+                        energy_kwh_est=breakdown.energy_kwh,
                         hold_expires_at=utcnow() + timedelta(seconds=HOLD_TTL_SECONDS),
                     )
                     try:
@@ -207,6 +230,30 @@ class BookingService:
         assert booking is not None  # acquired implies booking was set or an error was raised
         await publish_slot_event(booking.station_id, booking.charger_id, "hold_created")
         return booking
+
+    async def get_breakdown(self, booking: Booking):
+        """Recompute the itemized pricing breakdown for a booking, deterministic
+        given the booking's immutable charger/duration and current platform
+        settings — see compute_pricing's docstring for why this is
+        byte-identical to what was charged at capture time (nothing the
+        formula depends on changes between booking creation and payment
+        capture)."""
+        platform_config = await self.pricing_settings.to_platform_config()
+        charger = booking.charger
+        charger_pricing = ChargerPricing(
+            power_kw=float(charger.power_kw),
+            price_per_kwh_paise=charger.price_per_kwh,
+            parking_fee_paise=charger.parking_fee_paise,
+            idle_fee_paise_per_min=charger.idle_fee_paise_per_min,
+        )
+        duration_minutes = int(
+            (ensure_aware(booking.slot_end) - ensure_aware(booking.slot_start)).total_seconds() // 60
+        )
+        return compute_pricing(
+            charger_pricing, platform_config,
+            duration_minutes=duration_minutes,
+            energy_kwh_override=booking.energy_kwh_est,
+        )
 
     async def list_user_bookings(self, user_id: uuid.UUID) -> list[Booking]:
         return await self.bookings.list_for_user(user_id)

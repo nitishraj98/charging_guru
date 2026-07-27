@@ -9,6 +9,7 @@ from pydantic import Field
 
 from app.models.enums import BookingStatus
 from app.schemas.common import ORMModel, StrictModel
+from app.schemas.pricing import OwnerBreakdownOut, PricingBreakdownOut
 from app.schemas.stations import ChargerOut, StationOut
 
 SlotStatus = Literal["AVAILABLE", "HELD", "BOOKED", "OFFLINE", "PAST"]
@@ -36,6 +37,28 @@ class BookingOut(ORMModel):
     slot_end: datetime
     charger: ChargerOut | None = None
     station: StationOut | None = None
+    breakdown: PricingBreakdownOut | None = None
+
+
+class OwnerBookingOut(ORMModel):
+    """Booking view for station owners. Excludes `amount` (the customer's
+    full paid total, which includes Charging Guru's platform/convenience fee
+    and GST) — owners see `breakdown.owner_earnings_paise` instead, computed
+    from the same restricted OwnerBreakdownOut used by OwnerFinanceService."""
+    id: uuid.UUID
+    station_id: uuid.UUID
+    charger_id: uuid.UUID
+    slot_id: uuid.UUID
+    status: BookingStatus
+    energy_kwh_est: float | None
+    hold_expires_at: datetime | None
+    created_at: datetime
+    qr_jti: uuid.UUID | None = None
+    slot_start: datetime
+    slot_end: datetime
+    charger: ChargerOut | None = None
+    station: StationOut | None = None
+    breakdown: OwnerBreakdownOut | None = None
 
 
 class QRTokenOut(StrictModel):

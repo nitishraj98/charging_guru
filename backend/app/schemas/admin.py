@@ -27,6 +27,21 @@ class DayTrend(BaseModel):
     revenue_paise: int
 
 
+class StationRevenueRow(BaseModel):
+    station_id: uuid.UUID
+    station_name: str
+    city: str
+    owner_name: str
+    gtv_paise: int
+    owner_earnings_paise: int
+    charging_guru_earnings_paise: int
+    charging_revenue_paise: int
+    parking_revenue_paise: int
+    idle_revenue_paise: int
+    gst_collected_paise: int
+    transaction_count: int
+
+
 class ChargerBreakdown(BaseModel):
     AVAILABLE: int = 0
     BOOKED: int = 0
@@ -43,6 +58,32 @@ class TopStation(BaseModel):
     bookings: int
 
 
+class MarketplaceVolumeOut(BaseModel):
+    charging_revenue_paise: int
+    parking_revenue_paise: int
+    idle_revenue_paise: int
+    gtv_paise: int
+
+
+class ChargingGuruRevenueOut(BaseModel):
+    platform_fee_paise: int
+    convenience_fee_paise: int
+    subscription_fee_paise: int
+    ad_revenue_paise: int
+    total_paise: int
+
+
+class StationPayoutsOut(BaseModel):
+    total_paid_paise: int
+    pending_paise: int
+    scheduled_paise: int
+
+
+class TaxesOut(BaseModel):
+    gst_collected_paise: int
+    gst_payable_paise: int  # MVP: no input-credit modeling, same as collected
+
+
 class AdminOverviewOut(BaseModel):
     total_users: int
     total_stations: int
@@ -51,11 +92,21 @@ class AdminOverviewOut(BaseModel):
     total_chargers: int
     bookings_today: int
     confirmed_bookings_today: int
-    revenue_today_paise: int
-    revenue_total_paise: int
+    completed_sessions_total: int
+    revenue_today_paise: int  # deprecated alias of gtv_today_paise, kept for existing consumers
+    revenue_total_paise: int  # deprecated alias of gtv_total_paise
+    gtv_today_paise: int
+    gtv_total_paise: int
+    charging_guru_revenue_total_paise: int
+    owner_payouts_total_paise: int
+    owner_payouts_pending_paise: int
     trend_7d: list[DayTrend]
     charger_breakdown: ChargerBreakdown
     top_stations: list[TopStation]
+    marketplace_volume: MarketplaceVolumeOut
+    charging_guru_revenue: ChargingGuruRevenueOut
+    station_payouts: StationPayoutsOut
+    taxes: TaxesOut
 
 
 class UserAdminOut(ORMModel):
@@ -108,6 +159,8 @@ class ChargerAdminOut(ORMModel):
     connector_type: str
     status: ChargerStatus
     price_per_kwh: int
+    parking_fee_paise: int = 0
+    idle_fee_paise_per_min: int = 0
     created_at: datetime
 
 

@@ -14,12 +14,14 @@ import uuid
 
 from app.core.errors import ConflictError, ForbiddenError, NotFoundError
 from app.core.qr import verify_qr
+from app.core.time import ensure_aware, utcnow
 from app.domain.booking_state import can_transition
 from app.models.booking import Booking
 from app.models.enums import BookingStatus, ChargerStatus
 from app.repositories.booking_repo import BookingRepo
 from app.repositories.station_repo import StationRepo
 from app.services.availability_service import AvailabilityService
+from app.services.pricing_settings_service import PricingSettingsService
 from app.services.reward_service import RewardService
 
 
@@ -31,12 +33,14 @@ class SessionService:
         avail: AvailabilityService,
         session,
         rewards: RewardService | None = None,
+        pricing_settings: PricingSettingsService | None = None,
     ):
         self.bookings = bookings
         self.stations = stations
         self.avail = avail
         self.session = session
         self.rewards = rewards
+        self.pricing_settings = pricing_settings
 
     async def _check_ownership(
         self, booking: Booking, operator_id: uuid.UUID, skip: bool
@@ -123,6 +127,7 @@ class SessionService:
                 code="INVALID_BOOKING_STATE",
             )
         booking.status = BookingStatus.IN_PROGRESS
+        booking.started_at = utcnow()
         await self.avail.set_status(
             booking.charger_id,
             ChargerStatus.OCCUPIED,
@@ -151,6 +156,29 @@ class SessionService:
                 code="INVALID_BOOKING_STATE",
             )
         booking.status = BookingStatus.COMPLETED
+        booking.completed_at = utcnow()
+
+        # Session-actuals for invoicing only — never alters the already-
+        # captured payment (Razorpay orders are immutable post-capture).
+        if booking.started_at is not None:
+            elapsed_minutes = max(
+                0,
+                (booking.completed_at - ensure_aware(booking.started_at)).total_seconds() // 60,
+            )
+            booking.energy_kwh_actual = round(
+                float(booking.charger.power_kw) * (elapsed_minutes / 60.0), 3
+            )
+            planned_minutes = (
+                ensure_aware(booking.slot_end) - ensure_aware(booking.slot_start)
+            ).total_seconds() / 60
+            grace_minutes = 10
+            if self.pricing_settings is not None:
+                settings = await self.pricing_settings.get()
+                grace_minutes = settings.idle_grace_minutes
+            booking.idle_minutes_actual = max(
+                0, int(elapsed_minutes - planned_minutes - grace_minutes)
+            )
+
         await self.avail.set_status(
             booking.charger_id,
             ChargerStatus.AVAILABLE,

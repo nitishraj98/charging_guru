@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 
 from sqlalchemy import BigInteger, Enum, ForeignKey, Index, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPkMixin
 from app.models.enums import PaymentStatus
@@ -36,3 +36,7 @@ class Payment(Base, UUIDPkMixin, TimestampMixin):
 
     # Webhook idempotency key (Razorpay event id from X-Razorpay-Event-Id).
     webhook_event_id: Mapped[str | None] = mapped_column(String(80), unique=True)
+
+    breakdown: Mapped["TransactionBreakdown | None"] = relationship(  # noqa: F821
+        back_populates="payment", uselist=False, lazy="selectin"
+    )

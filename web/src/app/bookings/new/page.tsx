@@ -89,6 +89,20 @@ function BookingNewInner() {
 
   useEffect(() => { refetchSlots(); }, [refetchSlots]);
 
+  // Returning here via router.back() (e.g. backing out of /pay after
+  // releasing a hold) restores this page from Next's client router cache
+  // instead of remounting it, so the mount-time refetchSlots() above never
+  // re-runs and the grid keeps showing the stale HELD state for the slot the
+  // hold was just released from. "pageshow" fires on that restore (both the
+  // bfcache case and the router-cache case) as well as on a normal fresh
+  // load, so re-fetching there closes the gap without double-fetching on
+  // first mount in practice (it lands effectively simultaneously with it).
+  useEffect(() => {
+    function onPageShow() { refetchSlots({ silent: true }); }
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [refetchSlots]);
+
   // Live updates: instant via WS when available, ~18s poll as a fallback for
   // dropped sockets or the case where the sweep beat the socket to it.
   useStationSocket(stationId, (msg) => {

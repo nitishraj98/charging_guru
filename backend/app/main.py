@@ -23,11 +23,21 @@ from app.core.scheduler import run_hold_sweep_loop
 log = get_logger("app")
 
 
+def _warm_weasyprint() -> None:
+    """WeasyPrint's import alone costs ~3s (dlopen of Pango/Cairo/GObject +
+    font-matching setup) — paying that on the first real invoice request
+    made downloads feel hung. Importing it once here, off the event loop,
+    means the module is already cached by the time any request needs it."""
+    with suppress(Exception):
+        import weasyprint  # noqa: F401
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     configure_logging()
     log.info("startup", env=settings.env, version=__version__)
     sweep_task = asyncio.create_task(run_hold_sweep_loop())
+    asyncio.get_event_loop().run_in_executor(None, _warm_weasyprint)
     yield
     sweep_task.cancel()
     with suppress(asyncio.CancelledError):

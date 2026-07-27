@@ -58,6 +58,8 @@ class StationService:
                     power_kw=c.power_kw,
                     connector_type=c.connector_type,
                     price_per_kwh=c.price_per_kwh,
+                    parking_fee_paise=c.parking_fee_paise,
+                    idle_fee_paise_per_min=c.idle_fee_paise_per_min,
                     status=ChargerStatus.AVAILABLE,
                 )
             )
@@ -113,6 +115,8 @@ class StationService:
             power_kw=payload.power_kw,
             connector_type=payload.connector_type,
             price_per_kwh=payload.price_per_kwh,
+            parking_fee_paise=payload.parking_fee_paise,
+            idle_fee_paise_per_min=payload.idle_fee_paise_per_min,
             status=ChargerStatus.AVAILABLE,
         )
         try:

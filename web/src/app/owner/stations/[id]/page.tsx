@@ -12,6 +12,7 @@ import { useToast } from "@/components/owner/Toast";
 interface Charger {
   id: string; label: string; charger_type: string; connector_type: string;
   power_kw: number; price_per_kwh: number; status: string;
+  parking_fee_paise?: number; idle_fee_paise_per_min?: number;
 }
 interface Station {
   id: string; name: string; city: string | null; address: string; lat: number; lng: number;
@@ -20,13 +21,14 @@ interface Station {
 interface ChargerForm {
   label: string; charger_type: string; power_kw: string;
   connector_type: string; price_per_kwh: string;
+  parking_fee_paise: string; idle_fee_paise_per_min: string;
 }
 
 const CONNECTOR_TYPES = ["CCS2", "TYPE2", "CHADEMO", "GBT", "BHARAT_AC", "BHARAT_DC"];
 const CHARGER_LABELS: Record<string, string> = { AVAILABLE: "Available", MAINTENANCE: "Maintenance", OFFLINE: "Offline" };
 
 function emptyChargerForm(n: number): ChargerForm {
-  return { label: `Bay ${n}`, charger_type: "DC", power_kw: "50", connector_type: "CCS2", price_per_kwh: "1800" };
+  return { label: `Bay ${n}`, charger_type: "DC", power_kw: "50", connector_type: "CCS2", price_per_kwh: "1800", parking_fee_paise: "0", idle_fee_paise_per_min: "0" };
 }
 
 export default function OwnerStationDetailPage() {
@@ -96,6 +98,8 @@ export default function OwnerStationDetailPage() {
           power_kw: parseFloat(form.power_kw),
           connector_type: form.connector_type,
           price_per_kwh: parseInt(form.price_per_kwh),
+          parking_fee_paise: parseInt(form.parking_fee_paise || "0"),
+          idle_fee_paise_per_min: parseInt(form.idle_fee_paise_per_min || "0"),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -221,6 +225,14 @@ export default function OwnerStationDetailPage() {
                 <label style={labelStyle(th)}>Price (paise/kWh) — ₹18/kWh = 1800</label>
                 <input required type="number" value={form.price_per_kwh} onChange={e => setForm(f => ({ ...f, price_per_kwh: e.target.value }))} style={inputStyle} placeholder="1800" min="100" />
               </div>
+              <div>
+                <label style={labelStyle(th)}>Parking Fee (paise) — optional</label>
+                <input type="number" value={form.parking_fee_paise} onChange={e => setForm(f => ({ ...f, parking_fee_paise: e.target.value }))} style={inputStyle} placeholder="0" min="0" />
+              </div>
+              <div>
+                <label style={labelStyle(th)}>Idle Fee (paise/min) — optional</label>
+                <input type="number" value={form.idle_fee_paise_per_min} onChange={e => setForm(f => ({ ...f, idle_fee_paise_per_min: e.target.value }))} style={inputStyle} placeholder="0" min="0" />
+              </div>
             </div>
             {addError && (
               <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: th.dangerDim, border: `1px solid ${th.danger}30`, color: th.danger, fontSize: 12 }}>{addError}</div>
@@ -245,9 +257,15 @@ export default function OwnerStationDetailPage() {
                     <span style={{ fontWeight: 700, fontSize: 13, color: th.text, flex: 1 }}>{c.label}</span>
                     <span style={{ fontSize: 10, fontWeight: 600, color: th.textSub, fontFamily: th.mono }}>{c.power_kw}kW</span>
                   </div>
-                  <div style={{ fontSize: 11, color: th.textSub, marginBottom: 12, display: "flex", gap: 6 }}>
+                  <div style={{ fontSize: 11, color: th.textSub, marginBottom: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ padding: "2px 7px", borderRadius: 6, background: `${meta}18`, color: meta, fontSize: 10, fontWeight: 700 }}>{c.connector_type}</span>
                     <span style={{ padding: "2px 7px", borderRadius: 6, background: th.card, fontSize: 10, color: th.textSub }}>₹{(c.price_per_kwh / 100).toFixed(0)}/kWh</span>
+                    {!!c.parking_fee_paise && (
+                      <span style={{ padding: "2px 7px", borderRadius: 6, background: th.card, fontSize: 10, color: th.textSub }}>+₹{(c.parking_fee_paise / 100).toFixed(0)} parking</span>
+                    )}
+                    {!!c.idle_fee_paise_per_min && (
+                      <span style={{ padding: "2px 7px", borderRadius: 6, background: th.card, fontSize: 10, color: th.textSub }}>+₹{(c.idle_fee_paise_per_min / 100).toFixed(0)}/min idle</span>
+                    )}
                   </div>
                   <button
                     onClick={() => setOpenMenuFor(open ? null : c.id)}

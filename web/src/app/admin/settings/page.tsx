@@ -1,8 +1,9 @@
 "use client";
-import { useState, useCallback } from "react";
-import { Settings, Copy, CheckCircle, AlertTriangle, RefreshCw, Clock, MapPin, Zap, ShieldCheck } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { Settings, Copy, CheckCircle, AlertTriangle, RefreshCw, Clock, MapPin, Zap, ShieldCheck, IndianRupee, Percent, ParkingSquare, Timer, ReceiptText } from "lucide-react";
 import { getTheme, BASE, getToken, authFetch, C } from "@/lib/admin-ui";
 import { useTheme } from "@/contexts/ThemeContext";
+import { admin, PricingSettings, FeeMode } from "@/lib/api";
 
 type Theme = ReturnType<typeof getTheme>;
 
@@ -27,6 +28,189 @@ function Row({ label, desc, th, children }: { label: string; desc: string; th: T
   );
 }
 
+function RowResultBadge({ result }: { result?: { ok: boolean; msg: string } }) {
+  if (!result) return null;
+  return (
+    <span style={{ fontSize: 11, color: result.ok ? C.green : C.red, fontWeight: 500 }}>{result.msg}</span>
+  );
+}
+
+function SaveBtn({ onClick, saving, disabled }: { onClick: () => void; saving: boolean; disabled?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={saving || disabled}
+      style={{
+        padding: "6px 14px", borderRadius: 8, fontSize: 11.5, fontWeight: 600,
+        cursor: saving || disabled ? "default" : "pointer",
+        background: `${C.green}15`, border: `1px solid ${C.green}35`, color: C.green,
+        fontFamily: C.sans, opacity: saving || disabled ? 0.6 : 1,
+      }}
+    >
+      {saving ? "Saving…" : "Save"}
+    </button>
+  );
+}
+
+function ModeToggle({ th, mode, onChange }: { th: Theme; mode: FeeMode; onChange: (m: FeeMode) => void }) {
+  return (
+    <div style={{ display: "flex", borderRadius: 8, border: `1px solid ${th.border}`, overflow: "hidden" }}>
+      {(["FIXED", "PERCENTAGE"] as FeeMode[]).map(m => (
+        <button
+          key={m}
+          onClick={() => onChange(m)}
+          style={{
+            padding: "5px 10px", fontSize: 10.5, fontWeight: 600, cursor: "pointer", border: "none",
+            background: mode === m ? `${C.green}18` : "transparent",
+            color: mode === m ? C.green : th.sub, fontFamily: C.sans,
+          }}
+        >
+          {m === "FIXED" ? "₹ Fixed" : "% Percent"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function NumInput({ th, value, onChange, width = 90, placeholder }: {
+  th: Theme; value: number; onChange: (n: number) => void; width?: number; placeholder?: string;
+}) {
+  return (
+    <input
+      type="number"
+      value={Number.isFinite(value) ? value : 0}
+      onChange={e => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
+      placeholder={placeholder}
+      style={{
+        width, fontSize: 12, fontFamily: C.mono, background: th.raised, border: `1px solid ${th.border}`,
+        borderRadius: 7, color: th.text, padding: "5px 8px", outline: "none",
+      }}
+    />
+  );
+}
+
+function EnableToggle({ th, enabled, onChange }: { th: Theme; enabled: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!enabled)}
+      style={{
+        width: 38, height: 21, borderRadius: 999, border: "none", cursor: "pointer", position: "relative",
+        background: enabled ? C.green : th.raised, transition: "background 0.15s", flexShrink: 0,
+      }}
+    >
+      <span style={{
+        position: "absolute", top: 2, left: enabled ? 19 : 2, width: 17, height: 17, borderRadius: "50%",
+        background: "#fff", transition: "left 0.15s", boxShadow: "0 1px 2px rgba(0,0,0,.3)",
+      }} />
+    </button>
+  );
+}
+
+function PricingFeeRow({
+  th, icon, label, desc, mode, fixedPaise, percent, minPaise, maxPaise, enabled, saving, result, onSave,
+}: {
+  th: Theme; icon: React.ReactNode; label: string; desc: string;
+  mode: FeeMode; fixedPaise: number; percent: number; minPaise: number; maxPaise: number; enabled: boolean;
+  saving: boolean; result?: { ok: boolean; msg: string };
+  onSave: (v: { mode: FeeMode; fixedPaise: number; percent: number; minPaise: number; maxPaise: number; enabled: boolean }) => void;
+}) {
+  const [localMode, setLocalMode] = useState(mode);
+  const [localFixed, setLocalFixed] = useState(fixedPaise);
+  const [localPercent, setLocalPercent] = useState(percent);
+  const [localMin, setLocalMin] = useState(minPaise);
+  const [localMax, setLocalMax] = useState(maxPaise);
+  const [localEnabled, setLocalEnabled] = useState(enabled);
+
+  return (
+    <div style={{ padding: "14px 0", borderBottom: `1px solid ${th.border}` }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: th.text, display: "flex", alignItems: "center", gap: 6 }}>
+            {icon} {label}
+          </div>
+          <div style={{ fontSize: 11, color: th.sub, marginTop: 3 }}>{desc}</div>
+        </div>
+        <EnableToggle th={th} enabled={localEnabled} onChange={setLocalEnabled} />
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <ModeToggle th={th} mode={localMode} onChange={setLocalMode} />
+        {localMode === "FIXED" ? (
+          <NumInput th={th} value={localFixed} onChange={setLocalFixed} placeholder="paise" />
+        ) : (
+          <NumInput th={th} value={localPercent} onChange={setLocalPercent} width={70} placeholder="%" />
+        )}
+        <span style={{ fontSize: 10, color: th.sub }}>min</span>
+        <NumInput th={th} value={localMin} onChange={setLocalMin} width={70} />
+        <span style={{ fontSize: 10, color: th.sub }}>max (0=uncapped)</span>
+        <NumInput th={th} value={localMax} onChange={setLocalMax} width={70} />
+        <RowResultBadge result={result} />
+        <div style={{ marginLeft: "auto" }}>
+          <SaveBtn saving={saving} onClick={() => onSave({
+            mode: localMode, fixedPaise: localFixed, percent: localPercent,
+            minPaise: localMin, maxPaise: localMax, enabled: localEnabled,
+          })} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GstRow({ th, percent, enabled, saving, result, onSave }: {
+  th: Theme; percent: number; enabled: boolean; saving: boolean;
+  result?: { ok: boolean; msg: string }; onSave: (percent: number, enabled: boolean) => void;
+}) {
+  const [localPercent, setLocalPercent] = useState(percent);
+  const [localEnabled, setLocalEnabled] = useState(enabled);
+  return (
+    <Row th={th} label="GST" desc="Applied to the full pre-tax subtotal (energy + parking + idle + platform + convenience - discount).">
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <Percent size={11} color={th.sub} />
+        <NumInput th={th} value={localPercent} onChange={setLocalPercent} width={60} />
+        <EnableToggle th={th} enabled={localEnabled} onChange={setLocalEnabled} />
+        <RowResultBadge result={result} />
+        <SaveBtn saving={saving} onClick={() => onSave(localPercent, localEnabled)} />
+      </div>
+    </Row>
+  );
+}
+
+function ToggleRow({ th, icon, label, desc, enabled, saving, result, onSave }: {
+  th: Theme; icon: React.ReactNode; label: string; desc: string; enabled: boolean; saving: boolean;
+  result?: { ok: boolean; msg: string }; onSave: (enabled: boolean) => void;
+}) {
+  const [localEnabled, setLocalEnabled] = useState(enabled);
+  return (
+    <Row th={th} label={label} desc={desc}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {icon}
+        <EnableToggle th={th} enabled={localEnabled} onChange={setLocalEnabled} />
+        <RowResultBadge result={result} />
+        <SaveBtn saving={saving} onClick={() => onSave(localEnabled)} />
+      </div>
+    </Row>
+  );
+}
+
+function IdleRow({ th, enabled, graceMinutes, saving, result, onSave }: {
+  th: Theme; enabled: boolean; graceMinutes: number; saving: boolean;
+  result?: { ok: boolean; msg: string }; onSave: (enabled: boolean, grace: number) => void;
+}) {
+  const [localEnabled, setLocalEnabled] = useState(enabled);
+  const [localGrace, setLocalGrace] = useState(graceMinutes);
+  return (
+    <Row th={th} label="Idle Fee" desc="Charged per minute beyond the grace period after a session's booked window ends.">
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <Timer size={11} color={th.sub} />
+        <span style={{ fontSize: 10, color: th.sub }}>grace (min)</span>
+        <NumInput th={th} value={localGrace} onChange={setLocalGrace} width={60} />
+        <EnableToggle th={th} enabled={localEnabled} onChange={setLocalEnabled} />
+        <RowResultBadge result={result} />
+        <SaveBtn saving={saving} onClick={() => onSave(localEnabled, localGrace)} />
+      </div>
+    </Row>
+  );
+}
+
 export default function AdminSettingsPage() {
   const { isLight } = useTheme();
   const th = getTheme(isLight);
@@ -39,6 +223,29 @@ export default function AdminSettingsPage() {
   const [invitePhone,  setInvitePhone]  = useState("");
   const [inviting,     setInviting]     = useState(false);
   const [inviteResult, setInviteResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const [pricing, setPricing] = useState<PricingSettings | null>(null);
+  const [pricingLoading, setPricingLoading] = useState(true);
+  const [savingRow, setSavingRow] = useState<string | null>(null);
+  const [rowResult, setRowResult] = useState<Record<string, { ok: boolean; msg: string }>>({});
+
+  useEffect(() => {
+    admin.pricingSettings.get().then(setPricing).catch(() => {}).finally(() => setPricingLoading(false));
+  }, []);
+
+  const savePricingRow = useCallback(async (rowKey: string, patch: Partial<PricingSettings>) => {
+    setSavingRow(rowKey);
+    setRowResult(r => ({ ...r, [rowKey]: undefined as unknown as { ok: boolean; msg: string } }));
+    try {
+      const updated = await admin.pricingSettings.update(patch);
+      setPricing(updated);
+      setRowResult(r => ({ ...r, [rowKey]: { ok: true, msg: "Saved" } }));
+    } catch (e: unknown) {
+      setRowResult(r => ({ ...r, [rowKey]: { ok: false, msg: e instanceof Error ? e.message : "Save failed" } }));
+    } finally {
+      setSavingRow(null);
+    }
+  }, []);
 
   function copyToken() {
     const t = getToken();
@@ -117,6 +324,81 @@ export default function AdminSettingsPage() {
             </button>
           </div>
         </Row>
+      </Section>
+
+      <Section th={th} title="Pricing & Fees">
+        {pricingLoading || !pricing ? (
+          <Row th={th} label="Loading…" desc="Fetching current pricing configuration">
+            <RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} color={th.sub} />
+          </Row>
+        ) : (
+          <>
+            <PricingFeeRow
+              th={th}
+              icon={<IndianRupee size={11} />}
+              label="Platform Fee"
+              desc="Charging Guru's marketplace fee, charged on top of the energy cost."
+              mode={pricing.platform_fee_mode}
+              fixedPaise={pricing.platform_fee_fixed_paise}
+              percent={pricing.platform_fee_percent}
+              minPaise={pricing.platform_fee_min_paise}
+              maxPaise={pricing.platform_fee_max_paise}
+              enabled={pricing.platform_fee_enabled}
+              saving={savingRow === "platform"}
+              result={rowResult["platform"]}
+              onSave={patch => savePricingRow("platform", {
+                platform_fee_mode: patch.mode, platform_fee_fixed_paise: patch.fixedPaise,
+                platform_fee_percent: patch.percent, platform_fee_min_paise: patch.minPaise,
+                platform_fee_max_paise: patch.maxPaise, platform_fee_enabled: patch.enabled,
+              })}
+            />
+            <PricingFeeRow
+              th={th}
+              icon={<ReceiptText size={11} />}
+              label="Convenience Fee"
+              desc="Booking convenience fee shown at checkout."
+              mode={pricing.convenience_fee_mode}
+              fixedPaise={pricing.convenience_fee_fixed_paise}
+              percent={pricing.convenience_fee_percent}
+              minPaise={pricing.convenience_fee_min_paise}
+              maxPaise={pricing.convenience_fee_max_paise}
+              enabled={pricing.convenience_fee_enabled}
+              saving={savingRow === "convenience"}
+              result={rowResult["convenience"]}
+              onSave={patch => savePricingRow("convenience", {
+                convenience_fee_mode: patch.mode, convenience_fee_fixed_paise: patch.fixedPaise,
+                convenience_fee_percent: patch.percent, convenience_fee_min_paise: patch.minPaise,
+                convenience_fee_max_paise: patch.maxPaise, convenience_fee_enabled: patch.enabled,
+              })}
+            />
+            <GstRow
+              th={th}
+              percent={pricing.gst_percentage}
+              enabled={pricing.gst_enabled}
+              saving={savingRow === "gst"}
+              result={rowResult["gst"]}
+              onSave={(percent, enabled) => savePricingRow("gst", { gst_percentage: percent, gst_enabled: enabled })}
+            />
+            <ToggleRow
+              th={th}
+              icon={<ParkingSquare size={11} />}
+              label="Parking Fee"
+              desc="Global switch — when off, no charger's parking fee is billed even if configured."
+              enabled={pricing.parking_fee_enabled}
+              saving={savingRow === "parking"}
+              result={rowResult["parking"]}
+              onSave={enabled => savePricingRow("parking", { parking_fee_enabled: enabled })}
+            />
+            <IdleRow
+              th={th}
+              enabled={pricing.idle_fee_enabled}
+              graceMinutes={pricing.idle_grace_minutes}
+              saving={savingRow === "idle"}
+              result={rowResult["idle"]}
+              onSave={(enabled, grace) => savePricingRow("idle", { idle_fee_enabled: enabled, idle_grace_minutes: grace })}
+            />
+          </>
+        )}
       </Section>
 
       <Section th={th} title="Maintenance Operations">

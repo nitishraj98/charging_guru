@@ -55,6 +55,40 @@ async def test_admin_overview_returns_kpi_structure(client, admin_tokens):
 
 
 @pytest.mark.asyncio
+async def test_admin_overview_includes_marketplace_financial_sections(client, admin_tokens):
+    r = await client.get("/api/v1/admin/analytics/overview", headers=_auth(admin_tokens))
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert "gtv_today_paise" in data
+    assert "gtv_total_paise" in data
+    assert "charging_guru_revenue_total_paise" in data
+    assert "owner_payouts_total_paise" in data
+    assert "owner_payouts_pending_paise" in data
+    assert "completed_sessions_total" in data
+
+    mv = data["marketplace_volume"]
+    assert set(mv.keys()) == {
+        "charging_revenue_paise", "parking_revenue_paise", "idle_revenue_paise", "gtv_paise",
+    }
+    cgr = data["charging_guru_revenue"]
+    assert set(cgr.keys()) == {
+        "platform_fee_paise", "convenience_fee_paise", "subscription_fee_paise",
+        "ad_revenue_paise", "total_paise",
+    }
+    sp = data["station_payouts"]
+    assert set(sp.keys()) == {"total_paid_paise", "pending_paise", "scheduled_paise"}
+    taxes = data["taxes"]
+    assert set(taxes.keys()) == {"gst_collected_paise", "gst_payable_paise"}
+
+
+@pytest.mark.asyncio
+async def test_non_admin_cannot_access_pricing_settings_or_payouts(client):
+    user = await _login(client, "+919876543210")
+    assert (await client.get("/api/v1/admin/pricing/settings", headers=_auth(user))).status_code == 403
+    assert (await client.get("/api/v1/admin/pricing/payouts", headers=_auth(user))).status_code == 403
+
+
+@pytest.mark.asyncio
 async def test_admin_overview_reflects_seeded_station(client, admin_tokens, seed_station):
     r = await client.get("/api/v1/admin/analytics/overview", headers=_auth(admin_tokens))
     data = r.json()

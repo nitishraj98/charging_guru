@@ -9,9 +9,12 @@ import {
 } from "@/components/owner";
 
 interface Booking {
-  id: string; status: string; slot_start: string; slot_end: string; amount: number; created_at: string;
+  id: string; status: string; slot_start: string; slot_end: string; created_at: string;
   charger?: { label: string; connector_type: string; power_kw: number };
   station?: { name: string };
+  // Owner-safe breakdown only — never includes Charging Guru's platform/
+  // convenience fee or GST. owner_earnings_paise is what the owner actually earns.
+  breakdown?: { owner_earnings_paise: number } | null;
 }
 
 const FILTERS = ["ALL", "PENDING_PAYMENT", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
@@ -40,7 +43,7 @@ export default function OwnerBookingsPage() {
 
   const filtered = useMemo(() => filter === "ALL" ? bookings : bookings.filter(b => b.status === filter), [bookings, filter]);
   const liveCount = useMemo(() => bookings.filter(b => ["CONFIRMED", "CHECKED_IN", "IN_PROGRESS"].includes(b.status)).length, [bookings]);
-  const revenue = useMemo(() => bookings.reduce((sum, b) => sum + (b.status === "COMPLETED" ? b.amount : 0), 0), [bookings]);
+  const revenue = useMemo(() => bookings.reduce((sum, b) => sum + (b.status === "COMPLETED" ? (b.breakdown?.owner_earnings_paise ?? 0) : 0), 0), [bookings]);
 
   const columns: Column<Booking>[] = [
     { key: "charger", header: "Charger / Station", render: b => (
@@ -55,8 +58,8 @@ export default function OwnerBookingsPage() {
         {b.slot_end && ` – ${new Date(b.slot_end).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
       </span>
     ) },
-    { key: "amount", header: "Amount", align: "right", sortValue: b => b.amount, render: b => (
-      <span style={{ fontFamily: th.mono, fontWeight: 700, color: th.text }}>{rupees(b.amount)}</span>
+    { key: "amount", header: "Your Earnings", align: "right", sortValue: b => b.breakdown?.owner_earnings_paise ?? 0, render: b => (
+      <span style={{ fontFamily: th.mono, fontWeight: 700, color: th.text }}>{rupees(b.breakdown?.owner_earnings_paise ?? 0)}</span>
     ) },
     { key: "status", header: "Status", render: b => <StatusBadge status={b.status} th={th} /> },
     { key: "actions", header: "", align: "right", render: b => (

@@ -81,3 +81,15 @@ class RewardTransactionType(str, enum.Enum):
     EARNED = "EARNED"
     REDEEMED = "REDEEMED"
     EXPIRED = "EXPIRED"
+
+
+class PayoutStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    SCHEDULED = "SCHEDULED"
+    PAID = "PAID"
+    FAILED = "FAILED"
+
+
+class FeeMode(str, enum.Enum):
+    FIXED = "FIXED"
+    PERCENTAGE = "PERCENTAGE"

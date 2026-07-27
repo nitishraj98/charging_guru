@@ -23,8 +23,10 @@ import asyncio
 from app.core.db import SessionFactory
 from app.core.logging import get_logger
 from app.repositories.booking_repo import BookingRepo, SlotRepo
+from app.repositories.pricing_settings_repo import PricingSettingsRepo
 from app.repositories.station_repo import ChargerRepo
 from app.services.booking_service import BookingService
+from app.services.pricing_settings_service import PricingSettingsService
 from app.services.realtime import publish_slot_event
 
 log = get_logger("scheduler")
@@ -39,8 +41,9 @@ HOLD_SWEEP_INTERVAL_SECONDS = 15
 
 async def _sweep_once() -> None:
     async with SessionFactory() as session:
+        pricing_settings = PricingSettingsService(PricingSettingsRepo(session))
         service = BookingService(
-            BookingRepo(session), SlotRepo(session), ChargerRepo(session), session
+            BookingRepo(session), SlotRepo(session), ChargerRepo(session), session, pricing_settings
         )
         expired = await service.expire_stale_holds()
         await session.commit()

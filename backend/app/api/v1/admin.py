@@ -31,6 +31,7 @@ from app.schemas.admin import (
     PaymentAdminOut,
     StationAdminOut,
     StationRejectIn,
+    StationRevenueRow,
     StationStatusIn,
     UserAdminOut,
     UserStatusIn,
@@ -93,6 +94,19 @@ async def get_overview(
     svc: AdminService = Depends(get_admin_service),
 ):
     return await svc.get_overview()
+
+
+@router.get("/analytics/stations-revenue", response_model=PagedResult[StationRevenueRow])
+async def get_station_revenue_breakdown(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    search: str | None = Query(None),
+    _: object = Depends(_ADMIN_ONLY),
+    svc: AdminService = Depends(get_admin_service),
+):
+    """Every station's full marketplace breakdown — GTV, owner earnings vs.
+    Charging Guru revenue, GST — for the admin Revenue page's station-level view."""
+    return await svc.station_revenue_breakdown(page, per_page, search)
 
 
 # ── Users ─────────────────────────────────────────────────────────────────────

@@ -2,11 +2,12 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import { bookings, payments, Booking, PaymentRecord } from "@/lib/api";
+import { bookings, payments, BASE, getToken, Booking, PaymentRecord } from "@/lib/api";
 import { checkAuth } from "@/lib/auth";
 import NavBar from "@/components/NavBar";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Skeleton, BookingDetailSkeleton } from "@/components/Skeleton";
+import { getOwnerTheme, InvoiceBreakdown } from "@/components/owner";
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; icon: string }> = {
   PENDING_PAYMENT: { label: "Pending Payment", color: "#FFC043", bg: "rgba(255,192,67,.1)",  icon: "⏳" },
@@ -81,6 +82,9 @@ export default function BookingDetailPage() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
   const [qrToken, setQrToken]       = useState("");
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [invoiceError, setInvoiceError] = useState("");
+  const ownerTheme = getOwnerTheme(isLight);
 
   const cardBg      = isLight ? "#FFFFFF" : "#101415";
   const cardBorder  = isLight ? "#CBD5E1" : "#222829";
@@ -132,30 +136,27 @@ export default function BookingDetailPage() {
     }
   }, [booking?.status, booking?.qr_jti, booking?.id]);
 
-  function downloadInvoice() {
+  async function downloadInvoice() {
     if (!booking) return;
-    const lines = [
-      "CHARGING GURU — INVOICE",
-      "=".repeat(40),
-      `Booking ID : ${booking.id}`,
-      `Status     : ${booking.status}`,
-      `Slot start : ${booking.slot_start ? new Date(booking.slot_start).toLocaleString("en-IN") : "—"}`,
-      `Slot end   : ${booking.slot_end   ? new Date(booking.slot_end).toLocaleString("en-IN")   : "—"}`,
-      `Charger    : ${booking.charger?.label ?? "—"} · ${booking.charger?.connector_type ?? "—"} · ${booking.charger?.power_kw ?? "—"}kW`,
-      `Station    : ${booking.station?.name ?? "—"}`,
-      `Address    : ${booking.station?.address ?? "—"}`,
-      `Amount     : ₹${(booking.amount / 100).toLocaleString("en-IN")}`,
-      "",
-      "Thank you for choosing Charging Guru!",
-      "Support: support@chargingguru.in",
-    ];
-    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `invoice-${booking.id.slice(0, 8)}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    setDownloadingInvoice(true);
+    setInvoiceError("");
+    try {
+      const res = await fetch(`${BASE}/api/v1/bookings/${booking.id}/invoice`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${booking.id.slice(0, 8)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      setInvoiceError(e instanceof Error ? e.message : "Failed to download invoice");
+    } finally {
+      setDownloadingInvoice(false);
+    }
   }
 
   async function cancelBooking() {
@@ -291,28 +292,39 @@ export default function BookingDetailPage() {
         {/* Payment info */}
         <div style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 20, padding: "20px 22px", marginBottom: 16, boxShadow: isLight ? "0 1px 4px rgba(0,0,0,.05)" : "none" }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", color: textMuted, marginBottom: 14, textTransform: "uppercase" }}>Payment</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-              <span style={{ color: textSub }}>Booking amount</span>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: textPrimary }}>
-                {booking.amount ? `₹${(booking.amount / 100).toLocaleString("en-IN")}` : "—"}
-              </span>
+
+          {payment?.breakdown ? (
+            <InvoiceBreakdown
+              th={ownerTheme}
+              breakdown={payment.breakdown}
+              energyRatePaise={booking.charger?.price_per_kwh ?? 0}
+              compact
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                <span style={{ color: textSub }}>Booking amount</span>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: textPrimary }}>
+                  {booking.amount ? `₹${(booking.amount / 100).toLocaleString("en-IN")}` : "—"}
+                </span>
+              </div>
             </div>
-            {payment && (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                  <span style={{ color: textSub }}>Status</span>
-                  <span style={{ color: ["CAPTURED","AUTHORIZED"].includes(payment.status) ? accent : textSub, fontSize: 13, fontWeight: 600 }}>{payment.status}</span>
+          )}
+
+          {payment && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${cardBorder}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                <span style={{ color: textSub }}>Status</span>
+                <span style={{ color: ["CAPTURED","AUTHORIZED"].includes(payment.status) ? accent : textSub, fontSize: 13, fontWeight: 600 }}>{payment.status}</span>
+              </div>
+              {payment.razorpay_payment_id && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                  <span style={{ color: textMuted }}>Payment ID</span>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", color: textMuted, fontSize: 11 }}>{payment.razorpay_payment_id}</span>
                 </div>
-                {payment.razorpay_payment_id && (
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                    <span style={{ color: textMuted }}>Payment ID</span>
-                    <span style={{ fontFamily: "'JetBrains Mono',monospace", color: textMuted, fontSize: 11 }}>{payment.razorpay_payment_id}</span>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {booking.status === "PENDING_PAYMENT" && (
             <button onClick={() => router.push(`/pay/${booking.id}`)} style={{ width: "100%", marginTop: 16, padding: "14px", borderRadius: 12, background: "#FFC043", color: "#050708", fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer" }}>
@@ -321,10 +333,15 @@ export default function BookingDetailPage() {
           )}
 
           {isCompleted && (
-            <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: accentDim, border: `1px solid ${accentBrd}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: accentDim, border: `1px solid ${accentBrd}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
               <span style={{ fontSize: 13, color: isLight ? "#059669" : "#4DFFA6" }}>Invoice available</span>
-              <button onClick={downloadInvoice} style={{ padding: "6px 14px", borderRadius: 9, background: accent, color: "#050708", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>Download ↓</button>
+              <button onClick={downloadInvoice} disabled={downloadingInvoice} style={{ padding: "6px 14px", borderRadius: 9, background: accent, color: "#050708", fontSize: 12, fontWeight: 700, border: "none", cursor: downloadingInvoice ? "not-allowed" : "pointer", opacity: downloadingInvoice ? 0.6 : 1 }}>
+                {downloadingInvoice ? "Preparing…" : "Download ↓"}
+              </button>
             </div>
+          )}
+          {invoiceError && (
+            <div style={{ marginTop: 10, fontSize: 12, color: "#FF5A5F" }}>{invoiceError}</div>
           )}
         </div>
 
